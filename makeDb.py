@@ -43,23 +43,24 @@ class DepartmentList:
 
 class CategoryList:
 	def __init__(self):
-		self.rows={}
+		self.names={}
 		self.prevRow=None
 	def resetSequence(self):
 		self.prevRow=None
 	def add(self,row):
 		code=row['categoryCode']
 		name=row['categoryName']
-		sectionCode=row['sectionCode']
-		r={'name':name,'sectionCode':sectionCode}
-		if code in self.rows:
-			if self.rows[code]!=r:
-				raise Exception('code collision: categories['+code+'] = '+str(self.rows[code])+' vs '+str(r))
+		if code in self.names:
+			if self.names[code]!=name:
+				raise Exception('code collision: categories['+code+'] = '+str(self.names[code])+' vs '+str(names))
 		else:
-			self.rows[code]=r
+			self.names[code]=name
 		if self.prevRow is not None and self.prevRow['departmentCode']==row['departmentCode']:
 			if (self.prevRow['sectionCode'],self.prevRow['categoryCode'])>(row['sectionCode'],row['categoryCode']):
 				raise Exception('invalid category order')
+	def getOrderedRows(self):
+		for code,name in sorted(self.names.items()):
+			yield {'categoryCode':code,'categoryName':name}
 
 departments=DepartmentList()
 categories=CategoryList()
@@ -94,10 +95,12 @@ sql.write(";\n")
 sql.write("""
 CREATE TABLE categories(
 	categoryCode CHAR(7) PRIMARY KEY,
-	categoryName TEXT,
-	sectionCode CHAR(4)
+	categoryName TEXT
 );
 
-INSERT INTO categories(categoryCode,categoryName,sectionCode) VALUES
+INSERT INTO categories(categoryCode,categoryName) VALUES
 """)
-
+sql.write(",\n".join(
+	"('"+row['categoryCode']+"','"+row['categoryName']+"')" for row in categories.getOrderedRows()
+))
+sql.write(";\n")
