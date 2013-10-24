@@ -47,11 +47,7 @@ for csvFilename in ('tables/pr03-2014-16.csv','tables/pr04-2014-16.csv'):
 	departments.resetSequence()
 	with open(csvFilename,encoding='utf8',newline='') as csvFile:
 		cols=None
-		for row in csv.reader(csvFile):
-			if cols is None:
-				cols=row
-				continue
-			row={col:item for col,item in zip(cols,row)}
+		for row in csv.DictReader(csvFile):
 			if row['departmentCode']:
 				departments.add(row['departmentCode'],row['departmentName'])
 
