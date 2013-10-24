@@ -1,4 +1,7 @@
+#!/usr/bin/env python3
+
 import re
+import csv
 from openpyxl import load_workbook
 
 wb=load_workbook('fincom/pr03-2014-16.xlsx')
@@ -17,36 +20,45 @@ departmentNameRe=re.compile(r'(?P<departmentName>.*?)\s*\((?P<departmentCode>...
 
 for r in range(r,maxRow):
 	number,name,sectionCode,categoryCode,typeCode,amount=(ws.cell(row=r,column=c).value for c in range(6))
+	sectionCode=sectionCode[:2]+sectionCode[-2:]
+	typeCode=str(typeCode)
 	row={'year':2014}
 	if not number:
-		row['totalAmount']=amount
+		row['yearAmount']=amount
 		rows[0]=row
 		break
 	elif not sectionCode:
 		m=departmentNameRe.match(name)
 		row['departmentName']=departmentName=m.group('departmentName')
 		row['departmentCode']=departmentCode=m.group('departmentCode')
-		row['departmentAmount']=amount
+		row['yearDepartmentAmount']=amount
 	elif not typeCode:
 		row['departmentName']=departmentName
 		row['departmentCode']=departmentCode
-		row['sectionCode']=sectionCode=sectionCode[:2]+sectionCode[-2:]
+		row['sectionCode']=sectionCode
 		row['categoryName']=categoryName=name
 		row['categoryCode']=categoryCode
-		row['departmentCategoryAmount']=amount
+		row['yearDepartmentCategoryAmount']=amount
 	else:
 		row['departmentName']=departmentName
 		row['departmentCode']=departmentCode
-		# if sectionCode!=sectionCode[:2]+sectionCode[-2:]:
-			# raise Exception('unexpected change of sectionCode')
 		row['sectionCode']=sectionCode
 		row['categoryName']=categoryName
 		row['categoryCode']=categoryCode
+		row['typeName']=typeName=name
 		row['typeCode']=typeCode
-		row['departmentCategoryTypeAmount']=amount
+		row['yearDepartmentCategoryTypeAmount']=amount
 	rows.append(row)
 else:
 	raise Exception('no total line found')
 
+writer=csv.writer(open('tables/pr03-2014-16.csv','w',newline='',encoding='utf8'),quoting=csv.QUOTE_NONNUMERIC)
+cols=[
+	'year','yearAmount',
+	'departmentName','departmentCode','yearDepartmentAmount',
+	'sectionCode','categoryName','categoryCode','yearDepartmentCategoryAmount',
+	'typeName','typeCode','yearDepartmentCategoryTypeAmount',
+]
+writer.writerow(cols)
 for row in rows:
-	print(row)
+	writer.writerow([row.get(col) for col in cols])
