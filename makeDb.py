@@ -108,7 +108,8 @@ for csvFilename in ('tables/pr03-2014-16.csv','tables/pr04-2014-16.csv'):
 				categories.add(row)
 			if row['typeCode']:
 				types.add(row)
-				items.append(row) # maybe skip zero amounts?
+				if row['ydsctAmount']!='0.0':
+					items.append(row)
 
 sql=open('db/pr-bd-2014-16.sql','w',encoding='utf8')
 sql.write("-- проект бюджета Санкт-Петербурга на 2014-2016 гг.\n")
@@ -141,6 +142,10 @@ CREATE TABLE types(
 for row in types.getOrderedRows():
 	sql.write("INSERT INTO types(typeCode,typeName) VALUES ('"+row['typeCode']+"','"+row['typeName']+"');\n")
 
+def amount(amount):
+	if amount[-2]!='.':
+		raise Exception('invalid amount '+amount)
+	return str(int(amount[:-2]+amount[-1]+'00'))
 sql.write("""
 CREATE TABLE items(
 	year INT,
@@ -148,16 +153,16 @@ CREATE TABLE items(
 	sectionCode CHAR(4),
 	categoryCode CHAR(7),
 	typeCode CHAR(3),
-	amount DECIMAL(10,1),
+	amount INT,
 	PRIMARY KEY (year,departmentCode,sectionCode,categoryCode,typeCode),
 	FOREIGN KEY (departmentCode) REFERENCES departments(departmentCode),
 	FOREIGN KEY (categoryCode) REFERENCES categories(categoryCode),
 	FOREIGN KEY (typeCode) REFERENCES types(typeCode)
 );
-""");
+"""); # amount DECIMAL(10,1) - but sqlite doesn't support decimal
 for row in sorted(items,key=lambda r: (r['year'],r['departmentCode'],r['sectionCode'],r['categoryCode'],r['typeCode'])):
 	sql.write(
 		"INSERT INTO items(year,departmentCode,sectionCode,categoryCode,typeCode,amount) VALUES ("+
-		row['year']+",'"+row['departmentCode']+"','"+row['sectionCode']+"','"+row['categoryCode']+"','"+row['typeCode']+"',"+row['ydsctAmount']+
+		row['year']+",'"+row['departmentCode']+"','"+row['sectionCode']+"','"+row['categoryCode']+"','"+row['typeCode']+"',"+amount(row['ydsctAmount'])+
 		");\n"
 	)
