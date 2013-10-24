@@ -41,17 +41,42 @@ class DepartmentList:
 		for order,code in enumerate(reversed(exitSeq)):
 			yield {'departmentCode':code,'departmentName':self.names[code],'departmentOrder':order}
 
+class CategoryList:
+	def __init__(self):
+		self.rows={}
+		self.prevRow=None
+	def resetSequence(self):
+		self.prevRow=None
+	def add(self,row):
+		code=row['categoryCode']
+		name=row['categoryName']
+		sectionCode=row['sectionCode']
+		r={'name':name,'sectionCode':sectionCode}
+		if code in self.rows:
+			if self.rows[code]!=r:
+				raise Exception('code collision: categories['+code+'] = '+str(self.rows[code])+' vs '+str(r))
+		else:
+			self.rows[code]=r
+		if self.prevRow is not None and self.prevRow['departmentCode']==row['departmentCode']:
+			if (self.prevRow['sectionCode'],self.prevRow['categoryCode'])>(row['sectionCode'],row['categoryCode']):
+				raise Exception('invalid category order')
+
 departments=DepartmentList()
+categories=CategoryList()
 
 for csvFilename in ('tables/pr03-2014-16.csv','tables/pr04-2014-16.csv'):
 	departments.resetSequence()
+	categories.resetSequence()
 	with open(csvFilename,encoding='utf8',newline='') as csvFile:
 		cols=None
 		for row in csv.DictReader(csvFile):
 			if row['departmentCode']:
 				departments.add(row['departmentCode'],row['departmentName'])
+			if row['categoryCode']:
+				categories.add(row)
 
 sql=open('db/pr-bd-2014-16.sql','w',encoding='utf8')
+
 sql.write("""
 CREATE TABLE departments(
 	departmentCode CHAR(3) PRIMARY KEY,
@@ -65,3 +90,14 @@ sql.write(",\n".join(
 	"('"+row['departmentCode']+"','"+row['departmentName']+"',"+str(row['departmentOrder'])+")" for row in departments.getOrderedRows()
 ))
 sql.write(";\n")
+
+sql.write("""
+CREATE TABLE categories(
+	categoryCode CHAR(7) PRIMARY KEY,
+	categoryName TEXT,
+	sectionCode CHAR(4)
+);
+
+INSERT INTO categories(categoryCode,categoryName,sectionCode) VALUES
+""")
+
