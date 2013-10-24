@@ -27,6 +27,7 @@ def convertXslxToCsv(inputFilename,outputFilename,years):
 				amount=str(amount)
 			return decimal.Decimal(amount)
 		number,name,sectionCode,categoryCode,typeCode=(ws.cell(row=nRow,column=c).value for c in range(5))
+		name=' '.join(name.split())
 		amounts=[makeDecimalAmount(ws.cell(row=nRow,column=c).value) for c in range(5,5+len(years))]
 		sectionCode=sectionCode[:2]+sectionCode[-2:]
 		typeCode=str(typeCode)
