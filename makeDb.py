@@ -84,23 +84,14 @@ CREATE TABLE departments(
 	departmentName TEXT,
 	departmentOrder INT
 );
-
-INSERT INTO departments(departmentCode,departmentName,departmentOrder) VALUES
 """)
-sql.write(",\n".join(
-	"('"+row['departmentCode']+"','"+row['departmentName']+"',"+str(row['departmentOrder'])+")" for row in departments.getOrderedRows()
-))
-sql.write(";\n")
-
+for row in departments.getOrderedRows():
+	sql.write("INSERT INTO departments(departmentCode,departmentName,departmentOrder) VALUES ('"+row['departmentCode']+"','"+row['departmentName']+"',"+str(row['departmentOrder'])+");\n")
 sql.write("""
 CREATE TABLE categories(
 	categoryCode CHAR(7) PRIMARY KEY,
 	categoryName TEXT
 );
-
-INSERT INTO categories(categoryCode,categoryName) VALUES
 """)
-sql.write(",\n".join(
-	"('"+row['categoryCode']+"','"+row['categoryName']+"')" for row in categories.getOrderedRows()
-))
-sql.write(";\n")
+for row in categories.getOrderedRows():
+	sql.write("INSERT INTO categories(categoryCode,categoryName) VALUES ('"+row['categoryCode']+"','"+row['categoryName']+"');\n")
