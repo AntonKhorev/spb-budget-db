@@ -71,6 +71,7 @@ class TypeList(AbstractList):
 departments=DepartmentList()
 categories=CategoryList()
 types=TypeList()
+items=[]
 
 def makeTestOrder(cols,stricts):
 	prevs=[None]*len(cols)
@@ -107,6 +108,7 @@ for csvFilename in ('tables/pr03-2014-16.csv','tables/pr04-2014-16.csv'):
 				categories.add(row)
 			if row['typeCode']:
 				types.add(row)
+				items.append(row) # maybe skip zero amounts?
 
 sql=open('db/pr-bd-2014-16.sql','w',encoding='utf8')
 sql.write("-- проект бюджета Санкт-Петербурга на 2014-2016 гг.\n")
@@ -138,3 +140,24 @@ CREATE TABLE types(
 """)
 for row in types.getOrderedRows():
 	sql.write("INSERT INTO types(typeCode,typeName) VALUES ('"+row['typeCode']+"','"+row['typeName']+"');\n")
+
+sql.write("""
+CREATE TABLE items(
+	year INT,
+	departmentCode CHAR(3),
+	sectionCode CHAR(4),
+	categoryCode CHAR(7),
+	typeCode CHAR(3),
+	amount DECIMAL(10,1),
+	PRIMARY KEY (year,departmentCode,sectionCode,categoryCode,typeCode),
+	FOREIGN KEY (departmentCode) REFERENCES departments(departmentCode),
+	FOREIGN KEY (categoryCode) REFERENCES categories(categoryCode),
+	FOREIGN KEY (typeCode) REFERENCES types(typeCode)
+);
+""");
+for row in sorted(items,key=lambda r: (r['year'],r['departmentCode'],r['sectionCode'],r['categoryCode'],r['typeCode'])):
+	sql.write(
+		"INSERT INTO items(year,departmentCode,sectionCode,categoryCode,typeCode,amount) VALUES ("+
+		row['year']+",'"+row['departmentCode']+"','"+row['sectionCode']+"','"+row['categoryCode']+"','"+row['typeCode']+"',"+row['ydsctAmount']+
+		");\n"
+	)

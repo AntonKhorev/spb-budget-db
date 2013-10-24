@@ -43,19 +43,19 @@ def convertXslxToCsv(inputFilename,outputFilename,years):
 					nRow+=1
 				return addRow
 			addRow=makeAddRow()
-			amountCol='yearAmount'
+			amountCol='yAmount'
 		elif not sectionCode:
 			m=departmentNameRe.match(name)
 			row['departmentName']=departmentName=m.group('departmentName')
 			row['departmentCode']=departmentCode=m.group('departmentCode')
-			amountCol='yearDepartmentAmount'
+			amountCol='ydAmount'
 		elif not typeCode:
 			row['departmentName']=departmentName
 			row['departmentCode']=departmentCode
 			row['sectionCode']=sectionCode
 			row['categoryName']=categoryName=name
 			row['categoryCode']=categoryCode
-			amountCol='yearDepartmentCategoryAmount'
+			amountCol='ydscAmount'
 		else:
 			row['departmentName']=departmentName
 			row['departmentCode']=departmentCode
@@ -64,7 +64,7 @@ def convertXslxToCsv(inputFilename,outputFilename,years):
 			row['categoryCode']=categoryCode
 			row['typeName']=typeName=name
 			row['typeCode']=typeCode
-			amountCol='yearDepartmentCategoryTypeAmount'
+			amountCol='ydsctAmount'
 		for year,amount in zip(years,amounts):
 			r=row.copy()
 			r['year']=year
@@ -81,7 +81,7 @@ def convertXslxToCsv(inputFilename,outputFilename,years):
 		'departmentName','departmentCode',
 		'sectionCode','categoryName','categoryCode',
 		'typeName','typeCode',
-		'yearAmount','yearDepartmentAmount','yearDepartmentCategoryAmount','yearDepartmentCategoryTypeAmount',
+		'yAmount','ydAmount','ydscAmount','ydsctAmount',
 	]
 	writer.writerow(cols)
 	for row in rows:
