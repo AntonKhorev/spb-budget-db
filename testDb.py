@@ -11,3 +11,5 @@ with sqlite3.connect(':memory:') as conn:
 		print(row)
 	for row in conn.execute("SELECT * FROM categories ORDER BY categoryCode"):
 		print(row)
+	for row in conn.execute("SELECT * FROM types ORDER BY typeCode"):
+		print(row)

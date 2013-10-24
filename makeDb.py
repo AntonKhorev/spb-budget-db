@@ -41,42 +41,75 @@ class DepartmentList:
 		for order,code in enumerate(reversed(exitSeq)):
 			yield {'departmentCode':code,'departmentName':self.names[code],'departmentOrder':order}
 
-class CategoryList:
+class AbstractList:
 	def __init__(self):
 		self.names={}
-		self.prevRow=None
-	def resetSequence(self):
-		self.prevRow=None
 	def add(self,row):
-		code=row['categoryCode']
-		name=row['categoryName']
+		code=row[self.codeCol]
+		name=row[self.nameCol]
 		if code in self.names:
 			if self.names[code]!=name:
-				raise Exception('code collision: categories['+code+'] = '+str(self.names[code])+' vs '+str(names))
+				raise Exception('code collision: '+self.codeCol+' = '+code+'; '+self.nameCol+' = '+str(self.names[code])+' vs '+str(names))
 		else:
 			self.names[code]=name
-		if self.prevRow is not None and self.prevRow['departmentCode']==row['departmentCode']:
-			if (self.prevRow['sectionCode'],self.prevRow['categoryCode'])>(row['sectionCode'],row['categoryCode']):
-				raise Exception('invalid category order')
 	def getOrderedRows(self):
 		for code,name in sorted(self.names.items()):
-			yield {'categoryCode':code,'categoryName':name}
+			yield {self.codeCol:code,self.nameCol:name}
+
+class CategoryList(AbstractList):
+	def __init__(self):
+		super().__init__()
+		self.codeCol='categoryCode'
+		self.nameCol='categoryName'
+
+class TypeList(AbstractList):
+	def __init__(self):
+		super().__init__()
+		self.codeCol='typeCode'
+		self.nameCol='typeName'
 
 departments=DepartmentList()
 categories=CategoryList()
+types=TypeList()
+
+def makeTestOrder(cols,stricts):
+	prevs=[None]*len(cols)
+	def testOrder(row):
+		resets=set()
+		resetFlag=False
+		for col,strict,prev in zip(cols,stricts,prevs):
+			if resetFlag:
+				resets.add(col)
+				continue
+			if not prev:
+				resetFlag=True
+				resets.add(col)
+				continue
+			if strict and row[col]<prev:
+				raise Exception('invalid order for '+col)
+			if row[col]!=prev:
+				resetFlag=True
+		for i,col in enumerate(cols):
+			prevs[i]=row[col]
+		return resets
+	return testOrder
 
 for csvFilename in ('tables/pr03-2014-16.csv','tables/pr04-2014-16.csv'):
-	departments.resetSequence()
-	categories.resetSequence()
+	testOrder=makeTestOrder(['departmentCode','sectionCode','categoryCode','typeCode'],[False,True,True,True])
 	with open(csvFilename,encoding='utf8',newline='') as csvFile:
-		cols=None
 		for row in csv.DictReader(csvFile):
+			resets=testOrder(row)
+			if 'departmentCode' in resets:
+				departments.resetSequence()
 			if row['departmentCode']:
 				departments.add(row['departmentCode'],row['departmentName'])
 			if row['categoryCode']:
 				categories.add(row)
+			if row['typeCode']:
+				types.add(row)
 
 sql=open('db/pr-bd-2014-16.sql','w',encoding='utf8')
+sql.write("-- проект бюджета Санкт-Петербурга на 2014-2016 гг.\n")
 
 sql.write("""
 CREATE TABLE departments(
@@ -87,6 +120,7 @@ CREATE TABLE departments(
 """)
 for row in departments.getOrderedRows():
 	sql.write("INSERT INTO departments(departmentCode,departmentName,departmentOrder) VALUES ('"+row['departmentCode']+"','"+row['departmentName']+"',"+str(row['departmentOrder'])+");\n")
+
 sql.write("""
 CREATE TABLE categories(
 	categoryCode CHAR(7) PRIMARY KEY,
@@ -95,3 +129,12 @@ CREATE TABLE categories(
 """)
 for row in categories.getOrderedRows():
 	sql.write("INSERT INTO categories(categoryCode,categoryName) VALUES ('"+row['categoryCode']+"','"+row['categoryName']+"');\n")
+
+sql.write("""
+CREATE TABLE types(
+	typeCode CHAR(3) PRIMARY KEY,
+	typeName TEXT
+);
+""")
+for row in types.getOrderedRows():
+	sql.write("INSERT INTO types(typeCode,typeName) VALUES ('"+row['typeCode']+"','"+row['typeName']+"');\n")
