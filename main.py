@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import decimal
 import re
 import csv
 from openpyxl import load_workbook
@@ -22,6 +23,11 @@ for r in range(r,maxRow):
 	number,name,sectionCode,categoryCode,typeCode,amount=(ws.cell(row=r,column=c).value for c in range(6))
 	sectionCode=sectionCode[:2]+sectionCode[-2:]
 	typeCode=str(typeCode)
+	if type(amount) is int:
+		amount=str(amount)+'.0'
+	else:
+		amount=str(amount)
+	amount=decimal.Decimal(amount)
 	row={'year':2014}
 	if not number:
 		row['yearAmount']=amount
@@ -54,10 +60,11 @@ else:
 
 writer=csv.writer(open('tables/pr03-2014-16.csv','w',newline='',encoding='utf8'),quoting=csv.QUOTE_NONNUMERIC)
 cols=[
-	'year','yearAmount',
-	'departmentName','departmentCode','yearDepartmentAmount',
-	'sectionCode','categoryName','categoryCode','yearDepartmentCategoryAmount',
-	'typeName','typeCode','yearDepartmentCategoryTypeAmount',
+	'year',
+	'departmentName','departmentCode',
+	'sectionCode','categoryName','categoryCode',
+	'typeName','typeCode',
+	'yearAmount','yearDepartmentAmount','yearDepartmentCategoryAmount','yearDepartmentCategoryTypeAmount',
 ]
 writer.writerow(cols)
 for row in rows:
