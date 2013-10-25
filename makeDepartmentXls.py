@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from decimal import Decimal
 import sqlite3
 import xlwt3 as xlwt
 
@@ -54,7 +55,7 @@ with sqlite3.connect(':memory:') as conn:
 				outRows.append(outRow)
 				insides[level]=nextInside
 				newInsides=True
-		outRow[-len(years)+years.index(row['year'])]=row['amount']
+		outRow[-len(years)+years.index(row['year'])]=Decimal(row['amount'])/1000
 
 # write xls
 wb=xlwt.Workbook()
@@ -74,7 +75,7 @@ columns=[
 	{'text':'Код раздела',		'width':5,	'headerStyle':styleThinHeader,		'cellStyle':styleStandard},
 	{'text':'Код целевой статьи',	'width':8,	'headerStyle':styleThinHeader,		'cellStyle':styleStandard},
 	{'text':'Код вида расходов',	'width':4,	'headerStyle':styleVeryThinHeader,	'cellStyle':styleStandard},
-]+[{'text':'Сумма на '+str(year)+' г.',	'width':15,	'headerStyle':styleHeader,		'cellStyle':styleAmount} for year in years]
+]+[{'text':'Сумма на '+str(year)+' г. (тыс. руб.)','width':15,'headerStyle':styleHeader,'cellStyle':styleAmount} for year in years]
 for nCol,col in enumerate(columns):
 	ws.col(nCol).width=256*col['width']
 	ws.write(nHeaderRows-1,nCol,col['text'],col['headerStyle'])
