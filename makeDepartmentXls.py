@@ -28,7 +28,8 @@ def outputLevelRow(row,level):
 	outRow+=[None]*len(years)
 	return outRow
 
-nHeaderRows=1 # for xls
+nHeaderRows=2 # for xls
+tableTitle="Данные из приложений 3 и 4 к Закону Санкт-Петербурга «О бюджете Санкт-Петербурга на 2014 год и на плановый период 2015 и 2016 годов»"
 outRows=[['Итого']+[None for levelColList in levelColLists for col in levelColList]+[None]*len(years)]
 
 with sqlite3.connect(':memory:') as conn:
@@ -81,13 +82,11 @@ with sqlite3.connect(':memory:') as conn:
 wb=xlwt.Workbook()
 ws=wb.add_sheet('expenditures')
 styleStandard=xlwt.easyxf('')
+styleTableTitle=xlwt.easyxf('font: bold on, height 240')
 styleHeader=xlwt.easyxf('font: bold on; align: wrap on')
 styleThinHeader=xlwt.easyxf('font: bold on, height 180; align: wrap on')
 styleVeryThinHeader=xlwt.easyxf('font: height 140; align: wrap on')
 styleAmount=xlwt.easyxf(num_format_str='#,##0.0;-#,##0.0;""')
-ws.set_panes_frozen(True)
-ws.set_horz_split_pos(nHeaderRows)
-ws.row(nHeaderRows-1).height=1200
 columns=[
 	{'text':'Наименование',		'width':100,	'headerStyle':styleHeader,		'cellStyle':styleStandard},
 	{'text':'Код ведомства',	'width':4,	'headerStyle':styleVeryThinHeader,	'cellStyle':styleStandard},
@@ -95,6 +94,12 @@ columns=[
 	{'text':'Код целевой статьи',	'width':8,	'headerStyle':styleThinHeader,		'cellStyle':styleStandard},
 	{'text':'Код вида расходов',	'width':4,	'headerStyle':styleVeryThinHeader,	'cellStyle':styleStandard},
 ]+[{'text':'Сумма на '+str(year)+' г. (тыс. руб.)','width':15,'headerStyle':styleHeader,'cellStyle':styleAmount} for year in years]
+ws.set_panes_frozen(True)
+ws.set_horz_split_pos(nHeaderRows)
+ws.row(0).height=400
+ws.merge(0,0,0,len(columns)-1)
+ws.write(0,0,tableTitle,styleTableTitle)
+ws.row(nHeaderRows-1).height=1200
 for nCol,col in enumerate(columns):
 	ws.col(nCol).width=256*col['width']
 	ws.write(nHeaderRows-1,nCol,col['text'],col['headerStyle'])
