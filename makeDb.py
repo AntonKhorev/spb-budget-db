@@ -56,6 +56,12 @@ class AbstractList:
 		for code,name in sorted(self.names.items()):
 			yield {self.codeCol:code,self.nameCol:name}
 
+class SuperSectionList(AbstractList):
+	def __init__(self):
+		super().__init__()
+		self.codeCol='superSectionCode'
+		self.nameCol='superSectionName'
+
 class CategoryList(AbstractList):
 	def __init__(self):
 		super().__init__()
@@ -69,6 +75,7 @@ class TypeList(AbstractList):
 		self.nameCol='typeName'
 
 departments=DepartmentList()
+superSections=SuperSectionList()
 categories=CategoryList()
 types=TypeList()
 items=[]
@@ -111,6 +118,14 @@ for csvFilename in ('tables/pr03-2014-16.csv','tables/pr04-2014-16.csv'):
 				if row['ydsscctAmount']!='0.0':
 					items.append(row)
 
+for csvFilename in ('tables/pr05-2014-16.csv','tables/pr06-2014-16.csv'):
+	testOrder=makeTestOrder(['superSectionCode','sectionCode','categoryCode','typeCode'],[True,True,True,True])
+	with open(csvFilename,encoding='utf8',newline='') as csvFile:
+		for row in csv.DictReader(csvFile):
+			resets=testOrder(row)
+			if row['superSectionCode']:
+				superSections.add(row)
+
 sql=open('db/pr-bd-2014-16.sql','w',encoding='utf8')
 sql.write("-- проект бюджета Санкт-Петербурга на 2014-2016 гг.\n")
 
@@ -123,6 +138,15 @@ CREATE TABLE departments(
 """)
 for row in departments.getOrderedRows():
 	sql.write("INSERT INTO departments(departmentCode,departmentName,departmentOrder) VALUES ('"+row['departmentCode']+"','"+row['departmentName']+"',"+str(row['departmentOrder'])+");\n")
+
+sql.write("""
+CREATE TABLE superSections(
+	superSectionCode CHAR(4) PRIMARY KEY,
+	superSectionName TEXT
+);
+""")
+for row in superSections.getOrderedRows():
+	sql.write("INSERT INTO superSections(superSectionCode,superSectionName) VALUES ('"+row['superSectionCode']+"','"+row['superSectionName']+"');\n")
 
 sql.write("""
 CREATE TABLE categories(
