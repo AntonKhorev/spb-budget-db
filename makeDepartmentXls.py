@@ -28,7 +28,8 @@ def outputLevelRow(row,level):
 	outRow+=[None]*len(years)
 	return outRow
 
-outRows=[]
+nHeaderRows=1 # for xls
+outRows=[['Итого']+[None for levelColList in levelColLists for col in levelColList]+[None]*len(years)]
 
 with sqlite3.connect(':memory:') as conn:
 	conn.row_factory=sqlite3.Row
@@ -36,8 +37,12 @@ with sqlite3.connect(':memory:') as conn:
 	conn.executescript(
 		open('db/pr-bd-2014-16.sql',encoding='utf8').read()
 	)
+	levels=len(levelColLists)
 	outRow=None
-	insides=[None]*len(levelColLists)
+	insides=[None]*levels
+	summands=[[]]+[None]*levels
+	sums=[0]+[None]*levels
+	nRow=0
 	for row in conn.execute("""
 		SELECT departmentName,categoryName,typeName,departmentCode,sectionCode,categoryCode,typeCode,year,amount
 		FROM items
@@ -47,14 +52,25 @@ with sqlite3.connect(':memory:') as conn:
 		ORDER BY departmentOrder,sectionCode,categoryCode,typeCode,year
 	"""):
 		# TODO filter years
-		newInsides=False
+		clear=False
 		for level,levelColList in enumerate(levelColLists):
 			nextInside=tuple(row[col] for col in levelColList)
-			if newInsides or insides[level]!=nextInside:
+			if clear or insides[level]!=nextInside:
+				nRow+=1
+				if level<levels and summands[level+1]:
+					nFirstAmountCol=len(outRows[0])-len(years)
+					for y in range(len(years)):
+						colChar=chr(ord('A')+nFirstAmountCol+y)
+						outRows[sums[level+1]][nFirstAmountCol+y]='='+'+'.join(
+							colChar+str(1+nHeaderRows+summand) for summand in summands[level+1]
+						)
+				summands[level+1]=[]
+				sums[level+1]=nRow
+				summands[level].append(nRow)
 				outRow=outputLevelRow(row,level)
 				outRows.append(outRow)
 				insides[level]=nextInside
-				newInsides=True
+				clear=True
 		outRow[-len(years)+years.index(row['year'])]=Decimal(row['amount'])/1000
 
 # write xls
@@ -65,7 +81,6 @@ styleHeader=xlwt.easyxf('font: bold on; align: wrap on')
 styleThinHeader=xlwt.easyxf('font: bold on, height 180; align: wrap on')
 styleVeryThinHeader=xlwt.easyxf('font: height 140; align: wrap on')
 styleAmount=xlwt.easyxf(num_format_str='#,##0.0')
-nHeaderRows=1
 ws.set_panes_frozen(True)
 ws.set_horz_split_pos(nHeaderRows)
 ws.row(nHeaderRows-1).height=1200
@@ -83,5 +98,8 @@ for nRow,row in enumerate(outRows):
 	for nCol,(cell,col) in enumerate(zip(row,columns)):
 		if cell is None:
 			continue
-		ws.write(nHeaderRows+nRow,nCol,cell,col['cellStyle'])
+		elif type(cell) is str and cell[0]=='=':
+			ws.write(nHeaderRows+nRow,nCol,xlwt.Formula(cell[1:]),col['cellStyle'])
+		else:
+			ws.write(nHeaderRows+nRow,nCol,cell,col['cellStyle'])
 wb.save('out/pr03,04-2014-16.xls')
