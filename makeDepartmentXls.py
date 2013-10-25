@@ -84,7 +84,7 @@ styleStandard=xlwt.easyxf('')
 styleHeader=xlwt.easyxf('font: bold on; align: wrap on')
 styleThinHeader=xlwt.easyxf('font: bold on, height 180; align: wrap on')
 styleVeryThinHeader=xlwt.easyxf('font: height 140; align: wrap on')
-styleAmount=xlwt.easyxf(num_format_str='#,##0.0')
+styleAmount=xlwt.easyxf(num_format_str='#,##0.0;-#,##0.0;""')
 ws.set_panes_frozen(True)
 ws.set_horz_split_pos(nHeaderRows)
 ws.row(nHeaderRows-1).height=1200
