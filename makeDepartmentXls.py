@@ -14,20 +14,19 @@ levelNames=[
 ]
 years=[2014,2015,2016]
 
-def outputLevel(row,level):
-	line=[]
-	line.append(row[levelNames[level]])
+def outputLevelRow(row,level):
+	outRow=[]
+	outRow.append(row[levelNames[level]])
 	for l,levelColList in enumerate(levelColLists):
 		for levelCol in levelColList:
 			if l<=level:
-				line.append(row[levelCol])
+				outRow.append(row[levelCol])
 			else:
-				line.append(None)
-	if level==len(levelColLists)-1:
-		line.append(row['amount'])
-	else:
-		line.append(None)
-	return line
+				outRow.append(None)
+	outRow+=[None]*len(years)
+	return outRow
+
+outRows=[]
 
 with sqlite3.connect(':memory:') as conn:
 	conn.row_factory=sqlite3.Row
@@ -35,6 +34,7 @@ with sqlite3.connect(':memory:') as conn:
 	conn.executescript(
 		open('db/pr-bd-2014-16.sql',encoding='utf8').read()
 	)
+	outRow=None
 	insides=[None]*len(levelColLists)
 	for row in conn.execute("""
 		SELECT departmentName,categoryName,typeName,departmentCode,sectionCode,categoryCode,typeCode,year,amount
@@ -42,13 +42,18 @@ with sqlite3.connect(':memory:') as conn:
 		JOIN departments USING(departmentCode)
 		JOIN categories USING(categoryCode)
 		JOIN types USING(typeCode)
-		WHERE year=2014
 		ORDER BY departmentOrder,sectionCode,categoryCode,typeCode,year
 	"""):
+		# TODO filter years
 		newInsides=False
 		for level,levelColList in enumerate(levelColLists):
 			nextInside=tuple(row[col] for col in levelColList)
 			if newInsides or insides[level]!=nextInside:
-				print(outputLevel(row,level))
+				outRow=outputLevelRow(row,level)
+				outRows.append(outRow)
 				insides[level]=nextInside
 				newInsides=True
+		outRow[-len(years)+years.index(row['year'])]=row['amount']
+
+for outRow in outRows:
+	print(outRow)
