@@ -108,7 +108,7 @@ for csvFilename in ('tables/pr03-2014-16.csv','tables/pr04-2014-16.csv'):
 				categories.add(row)
 			if row['typeCode']:
 				types.add(row)
-				if row['ydsctAmount']!='0.0':
+				if row['ydsscctAmount']!='0.0':
 					items.append(row)
 
 sql=open('db/pr-bd-2014-16.sql','w',encoding='utf8')
@@ -163,6 +163,6 @@ CREATE TABLE items(
 for row in sorted(items,key=lambda r: (r['year'],r['departmentCode'],r['sectionCode'],r['categoryCode'],r['typeCode'])):
 	sql.write(
 		"INSERT INTO items(year,departmentCode,sectionCode,categoryCode,typeCode,amount) VALUES ("+
-		row['year']+",'"+row['departmentCode']+"','"+row['sectionCode']+"','"+row['categoryCode']+"','"+row['typeCode']+"',"+amount(row['ydsctAmount'])+
+		row['year']+",'"+row['departmentCode']+"','"+row['sectionCode']+"','"+row['categoryCode']+"','"+row['typeCode']+"',"+amount(row['ydsscctAmount'])+
 		");\n"
 	)
