@@ -23,6 +23,7 @@ def makeXls(tableTitle,levelColLists,levelNames,years,rows,outputFilename):
 	insides=[None]*levels
 	summands=[[]]+[None]*levels
 	sums=[0]+[None]*levels
+	depths=[0]
 	def clearSumsForLevel(level):
 		if level<levels and summands[level+1]:
 			nFirstAmountCol=len(outRows[0])-len(years)
@@ -44,6 +45,7 @@ def makeXls(tableTitle,levelColLists,levelNames,years,rows,outputFilename):
 				summands[level].append(nRow)
 				outRow=outputLevelRow(row,level)
 				outRows.append(outRow)
+				depths.append(level)
 				insides[level]=nextInside
 				clear=True
 		outRow[-len(years)+years.index(row['year'])]=Decimal(row['amount'])/1000
@@ -53,25 +55,27 @@ def makeXls(tableTitle,levelColLists,levelNames,years,rows,outputFilename):
 	# write xls
 	wb=xlwt.Workbook()
 	ws=wb.add_sheet('expenditures')
-	styleStandard=xlwt.easyxf('')
 	styleTableTitle=xlwt.easyxf('font: bold on, height 240')
 	styleHeader=xlwt.easyxf('font: bold on; align: wrap on')
 	styleThinHeader=xlwt.easyxf('font: bold on, height 180; align: wrap on')
 	styleVeryThinHeader=xlwt.easyxf('font: height 140; align: wrap on')
+	styleStandard=xlwt.easyxf('')
+	styleShallowStandard=xlwt.easyxf('font: bold on')
 	styleAmount=xlwt.easyxf(num_format_str='#,##0.0;-#,##0.0;""')
+	styleShallowAmount=xlwt.easyxf('font: bold on',num_format_str='#,##0.0;-#,##0.0;""')
 	codeColumnsData={
-		'departmentCode':	{'text':'Код ведомства',	'width':4,	'headerStyle':styleVeryThinHeader,	'cellStyle':styleStandard},
-		'superSectionCode':	{'text':'Код надраздела',	'width':5,	'headerStyle':styleThinHeader,		'cellStyle':styleStandard},
-		'sectionCode':		{'text':'Код раздела',		'width':5,	'headerStyle':styleThinHeader,		'cellStyle':styleStandard},
-		'categoryCode':		{'text':'Код целевой статьи',	'width':8,	'headerStyle':styleThinHeader,		'cellStyle':styleStandard},
-		'typeCode':		{'text':'Код вида расходов',	'width':4,	'headerStyle':styleVeryThinHeader,	'cellStyle':styleStandard},
+		'departmentCode':	{'text':'Код ведомства',	'width':4,	'headerStyle':styleVeryThinHeader,	'cellStyle':styleStandard,'shallowCellStyle':styleShallowStandard},
+		'superSectionCode':	{'text':'Код надраздела',	'width':5,	'headerStyle':styleThinHeader,		'cellStyle':styleStandard,'shallowCellStyle':styleShallowStandard},
+		'sectionCode':		{'text':'Код раздела',		'width':5,	'headerStyle':styleThinHeader,		'cellStyle':styleStandard,'shallowCellStyle':styleShallowStandard},
+		'categoryCode':		{'text':'Код целевой статьи',	'width':8,	'headerStyle':styleThinHeader,		'cellStyle':styleStandard,'shallowCellStyle':styleShallowStandard},
+		'typeCode':		{'text':'Код вида расходов',	'width':4,	'headerStyle':styleVeryThinHeader,	'cellStyle':styleStandard,'shallowCellStyle':styleShallowStandard},
 	}
 	columns=[
-		{'text':'Наименование','width':100,'headerStyle':styleHeader,'cellStyle':styleStandard}
+		{'text':'Наименование','width':100,'headerStyle':styleHeader,'cellStyle':styleStandard,'shallowCellStyle':styleShallowStandard}
 	]+[
 		codeColumnsData[col] for cols in levelColLists for col in cols
 	]+[
-		{'text':'Сумма на '+str(year)+' г. (тыс. руб.)','width':15,'headerStyle':styleHeader,'cellStyle':styleAmount} for year in years
+		{'text':'Сумма на '+str(year)+' г. (тыс. руб.)','width':15,'headerStyle':styleHeader,'cellStyle':styleAmount,'shallowCellStyle':styleShallowAmount} for year in years
 	]
 	ws.set_panes_frozen(True)
 	ws.set_horz_split_pos(nHeaderRows)
@@ -84,12 +88,14 @@ def makeXls(tableTitle,levelColLists,levelNames,years,rows,outputFilename):
 		ws.write(nHeaderRows-1,nCol,col['text'],col['headerStyle'])
 	for nRow,row in enumerate(outRows):
 		for nCol,(cell,col) in enumerate(zip(row,columns)):
+			shallow=depths[nRow]<levels//2
+			style=col['shallowCellStyle' if shallow else 'cellStyle']
 			if cell is None:
 				continue
 			elif type(cell) is str and cell[0]=='=':
-				ws.write(nHeaderRows+nRow,nCol,xlwt.Formula(cell[1:]),col['cellStyle'])
+				ws.write(nHeaderRows+nRow,nCol,xlwt.Formula(cell[1:]),style)
 			else:
-				ws.write(nHeaderRows+nRow,nCol,cell,col['cellStyle'])
+				ws.write(nHeaderRows+nRow,nCol,cell,style)
 	wb.save(outputFilename)
 
 with sqlite3.connect(':memory:') as conn:
