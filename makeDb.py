@@ -62,6 +62,15 @@ class SuperSectionList(AbstractList):
 		self.codeCol='superSectionCode'
 		self.nameCol='superSectionName'
 
+class SectionList(AbstractList):
+	def __init__(self):
+		super().__init__()
+		self.codeCol='sectionCode'
+		self.nameCol='sectionName'
+	def getOrderedRows(self):
+		for code,name in sorted(self.names.items()):
+			yield {self.codeCol:code,'superSectionCode':code[:2]+'00',self.nameCol:name}
+
 class CategoryList(AbstractList):
 	def __init__(self):
 		super().__init__()
@@ -76,6 +85,7 @@ class TypeList(AbstractList):
 
 departments=DepartmentList()
 superSections=SuperSectionList()
+sections=SectionList()
 categories=CategoryList()
 types=TypeList()
 items=[]
@@ -125,6 +135,12 @@ for csvFilename in ('tables/pr05-2014-16.csv','tables/pr06-2014-16.csv'):
 			resets=testOrder(row)
 			if row['superSectionCode']:
 				superSections.add(row)
+			if row['sectionCode']:
+				sections.add(row)
+			if row['categoryCode']:
+				categories.add(row)
+			if row['typeCode']:
+				types.add(row)
 
 sql=open('db/pr-bd-2014-16.sql','w',encoding='utf8')
 sql.write("-- проект бюджета Санкт-Петербурга на 2014-2016 гг.\n")
@@ -147,6 +163,17 @@ CREATE TABLE superSections(
 """)
 for row in superSections.getOrderedRows():
 	sql.write("INSERT INTO superSections(superSectionCode,superSectionName) VALUES ('"+row['superSectionCode']+"','"+row['superSectionName']+"');\n")
+
+sql.write("""
+CREATE TABLE sections(
+	sectionCode CHAR(4) PRIMARY KEY,
+	superSectionCode CHAR(4),
+	sectionName TEXT,
+	FOREIGN KEY (superSectionCode) REFERENCES superSections(superSectionCode)
+);
+""")
+for row in sections.getOrderedRows():
+	sql.write("INSERT INTO sections(sectionCode,superSectionCode,sectionName) VALUES ('"+row['sectionCode']+"','"+row['superSectionCode']+"','"+row['sectionName']+"');\n")
 
 sql.write("""
 CREATE TABLE categories(
@@ -180,6 +207,7 @@ CREATE TABLE items(
 	amount INT,
 	PRIMARY KEY (year,departmentCode,sectionCode,categoryCode,typeCode),
 	FOREIGN KEY (departmentCode) REFERENCES departments(departmentCode),
+	FOREIGN KEY (sectionCode) REFERENCES sections(sectionCode),
 	FOREIGN KEY (categoryCode) REFERENCES categories(categoryCode),
 	FOREIGN KEY (typeCode) REFERENCES types(typeCode)
 );
