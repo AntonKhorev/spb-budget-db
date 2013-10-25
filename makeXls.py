@@ -59,13 +59,20 @@ def makeXls(tableTitle,levelColLists,levelNames,years,rows,outputFilename):
 	styleThinHeader=xlwt.easyxf('font: bold on, height 180; align: wrap on')
 	styleVeryThinHeader=xlwt.easyxf('font: height 140; align: wrap on')
 	styleAmount=xlwt.easyxf(num_format_str='#,##0.0;-#,##0.0;""')
+	codeColumnsData={
+		'departmentCode':	{'text':'Код ведомства',	'width':4,	'headerStyle':styleVeryThinHeader,	'cellStyle':styleStandard},
+		'superSectionCode':	{'text':'Код надраздела',	'width':5,	'headerStyle':styleThinHeader,		'cellStyle':styleStandard},
+		'sectionCode':		{'text':'Код раздела',		'width':5,	'headerStyle':styleThinHeader,		'cellStyle':styleStandard},
+		'categoryCode':		{'text':'Код целевой статьи',	'width':8,	'headerStyle':styleThinHeader,		'cellStyle':styleStandard},
+		'typeCode':		{'text':'Код вида расходов',	'width':4,	'headerStyle':styleVeryThinHeader,	'cellStyle':styleStandard},
+	}
 	columns=[
-		{'text':'Наименование',		'width':100,	'headerStyle':styleHeader,		'cellStyle':styleStandard},
-		{'text':'Код ведомства',	'width':4,	'headerStyle':styleVeryThinHeader,	'cellStyle':styleStandard},
-		{'text':'Код раздела',		'width':5,	'headerStyle':styleThinHeader,		'cellStyle':styleStandard},
-		{'text':'Код целевой статьи',	'width':8,	'headerStyle':styleThinHeader,		'cellStyle':styleStandard},
-		{'text':'Код вида расходов',	'width':4,	'headerStyle':styleVeryThinHeader,	'cellStyle':styleStandard},
-	]+[{'text':'Сумма на '+str(year)+' г. (тыс. руб.)','width':15,'headerStyle':styleHeader,'cellStyle':styleAmount} for year in years]
+		{'text':'Наименование','width':100,'headerStyle':styleHeader,'cellStyle':styleStandard}
+	]+[
+		codeColumnsData[col] for cols in levelColLists for col in cols
+	]+[
+		{'text':'Сумма на '+str(year)+' г. (тыс. руб.)','width':15,'headerStyle':styleHeader,'cellStyle':styleAmount} for year in years
+	]
 	ws.set_panes_frozen(True)
 	ws.set_horz_split_pos(nHeaderRows)
 	ws.row(0).height=400
@@ -112,4 +119,30 @@ with sqlite3.connect(':memory:') as conn:
 			ORDER BY departmentOrder,sectionCode,categoryCode,typeCode,year
 		"""), # TODO filter years
 		'out/pr03,04-2014-16.xls'
+	)
+	makeXls(
+		"Данные из приложений 5 и 6 к Закону Санкт-Петербурга «О бюджете Санкт-Петербурга на 2014 год и на плановый период 2015 и 2016 годов»",
+		[
+			['superSectionCode'],
+			['sectionCode'],
+			['categoryCode'],
+			['typeCode'],
+		],[
+			'superSectionName',
+			'sectionName',
+			'categoryName',
+			'typeName',
+		],
+		[2014,2015,2016],
+		conn.execute("""
+			SELECT superSectionName,sectionName,categoryName,typeName,superSectionCode,sectionCode,categoryCode,typeCode,year, SUM(amount) AS amount
+			FROM items
+			JOIN sections USING(sectionCode)
+			JOIN superSections USING(superSectionCode)
+			JOIN categories USING(categoryCode)
+			JOIN types USING(typeCode)
+			GROUP BY superSectionName,sectionName,categoryName,typeName,superSectionCode,sectionCode,categoryCode,typeCode,year
+			ORDER BY superSectionCode,sectionCode,categoryCode,typeCode,year
+		"""), # TODO filter years
+		'out/pr05,06-2014-16.xls'
 	)
