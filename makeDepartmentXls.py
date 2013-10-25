@@ -42,6 +42,14 @@ with sqlite3.connect(':memory:') as conn:
 	insides=[None]*levels
 	summands=[[]]+[None]*levels
 	sums=[0]+[None]*levels
+	def clearSumsForLevel(level):
+		if level<levels and summands[level+1]:
+			nFirstAmountCol=len(outRows[0])-len(years)
+			for y in range(len(years)):
+				colChar=chr(ord('A')+nFirstAmountCol+y)
+				outRows[sums[level+1]][nFirstAmountCol+y]='='+'+'.join(
+					colChar+str(1+nHeaderRows+summand) for summand in summands[level+1]
+				)
 	nRow=0
 	for row in conn.execute("""
 		SELECT departmentName,categoryName,typeName,departmentCode,sectionCode,categoryCode,typeCode,year,amount
@@ -57,13 +65,7 @@ with sqlite3.connect(':memory:') as conn:
 			nextInside=tuple(row[col] for col in levelColList)
 			if clear or insides[level]!=nextInside:
 				nRow+=1
-				if level<levels and summands[level+1]:
-					nFirstAmountCol=len(outRows[0])-len(years)
-					for y in range(len(years)):
-						colChar=chr(ord('A')+nFirstAmountCol+y)
-						outRows[sums[level+1]][nFirstAmountCol+y]='='+'+'.join(
-							colChar+str(1+nHeaderRows+summand) for summand in summands[level+1]
-						)
+				clearSumsForLevel(level)
 				summands[level+1]=[]
 				sums[level+1]=nRow
 				summands[level].append(nRow)
@@ -72,6 +74,8 @@ with sqlite3.connect(':memory:') as conn:
 				insides[level]=nextInside
 				clear=True
 		outRow[-len(years)+years.index(row['year'])]=Decimal(row['amount'])/1000
+	for level in range(-1,levels):
+		clearSumsForLevel(level)
 
 # write xls
 wb=xlwt.Workbook()
