@@ -129,38 +129,51 @@ class LevelTable:
 		nLevels=len(self.levelColLists)
 		wb=xlsxwriter.Workbook(outputFilename)
 		ws=wb.add_worksheet('expenditures')
-		# bold = workbook.add_format({'bold': 1})
-
-		def numericWriter(nRow,nCol,cell):
+		styleTableTitle=wb.add_format({'bold':True,'font_size':13})
+		styleHeader=wb.add_format({'bold':True,'text_wrap':True})
+		styleThinHeader=wb.add_format({'bold':True,'font_size':10,'text_wrap':True})
+		styleVeryThinHeader=wb.add_format({'font_size':8,'text_wrap':True})
+		styleStandard=wb.add_format()
+		styleShallowStandard=wb.add_format({'bold':True})
+		styleCentered=wb.add_format({'align':'center'})
+		styleShallowCentered=wb.add_format({'bold':True,'align':'center'})
+		styleAmount=wb.add_format({'num_format':'#,##0.0;-#,##0.0;""'})
+		styleShallowAmount=wb.add_format({'bold':True,'num_format':'#,##0.0;-#,##0.0;""'})
+		def numericWriter(nRow,nCol,cell,style):
 			if type(cell) is str and cell[0]=='=':
-				ws.write_formula(nRow,nCol,cell,value=self.formulaValues[nRow-self.nHeaderRows][nCol])
+				ws.write_formula(nRow,nCol,cell,style,self.formulaValues[nRow-self.nHeaderRows][nCol])
 			else:
-				ws.write_number(nRow,nCol,cell)
+				ws.write_number(nRow,nCol,cell,style)
 		codeColumnsData={
-			'departmentCode':	{'text':'Код ведомства',	'writer':ws.write_string},
-			'superSectionCode':	{'text':'Код надраздела',	'writer':ws.write_string},
-			'sectionCode':		{'text':'Код раздела',		'writer':ws.write_string},
-			'categoryCode':		{'text':'Код целевой статьи',	'writer':ws.write_string},
-			'typeCode':		{'text':'Код вида расходов',	'writer':ws.write_string},
+			'departmentCode':	{'text':'Код ведомства',	'width':4,	'headerStyle':styleVeryThinHeader,	'cellStyle':styleCentered,'shallowCellStyle':styleShallowCentered,	'writer':ws.write_string},
+			'superSectionCode':	{'text':'Код надраздела',	'width':5,	'headerStyle':styleThinHeader,		'cellStyle':styleCentered,'shallowCellStyle':styleShallowCentered,	'writer':ws.write_string},
+			'sectionCode':		{'text':'Код раздела',		'width':5,	'headerStyle':styleThinHeader,		'cellStyle':styleCentered,'shallowCellStyle':styleShallowCentered,	'writer':ws.write_string},
+			'categoryCode':		{'text':'Код целевой статьи',	'width':8,	'headerStyle':styleThinHeader,		'cellStyle':styleCentered,'shallowCellStyle':styleShallowCentered,	'writer':ws.write_string},
+			'typeCode':		{'text':'Код вида расходов',	'width':4,	'headerStyle':styleVeryThinHeader,	'cellStyle':styleCentered,'shallowCellStyle':styleShallowCentered,	'writer':ws.write_string},
 		}
 		columns=[
-			{'text':'Наименование','writer':ws.write_string}
+			{'text':'Наименование','width':100,'headerStyle':styleHeader,'cellStyle':styleStandard,'shallowCellStyle':styleShallowStandard,'writer':ws.write_string}
 		]+[
 			codeColumnsData[col] for cols in self.levelColLists for col in cols
 		]+[
-			{'text':'Сумма на '+str(year)+' г. (тыс. руб.)','writer':numericWriter} for year in self.years
+			{'text':'Сумма на '+str(year)+' г. (тыс. руб.)','width':15,'headerStyle':styleHeader,'cellStyle':styleAmount,'shallowCellStyle':styleShallowAmount,'writer':numericWriter} for year in self.years
 		]
-
+		ws.freeze_panes(self.nHeaderRows,0)
+		ws.set_row(0,22)
+		ws.merge_range(0,0,0,len(columns)-1,tableTitle,styleTableTitle)
+		ws.set_row(self.nHeaderRows-1,60)
+		for nCol,col in enumerate(columns):
+			ws.set_column(nCol,nCol,col['width'])
+			ws.write(self.nHeaderRows-1,nCol,col['text'],col['headerStyle'])
 		for nRow,row in enumerate(self.outRows):
 			if self.levels[nRow]>=0:
 				ws.set_row(self.nHeaderRows+nRow,options={'level':self.levels[nRow]+1})
 			for nCol,(cell,col) in enumerate(zip(row,columns)):
-				# ws.write(self.nHeaderRows+nRow,nCol,cell)
-				# shallow=self.levels[nRow]<nLevels//2
-				# style=col['shallowCellStyle' if shallow else 'cellStyle']
+				shallow=self.levels[nRow]<nLevels//2
+				style=col['shallowCellStyle' if shallow else 'cellStyle']
 				if cell is None:
 					continue
-				col['writer'](self.nHeaderRows+nRow,nCol,cell)
+				col['writer'](self.nHeaderRows+nRow,nCol,cell,style)
 		wb.close()
 
 with sqlite3.connect(':memory:') as conn:
