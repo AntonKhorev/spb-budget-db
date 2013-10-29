@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
 from decimal import Decimal
+import collections
+import copy
 import sqlite3
 
 import xlwt3 as xlwt
-# import xlsxwriter
+import xlsxwriter
 
 class LevelTable:
 	def __init__(self,levelColLists,levelNames,years,rows,nHeaderRows=2):
@@ -14,6 +16,8 @@ class LevelTable:
 
 		self.outRows=[['Итого']+[None for levelColList in self.levelColLists for col in levelColList]+[None]*len(self.years)]
 		self.levels=[0]
+		self.formulaValues=collections.defaultdict(lambda: collections.defaultdict(lambda: Decimal(0)))
+
 		def outputLevelRow(row,level):
 			outRow=[]
 			outRow.append(row[levelNames[level]])
@@ -27,27 +31,35 @@ class LevelTable:
 			return outRow
 
 		nLevels=len(self.levelColLists)
+		nFirstAmountCol=len(self.outRows[0])-len(self.years)
 		outRow=None
 		insides=[None]*nLevels
 		summands=[[]]+[None]*nLevels
 		sums=[0]+[None]*nLevels
-		def clearSumsForLevel(level):
-			if level<nLevels and summands[level+1]:
-				nFirstAmountCol=len(self.outRows[0])-len(self.years)
-				for y in range(len(self.years)):
-					colChar=chr(ord('A')+nFirstAmountCol+y)
-					self.outRows[sums[level+1]][nFirstAmountCol+y]='='+'+'.join(
-						colChar+str(1+self.nHeaderRows+summand) for summand in summands[level+1]
-					) # TODO SUBTOTAL()
+		def makeClearSumsForLevel(level):
+			levelSummands=copy.deepcopy(summands[level+1])
+			levelSums=copy.deepcopy(sums[level+1])
+			def fn():
+				if level<nLevels and levelSummands:
+					for y in range(len(self.years)):
+						colChar=chr(ord('A')+nFirstAmountCol+y)
+						self.outRows[levelSums][nFirstAmountCol+y]='='+'+'.join(
+							colChar+str(1+self.nHeaderRows+summand) for summand in levelSummands
+						) # TODO SUBTOTAL()
+						self.formulaValues[levelSums][nFirstAmountCol+y]=sum(
+							self.formulaValues[summand][nFirstAmountCol+y] for summand in levelSummands
+						)
+			return fn
 
 		nRow=0
 		for row in rows:
 			clear=False
+			clearStack=[]
 			for level,levelColList in enumerate(self.levelColLists):
 				nextInside=tuple(row[col] for col in levelColList)
 				if clear or insides[level]!=nextInside:
 					nRow+=1
-					clearSumsForLevel(level)
+					clearStack.append(makeClearSumsForLevel(level))
 					summands[level+1]=[]
 					sums[level+1]=nRow
 					summands[level].append(nRow)
@@ -56,9 +68,15 @@ class LevelTable:
 					self.levels.append(level)
 					insides[level]=nextInside
 					clear=True
-			outRow[-len(self.years)+self.years.index(row['year'])]=Decimal(row['amount'])/1000
+			for fn in reversed(clearStack):
+				fn()
+			nCol=nFirstAmountCol+self.years.index(row['year'])
+			self.formulaValues[nRow][nCol]=outRow[nCol]=Decimal(row['amount'])/1000
+		clearStack=[]
 		for level in range(-1,nLevels):
-			clearSumsForLevel(level)
+			clearStack.append(makeClearSumsForLevel(level))
+		for fn in reversed(clearStack):
+			fn()
 
 	def makeXls(self,tableTitle,outputFilename):
 		nLevels=len(self.levelColLists)
@@ -107,6 +125,42 @@ class LevelTable:
 					ws.write(self.nHeaderRows+nRow,nCol,cell,style)
 		wb.save(outputFilename)
 
+	def makeXlsx(self,tableTitle,outputFilename):
+		nLevels=len(self.levelColLists)
+		wb=xlsxwriter.Workbook(outputFilename)
+		ws=wb.add_worksheet('expenditures')
+		# bold = workbook.add_format({'bold': 1})
+
+		def numericWriter(nRow,nCol,cell):
+			if type(cell) is str and cell[0]=='=':
+				ws.write_formula(nRow,nCol,cell,value=self.formulaValues[nRow-self.nHeaderRows][nCol])
+			else:
+				ws.write_number(nRow,nCol,cell)
+		codeColumnsData={
+			'departmentCode':	{'text':'Код ведомства',	'writer':ws.write_string},
+			'superSectionCode':	{'text':'Код надраздела',	'writer':ws.write_string},
+			'sectionCode':		{'text':'Код раздела',		'writer':ws.write_string},
+			'categoryCode':		{'text':'Код целевой статьи',	'writer':ws.write_string},
+			'typeCode':		{'text':'Код вида расходов',	'writer':ws.write_string},
+		}
+		columns=[
+			{'text':'Наименование','writer':ws.write_string}
+		]+[
+			codeColumnsData[col] for cols in self.levelColLists for col in cols
+		]+[
+			{'text':'Сумма на '+str(year)+' г. (тыс. руб.)','writer':numericWriter} for year in self.years
+		]
+
+		for nRow,row in enumerate(self.outRows):
+			for nCol,(cell,col) in enumerate(zip(row,columns)):
+				# ws.write(self.nHeaderRows+nRow,nCol,cell)
+				# shallow=self.levels[nRow]<nLevels//2
+				# style=col['shallowCellStyle' if shallow else 'cellStyle']
+				if cell is None:
+					continue
+				col['writer'](self.nHeaderRows+nRow,nCol,cell)
+		wb.close()
+
 with sqlite3.connect(':memory:') as conn:
 	conn.row_factory=sqlite3.Row
 	conn.execute('pragma foreign_keys=ON')
@@ -114,7 +168,7 @@ with sqlite3.connect(':memory:') as conn:
 		open('db/pr-bd-2014-16.sql',encoding='utf8').read()
 	)
 
-	LevelTable(
+	table=LevelTable(
 		[
 			['departmentCode'],
 			['sectionCode','categoryCode'],
@@ -133,12 +187,17 @@ with sqlite3.connect(':memory:') as conn:
 			JOIN types USING(typeCode)
 			ORDER BY departmentOrder,sectionCode,categoryCode,typeCode,year
 		""") # TODO filter years
-	).makeXls(
+	)
+	table.makeXls(
 		"Данные из приложений 3 и 4 к Закону Санкт-Петербурга «О бюджете Санкт-Петербурга на 2014 год и на плановый период 2015 и 2016 годов»",
 		'out/pr03,04-2014-16.xls'
 	)
+	table.makeXlsx(
+		"Данные из приложений 3 и 4 к Закону Санкт-Петербурга «О бюджете Санкт-Петербурга на 2014 год и на плановый период 2015 и 2016 годов»",
+		'out/pr03,04-2014-16.xlsx'
+	)
 
-	LevelTable(
+	table=LevelTable(
 		[
 			['superSectionCode'],
 			['sectionCode'],
@@ -161,7 +220,12 @@ with sqlite3.connect(':memory:') as conn:
 			GROUP BY superSectionName,sectionName,categoryName,typeName,superSectionCode,sectionCode,categoryCode,typeCode,year
 			ORDER BY superSectionCode,sectionCode,categoryCode,typeCode,year
 		""") # TODO filter years
-	).makeXls(
+	)
+	table.makeXls(
 		"Данные из приложений 5 и 6 к Закону Санкт-Петербурга «О бюджете Санкт-Петербурга на 2014 год и на плановый период 2015 и 2016 годов»",
 		'out/pr05,06-2014-16.xls'
+	)
+	table.makeXlsx(
+		"Данные из приложений 5 и 6 к Закону Санкт-Петербурга «О бюджете Санкт-Петербурга на 2014 год и на плановый период 2015 и 2016 годов»",
+		'out/pr05,06-2014-16.xlsx'
 	)
