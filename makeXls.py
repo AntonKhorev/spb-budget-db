@@ -9,17 +9,18 @@ import xlwt3 as xlwt
 import xlsxwriter
 
 class LevelTable:
-	def __init__(self,levelColLists,levelNames,years,rows,nHeaderRows=2):
+	def __init__(self,levelColLists,levelNames,yearsInAppendices,rows,nHeaderRows=2):
 		self.levelColLists=levelColLists
-		self.years=years
+		self.yearsInAppendices=yearsInAppendices
+		self.years=[year for appendix,years in sorted(yearsInAppendices.items()) for year in years]
 		self.nHeaderRows=nHeaderRows
 
-		self.outRows=[['Итого']+[None for levelColList in self.levelColLists for col in levelColList]+[None]*len(self.years)]
+		self.outRows=[[None]*len(self.yearsInAppendices)+['Итого']+[None for levelColList in self.levelColLists for col in levelColList]+[None]*len(self.years)]
 		self.levels=[-1]
 		self.formulaValues=collections.defaultdict(lambda: collections.defaultdict(lambda: Decimal(0)))
 
 		def outputLevelRow(row,level):
-			outRow=[]
+			outRow=[None]*len(self.yearsInAppendices)
 			outRow.append(row[levelNames[level]])
 			for l,levelColList in enumerate(self.levelColLists):
 				for levelCol in levelColList:
@@ -57,6 +58,37 @@ class LevelTable:
 						)
 			return fn
 
+		def putAppendixNumber(nCol):
+			if self.outRows[-1][nCol]:
+				return
+			nRow=len(self.outRows)-1
+			level=self.levels[nRow]
+			putForLevels=[(level,nRow)]
+			while True:
+				nRow-=1
+				if self.levels[nRow]<0:
+					break
+				if self.levels[nRow]>level or (self.levels[nRow]==level and not self.outRows[nRow][nCol]):
+					continue
+				if self.outRows[nRow][nCol]:
+					break
+				assert self.levels[nRow]==level-1, 'on row,col '+str(nRow)+','+str(nCol)+' met level '+str(self.levels[nRow])+' while on level '+str(level)
+				level-=1
+				putForLevels.insert(0,(level,nRow))
+			nRow0=nRow
+			for level,nRow in putForLevels:
+				if self.levels[nRow0]==level-1:
+					if self.outRows[nRow0][nCol] is None:
+						self.outRows[nRow][nCol]='1.'
+					else:
+						self.outRows[nRow][nCol]=self.outRows[nRow0][nCol]+'1.'
+				else:
+					assert self.levels[nRow0]==level
+					a=str(self.outRows[nRow0][nCol]).split('.')
+					a[-2]=str(int(a[-2])+1)
+					self.outRows[nRow][nCol]='.'.join(a)
+				nRow0=nRow
+
 		for row in rows:
 			clearRow=0
 			clearStack=[]
@@ -78,6 +110,9 @@ class LevelTable:
 				fn(clearRow)
 			nCol=nFirstAmountCol+self.years.index(row['year'])
 			self.formulaValues[nRow][nCol]=outRow[nCol]=Decimal(row['amount'])/1000
+			for nCol,(appendix,yearsInAppendix) in enumerate(self.yearsInAppendices.items()):
+				if row['year'] in yearsInAppendix:
+					putAppendixNumber(nCol)
 		clearStack=[]
 		for level in range(-1,nLevels):
 			clearStack.append(makeClearSumsForLevel(level))
@@ -104,6 +139,8 @@ class LevelTable:
 			'typeCode':		{'text':'Код вида расходов',	'width':4,	'headerStyle':styleVeryThinHeader,	'cellStyle':styleStandard,'shallowCellStyle':styleShallowStandard},
 		}
 		columns=[
+			{'text':'№ в приложении '+str(appendix),'width':10,'headerStyle':styleThinHeader,'cellStyle':styleStandard,'shallowCellStyle':styleShallowStandard} for appendix in self.yearsInAppendices
+		]+[
 			{'text':'Наименование','width':100,'headerStyle':styleHeader,'cellStyle':styleStandard,'shallowCellStyle':styleShallowStandard}
 		]+[
 			codeColumnsData[col] for cols in self.levelColLists for col in cols
@@ -158,6 +195,8 @@ class LevelTable:
 			'typeCode':		{'text':'Код вида расходов',	'width':4,	'headerStyle':styleVeryThinHeader,	'cellStyle':styleCentered,'shallowCellStyle':styleShallowCentered,	'writer':ws.write_string},
 		}
 		columns=[
+			{'text':'№ в приложении '+str(appendix),'width':10,'headerStyle':styleThinHeader,'cellStyle':styleStandard,'shallowCellStyle':styleShallowStandard,'writer':ws.write_string} for appendix in self.yearsInAppendices
+		]+[
 			{'text':'Наименование','width':100,'headerStyle':styleHeader,'cellStyle':styleStandard,'shallowCellStyle':styleShallowStandard,'writer':ws.write_string}
 		]+[
 			codeColumnsData[col] for cols in self.levelColLists for col in cols
@@ -199,7 +238,7 @@ with sqlite3.connect(':memory:') as conn:
 			'categoryName',
 			'typeName',
 		],
-		[2014,2015,2016],
+		{3:[2014],4:[2015,2016]},
 		conn.execute("""
 			SELECT departmentName,categoryName,typeName,departmentCode,sectionCode,categoryCode,typeCode,year,amount
 			FROM items
@@ -230,7 +269,7 @@ with sqlite3.connect(':memory:') as conn:
 			'categoryName',
 			'typeName',
 		],
-		[2014,2015,2016],
+		{5:[2014],6:[2015,2016]},
 		conn.execute("""
 			SELECT superSectionName,sectionName,categoryName,typeName,superSectionCode,sectionCode,categoryCode,typeCode,year, SUM(amount) AS amount
 			FROM items
