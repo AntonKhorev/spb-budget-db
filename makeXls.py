@@ -36,28 +36,33 @@ class LevelTable:
 		insides=[None]*nLevels
 		summands=[[]]+[None]*nLevels
 		sums=[0]+[None]*nLevels
+		nRow=0
+
 		def makeClearSumsForLevel(level):
 			levelSummands=copy.deepcopy(summands[level+1])
 			levelSums=copy.deepcopy(sums[level+1])
-			def fn():
+			def fn(clearRow):
 				if level<nLevels and levelSummands:
 					for y in range(len(self.years)):
 						colChar=chr(ord('A')+nFirstAmountCol+y)
-						self.outRows[levelSums][nFirstAmountCol+y]='='+'+'.join(
-							colChar+str(1+self.nHeaderRows+summand) for summand in levelSummands
-						) # TODO SUBTOTAL()
+						# +
+						# self.outRows[levelSums][nFirstAmountCol+y]='='+'+'.join(
+							# colChar+str(1+self.nHeaderRows+summand) for summand in levelSummands
+						# )
+						# SUBTOTAL
+						self.outRows[levelSums][nFirstAmountCol+y]='=SUBTOTAL(9,'+colChar+str(1+self.nHeaderRows+levelSums)+':'+colChar+str(1+self.nHeaderRows+clearRow-1)+')'
+						#
 						self.formulaValues[levelSums][nFirstAmountCol+y]=sum(
 							self.formulaValues[summand][nFirstAmountCol+y] for summand in levelSummands
 						)
 			return fn
 
-		nRow=0
 		for row in rows:
-			clear=False
+			clearRow=0
 			clearStack=[]
 			for level,levelColList in enumerate(self.levelColLists):
 				nextInside=tuple(row[col] for col in levelColList)
-				if clear or insides[level]!=nextInside:
+				if clearRow or insides[level]!=nextInside:
 					nRow+=1
 					clearStack.append(makeClearSumsForLevel(level))
 					summands[level+1]=[]
@@ -67,16 +72,17 @@ class LevelTable:
 					self.outRows.append(outRow)
 					self.levels.append(level)
 					insides[level]=nextInside
-					clear=True
+					if not clearRow:
+						clearRow=nRow
 			for fn in reversed(clearStack):
-				fn()
+				fn(clearRow)
 			nCol=nFirstAmountCol+self.years.index(row['year'])
 			self.formulaValues[nRow][nCol]=outRow[nCol]=Decimal(row['amount'])/1000
 		clearStack=[]
 		for level in range(-1,nLevels):
 			clearStack.append(makeClearSumsForLevel(level))
 		for fn in reversed(clearStack):
-			fn()
+			fn(nRow+1)
 
 	def makeXls(self,tableTitle,outputFilename):
 		nLevels=len(self.levelColLists)
