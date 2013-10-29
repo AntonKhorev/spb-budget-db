@@ -15,7 +15,7 @@ class LevelTable:
 		self.nHeaderRows=nHeaderRows
 
 		self.outRows=[['Итого']+[None for levelColList in self.levelColLists for col in levelColList]+[None]*len(self.years)]
-		self.levels=[0]
+		self.levels=[-1]
 		self.formulaValues=collections.defaultdict(lambda: collections.defaultdict(lambda: Decimal(0)))
 
 		def outputLevelRow(row,level):
@@ -152,6 +152,8 @@ class LevelTable:
 		]
 
 		for nRow,row in enumerate(self.outRows):
+			if self.levels[nRow]>=0:
+				ws.set_row(self.nHeaderRows+nRow,options={'level':self.levels[nRow]+1})
 			for nCol,(cell,col) in enumerate(zip(row,columns)):
 				# ws.write(self.nHeaderRows+nRow,nCol,cell)
 				# shallow=self.levels[nRow]<nLevels//2
