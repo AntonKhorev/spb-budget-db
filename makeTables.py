@@ -5,29 +5,34 @@ import re
 import csv
 from openpyxl import load_workbook
 
-class TableWriter:
-	def __init__(self,inputFilename,years):
-		self.years=years
-
-		wb=load_workbook(inputFilename)
-		ws=wb.get_active_sheet()
-		maxRow=ws.get_highest_row()
-
-		for nRow in range(maxRow):
-			if ws.cell(row=nRow,column=0).value==1:
-				break
-		else:
-			raise Exception('table start not found')
-
-		self.rows=[{}]*len(years) # reserve first rows for totals
-		self.processTable(ws,nRow,maxRow)
-
-	def makeDecimalAmount(self,amount):
+def makeTableReaderFromXlsxFile(inputFilename):
+	def makeDecimalAmount(amount):
 		if type(amount) is int:
 			amount=str(amount)+'.0'
 		else:
 			amount=str(amount)
 		return decimal.Decimal(amount)
+	def reader(years):
+		wb=load_workbook(inputFilename)
+		ws=wb.get_active_sheet()
+		maxRow=ws.get_highest_row()
+		for nRow in range(maxRow):
+			if ws.cell(row=nRow,column=0).value==1:
+				break
+		else:
+			raise Exception('table start not found')
+		for nRow in range(nRow,maxRow):
+			yield (
+				(ws.cell(row=nRow,column=c).value for c in range(5)),
+				[makeDecimalAmount(ws.cell(row=nRow,column=c).value) for c in range(5,5+len(years))]
+			)
+	return reader
+
+class TableWriter:
+	def __init__(self,tableReader,years):
+		self.years=years
+		self.rows=[{}]*len(years) # reserve first rows for totals
+		self.processTable(tableReader(years))
 
 	def makePrependRow(self):
 		nRow=0
@@ -37,7 +42,7 @@ class TableWriter:
 			nRow+=1
 		return addRow
 
-	def processTable(self,ws,nRow,maxRow):
+	def processTable(self,tableReader):
 		raise Exception('implement this')
 
 	def getCols(self):
@@ -51,12 +56,10 @@ class TableWriter:
 			writer.writerow([row.get(col) for col in cols])
 
 class DepartmentTableWriter(TableWriter):
-	def processTable(self,ws,nRow,maxRow):
+	def processTable(self,tableReader):
 		departmentNameRe=re.compile(r'(?P<departmentName>.*?)\s*\((?P<departmentCode>...)\)')
-		for nRow in range(nRow,maxRow):
-			number,name,sectionCode,categoryCode,typeCode=(ws.cell(row=nRow,column=c).value for c in range(5))
+		for (number,name,sectionCode,categoryCode,typeCode),amounts in tableReader:
 			name=' '.join(name.split())
-			amounts=[self.makeDecimalAmount(ws.cell(row=nRow,column=c).value) for c in range(5,5+len(self.years))]
 			sectionCode=sectionCode[:2]+sectionCode[-2:]
 			typeCode=str(typeCode)
 			amountCol=None
@@ -106,11 +109,9 @@ class DepartmentTableWriter(TableWriter):
 		]
 
 class SectionTableWriter(TableWriter):
-	def processTable(self,ws,nRow,maxRow):
-		for nRow in range(nRow,maxRow):
-			number,name,sectionCode,categoryCode,typeCode=(ws.cell(row=nRow,column=c).value for c in range(5))
+	def processTable(self,tableReader):
+		for (number,name,sectionCode,categoryCode,typeCode),amounts in tableReader:
 			name=' '.join(name.split())
-			amounts=[self.makeDecimalAmount(ws.cell(row=nRow,column=c).value) for c in range(5,5+len(self.years))]
 			# sectionCode=sectionCode[:2]+sectionCode[-2:]
 			if sectionCode[:2]!='  ':
 				superSectionCode=sectionCode[:2]+'00'
@@ -174,7 +175,19 @@ class SectionTableWriter(TableWriter):
 			'yAmount','ysAmount','yssAmount','yssccAmount','ysscctAmount',
 		]
 
-DepartmentTableWriter('fincom/pr03-2014-16.xlsx',[2014]).write('tables/pr03-2014-16.csv')
-DepartmentTableWriter('fincom/pr04-2014-16.xlsx',[2015,2016]).write('tables/pr04-2014-16.csv')
-SectionTableWriter('fincom/pr05-2014-16.xlsx',[2014]).write('tables/pr05-2014-16.csv')
-SectionTableWriter('fincom/pr06-2014-16.xlsx',[2015,2016]).write('tables/pr06-2014-16.csv')
+DepartmentTableWriter(
+	makeTableReaderFromXlsxFile('fincom/pr03-2014-16.xlsx'),
+	[2014]
+).write('tables/pr03-2014-16.csv')
+DepartmentTableWriter(
+	makeTableReaderFromXlsxFile('fincom/pr04-2014-16.xlsx'),
+	[2015,2016]
+).write('tables/pr04-2014-16.csv')
+SectionTableWriter(
+	makeTableReaderFromXlsxFile('fincom/pr05-2014-16.xlsx'),
+	[2014]
+).write('tables/pr05-2014-16.csv')
+SectionTableWriter(
+	makeTableReaderFromXlsxFile('fincom/pr06-2014-16.xlsx'),
+	[2015,2016]
+).write('tables/pr06-2014-16.csv')
