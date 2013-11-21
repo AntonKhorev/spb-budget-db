@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import decimal
 import re
 import ezodf
 import tableWriters
@@ -15,10 +16,15 @@ def makeTableReaderFromOdfTable(table):
 					found=True
 				else:
 					continue
-			yield (
-				(row[0].value.strip(),row[1].value.strip(),row[2].value.strip()+row[3].value.strip(),row[4].value.strip(),row[5].value.strip()),
-				[row[i].value.strip() for i in range(6,6+len(years))]
-			)
+			keys=(row[0].value.strip(),row[1].value.strip(),row[2].value.strip()+row[3].value.strip(),row[4].value.strip(),row[5].value.strip())
+			def makeAmount(cell):
+				amount=cell.value.strip()
+				if '.' not in amount:
+					# quirk in 3765.7.1.1 and 3765.7.5.1
+					amount=amount[:-1]+'.'+amount[-1]
+				return decimal.Decimal(amount)
+			amounts=[makeAmount(row[i]) for i in range(6,6+len(years))]
+			yield (keys,amounts)
 		if not found:
 			raise Exception('table start not found')
 	return reader
@@ -30,6 +36,7 @@ class TableWriteWatcher:
 	def setParagraphNumber(self,paragraphNumber):
 		self.paragraphNumber=paragraphNumber
 	def write(self,table,amendmentNumber):
+		# print('writing table for amendment',self.paragraphNumber)
 		if not self.paragraphNumber:
 			raise Exception('paragraph number for table not set')
 		tableWriters.DepartmentTableWriter(
@@ -49,18 +56,18 @@ tableWriteWatcher=None
 amendmentNumber=0
 for obj in doc.body:
 	if type(obj) is ezodf.text.Paragraph:
-		print('paragraph {')
+		# print('paragraph {')
 		for line in obj.plaintext().splitlines():
 			# m=paragraphRe.match(line)
 			# if m:
 				# print('== paragraph',m.group('paragraphNumber'),'==')
 			m=amendParagraphTextRe.match(line)
 			if m:
-				print('== amendment',m.group('paragraphNumber'),'for text ==')
+				# print('== amendment',m.group('paragraphNumber'),'for text ==')
 				tableWriteWatcher=None
 			m=amendParagraphAppendixRe.match(line)
 			if m:
-				print('== amendment',m.group('paragraphNumber'),'for appendix',m.group('appendixNumber'),'==')
+				# print('== amendment',m.group('paragraphNumber'),'for appendix',m.group('appendixNumber'),'==')
 				if m.group('appendixNumber') in ('3','4'):
 					tableWriteWatcher=TableWriteWatcher([2014] if m.group('appendixNumber')=='3' else [2015,2016])
 					tableWriteWatcher.setParagraphNumber(m.group('paragraphNumber'))
@@ -68,20 +75,20 @@ for obj in doc.body:
 					tableWriteWatcher=None
 			m=amendAppendixRe.match(line)
 			if m:
-				print('== amendment TBD for appendix',m.group('appendixNumber'),'==')
+				# print('== amendment TBD for appendix',m.group('appendixNumber'),'==')
 				if m.group('appendixNumber') in ('3','4'):
 					tableWriteWatcher=TableWriteWatcher([2014] if m.group('appendixNumber')=='3' else [2015,2016])
 				else:
 					tableWriteWatcher=None
 			m=subParagraphRe.match(line)
 			if m:
-				print('=== amendment',m.group('paragraphNumber'),'===')
+				# print('=== amendment',m.group('paragraphNumber'),'===')
 				if tableWriteWatcher:
 					tableWriteWatcher.setParagraphNumber(m.group('paragraphNumber'))
-			print('line:',line)
-		print('}')
+			# print('line:',line)
+		# print('}')
 	elif type(obj) is ezodf.table.Table:
-		print('table',obj.nrows(),'x',obj.ncols())
+		# print('table',obj.nrows(),'x',obj.ncols())
 		if tableWriteWatcher:
 			amendmentNumber+=1
 			tableWriteWatcher.write(obj,amendmentNumber)

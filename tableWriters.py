@@ -8,7 +8,13 @@ class TableWriter:
 		self.amendmentNumber=amendmentNumber
 		self.years=years
 		self.rows=[{}]*len(years) # reserve first rows for totals
+		self.punctWithoutSpaceRe=re.compile(r'(?<=[.,])(?=[^\W\d_])')
 		self.processTable(tableReader(years))
+
+	def processName(self,name):
+		name=' '.join(name.split())
+		name=self.punctWithoutSpaceRe.sub(' ',name)
+		return name
 
 	def makePrependRow(self):
 		nRow=0
@@ -35,7 +41,7 @@ class DepartmentTableWriter(TableWriter):
 	def processTable(self,tableReader):
 		departmentNameRe=re.compile(r'(?P<departmentName>.*?)\s*\((?P<departmentCode>...)\)')
 		for (number,name,sectionCode,categoryCode,typeCode),amounts in tableReader:
-			name=' '.join(name.split())
+			name=self.processName(name)
 			sectionCode=sectionCode[:2]+sectionCode[-2:]
 			typeCode=str(typeCode)
 			amountCol=None
@@ -87,7 +93,7 @@ class DepartmentTableWriter(TableWriter):
 class SectionTableWriter(TableWriter):
 	def processTable(self,tableReader):
 		for (number,name,sectionCode,categoryCode,typeCode),amounts in tableReader:
-			name=' '.join(name.split())
+			name=self.processName(name)
 			# sectionCode=sectionCode[:2]+sectionCode[-2:]
 			if sectionCode[:2]!='  ':
 				superSectionCode=sectionCode[:2]+'00'

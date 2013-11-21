@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-import csv
 import collections
+import glob
+import csv
 
 class DepartmentList:
 	def __init__(self):
@@ -49,7 +50,8 @@ class AbstractList:
 		name=row[self.nameCol]
 		if code in self.names:
 			if self.names[code]!=name:
-				raise Exception('code collision: '+self.codeCol+' = '+code+'; '+self.nameCol+' = '+str(self.names[code])+' vs '+str(names))
+				# raise Exception('code collision: '+self.codeCol+' = '+code+'; '+self.nameCol+' = '+str(self.names[code])+' vs '+str(name))
+				print('code collision: '+self.codeCol+' = '+code+'; '+self.nameCol+' = '+str(self.names[code])+' vs '+str(name))
 		else:
 			self.names[code]=name
 	def getOrderedRows(self):
@@ -142,6 +144,24 @@ for csvFilename in ('tables/pr05-2014-16.csv','tables/pr06-2014-16.csv'):
 			if row['typeCode']:
 				types.add(row)
 
+for csvFilename in glob.glob('tables/3765.*.csv'):
+	# copypasted from dept struct csvs
+	# testOrder=makeTestOrder(['departmentCode','sectionCode','categoryCode','typeCode'],[False,True,True,True])
+	with open(csvFilename,encoding='utf8',newline='') as csvFile:
+		for row in csv.DictReader(csvFile):
+			# resets=testOrder(row)
+			# if 'departmentCode' in resets:
+				# departments.resetSequence()
+			if row['departmentCode']:
+				departments.resetSequence() # ignore order
+				departments.add(row['departmentCode'],row['departmentName'])
+			if row['categoryCode']:
+				categories.add(row)
+			if row['typeCode']:
+				types.add(row)
+				if row['ydsscctAmount']!='0.0':
+					items.append(row)
+
 sql=open('db/pr-bd-2014-16.sql','w',encoding='utf8')
 sql.write("-- проект бюджета Санкт-Петербурга на 2014-2016 гг.\n")
 
@@ -199,22 +219,23 @@ def amount(amount):
 	return str(int(amount[:-2]+amount[-1]+'00'))
 sql.write("""
 CREATE TABLE items(
+	amendmentNumber INT,
 	year INT,
 	departmentCode CHAR(3),
 	sectionCode CHAR(4),
 	categoryCode CHAR(7),
 	typeCode CHAR(3),
 	amount INT,
-	PRIMARY KEY (year,departmentCode,sectionCode,categoryCode,typeCode),
+	PRIMARY KEY (amendmentNumber,year,departmentCode,sectionCode,categoryCode,typeCode),
 	FOREIGN KEY (departmentCode) REFERENCES departments(departmentCode),
 	FOREIGN KEY (sectionCode) REFERENCES sections(sectionCode),
 	FOREIGN KEY (categoryCode) REFERENCES categories(categoryCode),
 	FOREIGN KEY (typeCode) REFERENCES types(typeCode)
 );
 """); # amount DECIMAL(10,1) - but sqlite doesn't support decimal
-for row in sorted(items,key=lambda r: (r['year'],r['departmentCode'],r['sectionCode'],r['categoryCode'],r['typeCode'])):
+for row in sorted(items,key=lambda r: (int(r['amendmentNumber']),r['year'],r['departmentCode'],r['sectionCode'],r['categoryCode'],r['typeCode'])):
 	sql.write(
-		"INSERT INTO items(year,departmentCode,sectionCode,categoryCode,typeCode,amount) VALUES ("+
-		row['year']+",'"+row['departmentCode']+"','"+row['sectionCode']+"','"+row['categoryCode']+"','"+row['typeCode']+"',"+amount(row['ydsscctAmount'])+
+		"INSERT INTO items(amendmentNumber,year,departmentCode,sectionCode,categoryCode,typeCode,amount) VALUES ("+
+		row['amendmentNumber']+","+row['year']+",'"+row['departmentCode']+"','"+row['sectionCode']+"','"+row['categoryCode']+"','"+row['typeCode']+"',"+amount(row['ydsscctAmount'])+
 		");\n"
 	)
