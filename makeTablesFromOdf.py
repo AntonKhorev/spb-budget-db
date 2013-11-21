@@ -11,6 +11,8 @@ def makeTableReaderFromOdfTable(table):
 			if not found:
 				if row[0].value.strip()=='1.':
 					found=True
+				elif row[0].value.strip()=='.1.': # quirk in 3765.10.3
+					found=True
 				else:
 					continue
 			yield (
@@ -22,50 +24,62 @@ def makeTableReaderFromOdfTable(table):
 	return reader
 
 class TableWriteWatcher:
-	def __init__(self,paragraphNumber,years):
-		self.paragraphNumber=paragraphNumber
+	def __init__(self,years):
 		self.years=years
-		self.wrote=False
+		self.paragraphNumber=None
+	def setParagraphNumber(self,paragraphNumber):
+		self.paragraphNumber=paragraphNumber
 	def write(self,table):
-		if self.wrote:
-			raise Exception('already wrote')
+		if not self.paragraphNumber:
+			raise Exception('paragraph number for table not set')
 		tableWriters.DepartmentTableWriter(
 			makeTableReaderFromOdfTable(table),
                         self.years
 		).write('tables/3765.'+self.paragraphNumber+'csv')
-		self.wrote=True
+		self.paragraphNumber=None
 
-paragraphRe=re.compile(r'Пункт N (?P<paragraphNumber>\d+(?:\.\d+)*)')
-amendTextRe=re.compile(r'(?P<paragraphNumber>(?:\d+\.)+) В текстовую часть')
-amendAppendixRe=re.compile(r'(?P<paragraphNumber>(?:\d+\.)+) В приложение (?P<appendixNumber>\d+)')
+# paragraphRe=re.compile(r'Пункт N (?P<paragraphNumber>\d+(?:\.\d+)*)')
+amendParagraphTextRe=re.compile(r'(?P<paragraphNumber>(?:\d+\.)+) В текстовую часть')
+amendParagraphAppendixRe=re.compile(r'(?P<paragraphNumber>(?:\d+\.)+) В приложение (?P<appendixNumber>\d+)')
+amendAppendixRe=re.compile(r'В приложение (?P<appendixNumber>\d+)')
+subParagraphRe=re.compile(r'\s+(?P<paragraphNumber>(?:\d+\.){2,})')
 
 doc=ezodf.opendoc('assembly/3765.odt')
 tableWriteWatcher=None
 for obj in doc.body:
 	if type(obj) is ezodf.text.Paragraph:
-		print('text paragraph {')
+		print('paragraph {')
 		for line in obj.plaintext().splitlines():
-			m=paragraphRe.match(line)
+			# m=paragraphRe.match(line)
+			# if m:
+				# print('== paragraph',m.group('paragraphNumber'),'==')
+			m=amendParagraphTextRe.match(line)
 			if m:
-				print('=== paragraph',m.group('paragraphNumber'),'===')
-			m=amendTextRe.match(line)
+				print('== amendment',m.group('paragraphNumber'),'for text ==')
+				tableWriteWatcher=None
+			m=amendParagraphAppendixRe.match(line)
 			if m:
-				print('=== amendment',m.group('paragraphNumber'),'for text ===')
-			m=amendAppendixRe.match(line)
-			if m:
-				print('=== amendment',m.group('paragraphNumber'),'for appendix',m.group('appendixNumber'),'===')
+				print('== amendment',m.group('paragraphNumber'),'for appendix',m.group('appendixNumber'),'==')
 				if m.group('appendixNumber') in ('3','4'):
-					print('===*** got to process it ***===')
-					tableWriteWatcher=TableWriteWatcher(m.group('paragraphNumber'),([2014] if m.group('appendixNumber')=='3' else [2015,2016]))
+					tableWriteWatcher=TableWriteWatcher([2014] if m.group('appendixNumber')=='3' else [2015,2016])
+					tableWriteWatcher.setParagraphNumber(m.group('paragraphNumber'))
 				else:
 					tableWriteWatcher=None
-			print('text line:',line)
+			m=amendAppendixRe.match(line)
+			if m:
+				print('== amendment TBD for appendix',m.group('appendixNumber'),'==')
+				if m.group('appendixNumber') in ('3','4'):
+					tableWriteWatcher=TableWriteWatcher([2014] if m.group('appendixNumber')=='3' else [2015,2016])
+				else:
+					tableWriteWatcher=None
+			m=subParagraphRe.match(line)
+			if m:
+				print('=== amendment',m.group('paragraphNumber'),'===')
+				if tableWriteWatcher:
+					tableWriteWatcher.setParagraphNumber(m.group('paragraphNumber'))
+			print('line:',line)
 		print('}')
 	elif type(obj) is ezodf.table.Table:
-		print('table',obj.nrows(),'x',obj.ncols(),'{')
-		for i,row in enumerate(obj.rows()):
-			for j,cell in enumerate(row):
-				print('[',i,j,']',cell.value)
-		print('}')
+		print('table',obj.nrows(),'x',obj.ncols())
 		if tableWriteWatcher:
 			tableWriteWatcher.write(obj)
