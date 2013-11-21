@@ -45,13 +45,16 @@ class DepartmentList:
 class AbstractList:
 	def __init__(self):
 		self.names={}
+		self.nameCollisions=collections.defaultdict(set)
 	def add(self,row):
 		code=row[self.codeCol]
 		name=row[self.nameCol]
 		if code in self.names:
-			if self.names[code]!=name:
+			if self.names[code]!=name and name not in self.nameCollisions[code]:
+				self.nameCollisions[code].add(name)
 				# raise Exception('code collision: '+self.codeCol+' = '+code+'; '+self.nameCol+' = '+str(self.names[code])+' vs '+str(name))
-				print('code collision: '+self.codeCol+' = '+code+'; '+self.nameCol+' = '+str(self.names[code])+' vs '+str(name))
+				print('+ '+self.codeCol+' = '+code+'; '+self.nameCol+' = '+str(self.names[code]))
+				print('- '+self.codeCol+' = '+code+'; '+self.nameCol+' = '+str(name))
 		else:
 			self.names[code]=name
 	def getOrderedRows(self):
