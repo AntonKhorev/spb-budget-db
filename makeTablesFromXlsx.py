@@ -29,17 +29,17 @@ def makeTableReaderFromXlsxFile(inputFilename):
 
 tableWriters.DepartmentTableWriter(
 	makeTableReaderFromXlsxFile('fincom/pr03-2014-16.xlsx'),
-	[2014]
+	0,[2014]
 ).write('tables/pr03-2014-16.csv')
 tableWriters.DepartmentTableWriter(
 	makeTableReaderFromXlsxFile('fincom/pr04-2014-16.xlsx'),
-	[2015,2016]
+	0,[2015,2016]
 ).write('tables/pr04-2014-16.csv')
 tableWriters.SectionTableWriter(
 	makeTableReaderFromXlsxFile('fincom/pr05-2014-16.xlsx'),
-	[2014]
+	0,[2014]
 ).write('tables/pr05-2014-16.csv')
 tableWriters.SectionTableWriter(
 	makeTableReaderFromXlsxFile('fincom/pr06-2014-16.xlsx'),
-	[2015,2016]
+	0,[2015,2016]
 ).write('tables/pr06-2014-16.csv')

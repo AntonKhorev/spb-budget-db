@@ -4,7 +4,8 @@ import re
 import csv
 
 class TableWriter:
-	def __init__(self,tableReader,years):
+	def __init__(self,tableReader,amendmentNumber,years):
+		self.amendmentNumber=amendmentNumber
 		self.years=years
 		self.rows=[{}]*len(years) # reserve first rows for totals
 		self.processTable(tableReader(years))
@@ -26,9 +27,9 @@ class TableWriter:
 	def write(self,outputFilename):
 		writer=csv.writer(open(outputFilename,'w',newline='',encoding='utf8'),quoting=csv.QUOTE_NONNUMERIC)
 		cols=self.getCols()
-		writer.writerow(cols)
+		writer.writerow(['amendmentNumber']+cols)
 		for row in self.rows:
-			writer.writerow([row.get(col) for col in cols])
+			writer.writerow([self.amendmentNumber]+[row.get(col) for col in cols])
 
 class DepartmentTableWriter(TableWriter):
 	def processTable(self,tableReader):

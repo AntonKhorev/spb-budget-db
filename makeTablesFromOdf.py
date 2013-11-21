@@ -29,12 +29,12 @@ class TableWriteWatcher:
 		self.paragraphNumber=None
 	def setParagraphNumber(self,paragraphNumber):
 		self.paragraphNumber=paragraphNumber
-	def write(self,table):
+	def write(self,table,amendmentNumber):
 		if not self.paragraphNumber:
 			raise Exception('paragraph number for table not set')
 		tableWriters.DepartmentTableWriter(
 			makeTableReaderFromOdfTable(table),
-                        self.years
+                        amendmentNumber,self.years
 		).write('tables/3765.'+self.paragraphNumber+'csv')
 		self.paragraphNumber=None
 
@@ -46,6 +46,7 @@ subParagraphRe=re.compile(r'\s+(?P<paragraphNumber>(?:\d+\.){2,})')
 
 doc=ezodf.opendoc('assembly/3765.odt')
 tableWriteWatcher=None
+amendmentNumber=0
 for obj in doc.body:
 	if type(obj) is ezodf.text.Paragraph:
 		print('paragraph {')
@@ -82,4 +83,5 @@ for obj in doc.body:
 	elif type(obj) is ezodf.table.Table:
 		print('table',obj.nrows(),'x',obj.ncols())
 		if tableWriteWatcher:
-			tableWriteWatcher.write(obj)
+			amendmentNumber+=1
+			tableWriteWatcher.write(obj,amendmentNumber)
