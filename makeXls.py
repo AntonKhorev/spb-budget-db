@@ -235,6 +235,7 @@ with sqlite3.connect(':memory:') as conn:
 		open('db/pr-bd-2014-16.sql',encoding='utf8').read()
 	)
 
+	# dept table
 	table=LevelTable(
 		[
 			['departmentCode'],
@@ -265,6 +266,7 @@ with sqlite3.connect(':memory:') as conn:
 		'out/pr03,04-2014-16.xlsx'
 	)
 
+	# section table
 	table=LevelTable(
 		[
 			['superSectionCode'],
@@ -299,6 +301,35 @@ with sqlite3.connect(':memory:') as conn:
 		'out/pr05,06-2014-16.xlsx'
 	)
 
+	# governor amendments table
+	table=LevelTable(
+		[
+			['departmentCode'],
+			['sectionCode','categoryCode'],
+			['typeCode'],
+		],[
+			'departmentName',
+			'categoryName',
+			'typeName',
+		],
+		{3:[2014],4:[2015,2016]},
+		conn.execute("""
+			SELECT departmentName,categoryName,typeName,departmentCode,sectionCode,categoryCode,typeCode,year, SUM(amount) AS amount
+			FROM items
+			JOIN departments USING(departmentCode)
+			JOIN categories USING(categoryCode)
+			JOIN types USING(typeCode)
+			WHERE amendmentNumber>0
+			GROUP BY departmentName,categoryName,typeName,departmentCode,sectionCode,categoryCode,typeCode,year
+			ORDER BY departmentOrder,sectionCode,categoryCode,typeCode,year
+		""") # TODO filter years
+	)
+	table.makeXlsx(
+		"Поправка губернатора к Закону Санкт-Петербурга «О бюджете Санкт-Петербурга на 2014 год и на плановый период 2015 и 2016 годов»",
+		'out/amendment-2014-16.xlsx'
+	)
+
+	# experimental project+amendments table
 	fakeYears=[]
 	for row in conn.execute("""
 		SELECT DISTINCT year,amendmentNumber,documentNumber,paragraphNumber, year||'.'||documentNumber||'.'||paragraphNumber AS fakeYear
@@ -333,5 +364,5 @@ with sqlite3.connect(':memory:') as conn:
 	)
 	table.makeXlsx(
 		"Данные из приложений 3 и 4 с поправками - ЭКПЕРИМЕНТАЛЬНО!",
-		'out/amendments-2014-16.xlsx'
+		'out/project-amendments-2014-16.xlsx'
 	)
