@@ -42,10 +42,17 @@ class LevelTable:
 		def makeClearSumsForLevel(level):
 			levelSummands=copy.deepcopy(summands[level+1])
 			levelSums=copy.deepcopy(sums[level+1])
+			def getColChar(n):
+				a=ord('A')
+				radix=ord('Z')-a+1
+				if n<radix:
+					return chr(a+n)
+				else:
+					return chr(a+n//radix-1)+chr(a+n%radix)
 			def fn(clearRow):
 				if level<nLevels and levelSummands:
 					for y in range(len(self.years)):
-						colChar=chr(ord('A')+nFirstAmountCol+y)
+						colChar=getColChar(nFirstAmountCol+y)
 						# +
 						# self.outRows[levelSums][nFirstAmountCol+y]='='+'+'.join(
 							# colChar+str(1+self.nHeaderRows+summand) for summand in levelSummands
@@ -290,4 +297,41 @@ with sqlite3.connect(':memory:') as conn:
 	table.makeXlsx(
 		"Данные из приложений 5 и 6 к Закону Санкт-Петербурга «О бюджете Санкт-Петербурга на 2014 год и на плановый период 2015 и 2016 годов»",
 		'out/pr05,06-2014-16.xlsx'
+	)
+
+	fakeYears=[]
+	for row in conn.execute("""
+		SELECT DISTINCT year,amendmentNumber,documentNumber,paragraphNumber, year||'.'||documentNumber||'.'||paragraphNumber AS fakeYear
+		FROM items
+		JOIN amendments USING(amendmentNumber)
+		ORDER BY year,amendmentNumber
+	"""):
+		# print(dict(row))
+		fakeYears.append(row['fakeYear'])
+	table=LevelTable(
+		[
+			['departmentCode'],
+			['sectionCode','categoryCode'],
+			['typeCode'],
+		],[
+			'departmentName',
+			'categoryName',
+			'typeName',
+		],
+		{0:fakeYears},
+		conn.execute("""
+			SELECT departmentName,categoryName,typeName,departmentCode,sectionCode,categoryCode,typeCode,
+				year||'.'||documentNumber||'.'||paragraphNumber AS year,
+				amount
+			FROM items
+			JOIN departments USING(departmentCode)
+			JOIN categories USING(categoryCode)
+			JOIN types USING(typeCode)
+			JOIN amendments USING(amendmentNumber)
+			ORDER BY departmentOrder,sectionCode,categoryCode,typeCode,year,amendmentNumber
+		""") # TODO filter years
+	)
+	table.makeXlsx(
+		"Данные из приложений 3 и 4 с поправками - ЭКПЕРИМЕНТАЛЬНО!",
+		'out/amendments-2014-16.xlsx'
 	)
