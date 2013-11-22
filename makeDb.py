@@ -88,6 +88,9 @@ class TypeList(AbstractList):
 		self.codeCol='typeCode'
 		self.nameCol='typeName'
 
+amendments=[
+	{'amendmentNumber':0,'documentNumber':'','paragraphNumber':''}
+]
 departments=DepartmentList()
 superSections=SuperSectionList()
 sections=SectionList()
@@ -166,12 +169,27 @@ for csvFilename in glob.glob('tables/3765.*.csv'):
 					items.append(row)
 				if row['sectionCode'] not in sections.names:
 					print('!!! unknown section code',row)
+		amendments.append({
+			'amendmentNumber':int(row['amendmentNumber']),
+			'documentNumber':'3765',
+			'paragraphNumber':csvFilename[12:-4],
+		})
 
 # temp fix for new section
 sections.add({'sectionCode':'0109','sectionName':'TBD'})
 
 sql=open('db/pr-bd-2014-16.sql','w',encoding='utf8')
 sql.write("-- проект бюджета Санкт-Петербурга на 2014-2016 гг.\n")
+
+sql.write("""
+CREATE TABLE amendments(
+	amendmentNumber INT PRIMARY KEY,
+	documentNumber TEXT,
+	paragraphNumber TEXT
+);
+""");
+for row in sorted(amendments,key=lambda r: r['amendmentNumber']):
+	sql.write("INSERT INTO amendments(amendmentNumber,documentNumber,paragraphNumber) VALUES ("+str(row['amendmentNumber'])+",'"+row['documentNumber']+"','"+row['paragraphNumber']+"');\n")
 
 sql.write("""
 CREATE TABLE departments(
@@ -235,6 +253,7 @@ CREATE TABLE items(
 	typeCode CHAR(3),
 	amount INT,
 	PRIMARY KEY (amendmentNumber,year,departmentCode,sectionCode,categoryCode,typeCode),
+	FOREIGN KEY (amendmentNumber) REFERENCES amendments(amendmentNumber),
 	FOREIGN KEY (departmentCode) REFERENCES departments(departmentCode),
 	FOREIGN KEY (sectionCode) REFERENCES sections(sectionCode),
 	FOREIGN KEY (categoryCode) REFERENCES categories(categoryCode),
