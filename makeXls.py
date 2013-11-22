@@ -11,8 +11,12 @@ import xlsxwriter
 class LevelTable:
 	def __init__(self,levelColLists,levelNames,yearsInAppendices,rows,nHeaderRows=2):
 		self.levelColLists=levelColLists
-		self.yearsInAppendices=yearsInAppendices
-		self.years=[year for appendix,years in sorted(yearsInAppendices.items()) for year in years]
+		if type(yearsInAppendices) is dict:
+			self.yearsInAppendices=yearsInAppendices
+			self.years=[year for appendix,years in sorted(yearsInAppendices.items()) for year in years]
+		else:
+			self.yearsInAppendices={} # don't use 'numbers in appendices'
+			self.years=yearsInAppendices
 		self.nHeaderRows=nHeaderRows
 
 		self.outRows=[[None]*len(self.yearsInAppendices)+['Итого']+[None for levelColList in self.levelColLists for col in levelColList]+[None]*len(self.years)]
@@ -312,7 +316,7 @@ with sqlite3.connect(':memory:') as conn:
 			'categoryName',
 			'typeName',
 		],
-		{3:[2014],4:[2015,2016]},
+		[2014,2015,2016],
 		conn.execute("""
 			SELECT departmentName,categoryName,typeName,departmentCode,sectionCode,categoryCode,typeCode,year, SUM(amount) AS amount
 			FROM items
@@ -349,7 +353,7 @@ with sqlite3.connect(':memory:') as conn:
 			'categoryName',
 			'typeName',
 		],
-		{0:fakeYears},
+		fakeYears,
 		conn.execute("""
 			SELECT departmentName,categoryName,typeName,departmentCode,sectionCode,categoryCode,typeCode,
 				year||'.'||documentNumber||'.'||paragraphNumber AS year,
