@@ -164,6 +164,11 @@ for csvFilename in glob.glob('tables/3765.*.csv'):
 				types.add(row)
 				if row['ydsscctAmount']!='0.0':
 					items.append(row)
+				if row['sectionCode'] not in sections.names:
+					print('!!! unknown section code',row)
+
+# temp fix for new section
+sections.add({'sectionCode':'0109','sectionName':'TBD'})
 
 sql=open('db/pr-bd-2014-16.sql','w',encoding='utf8')
 sql.write("-- проект бюджета Санкт-Петербурга на 2014-2016 гг.\n")

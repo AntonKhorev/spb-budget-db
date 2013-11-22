@@ -245,6 +245,7 @@ with sqlite3.connect(':memory:') as conn:
 			JOIN departments USING(departmentCode)
 			JOIN categories USING(categoryCode)
 			JOIN types USING(typeCode)
+			WHERE amendmentNumber=0
 			ORDER BY departmentOrder,sectionCode,categoryCode,typeCode,year
 		""") # TODO filter years
 	)
@@ -277,6 +278,7 @@ with sqlite3.connect(':memory:') as conn:
 			JOIN superSections USING(superSectionCode)
 			JOIN categories USING(categoryCode)
 			JOIN types USING(typeCode)
+			WHERE amendmentNumber=0
 			GROUP BY superSectionName,sectionName,categoryName,typeName,superSectionCode,sectionCode,categoryCode,typeCode,year
 			ORDER BY superSectionCode,sectionCode,categoryCode,typeCode,year
 		""") # TODO filter years
