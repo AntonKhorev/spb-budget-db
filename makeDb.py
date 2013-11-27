@@ -4,19 +4,37 @@ import collections
 import glob
 import csv
 
-class DepartmentList:
+class AbstractList:
 	def __init__(self):
 		self.names={}
+		self.nameCollisions=collections.defaultdict(set)
+	def add(self,row):
+		code=row[self.codeCol]
+		name=row[self.nameCol]
+		if code in self.names:
+			if self.names[code]!=name and name not in self.nameCollisions[code]:
+				self.nameCollisions[code].add(name)
+				# raise Exception('code collision: '+self.codeCol+' = '+code+'; '+self.nameCol+' = '+str(self.names[code])+' vs '+str(name))
+				print('+ '+self.codeCol+' = '+code+'; '+self.nameCol+' = '+str(self.names[code]))
+				print('- '+self.codeCol+' = '+code+'; '+self.nameCol+' = '+str(name))
+		else:
+			self.names[code]=name
+	def getOrderedRows(self):
+		for code,name in sorted(self.names.items()):
+			yield {self.codeCol:code,self.nameCol:name}
+
+class DepartmentList(AbstractList):
+	def __init__(self):
+		super().__init__()
+		self.codeCol='departmentCode'
+		self.nameCol='departmentName'
 		self.vertices=collections.defaultdict(set)
 		self.prevCode=None
 	def resetSequence(self):
 		self.prevCode=None
-	def add(self,code,name):
-		if code in self.names:
-			if self.names[code]!=name:
-				raise Exception('code collision: departments['+str(code)+'] = '+str(self.names[code])+' vs '+str(name))
-		else:
-			self.names[code]=name
+	def add(self,row):
+		super().add(row)
+		code=row[self.codeCol]
 		if self.prevCode is not None:
 			if self.prevCode==code:
 				return
@@ -41,25 +59,6 @@ class DepartmentList:
 			dfs(vertex)
 		for order,code in enumerate(reversed(exitSeq)):
 			yield {'departmentCode':code,'departmentName':self.names[code],'departmentOrder':order}
-
-class AbstractList:
-	def __init__(self):
-		self.names={}
-		self.nameCollisions=collections.defaultdict(set)
-	def add(self,row):
-		code=row[self.codeCol]
-		name=row[self.nameCol]
-		if code in self.names:
-			if self.names[code]!=name and name not in self.nameCollisions[code]:
-				self.nameCollisions[code].add(name)
-				# raise Exception('code collision: '+self.codeCol+' = '+code+'; '+self.nameCol+' = '+str(self.names[code])+' vs '+str(name))
-				print('+ '+self.codeCol+' = '+code+'; '+self.nameCol+' = '+str(self.names[code]))
-				print('- '+self.codeCol+' = '+code+'; '+self.nameCol+' = '+str(name))
-		else:
-			self.names[code]=name
-	def getOrderedRows(self):
-		for code,name in sorted(self.names.items()):
-			yield {self.codeCol:code,self.nameCol:name}
 
 class SuperSectionList(AbstractList):
 	def __init__(self):
@@ -128,7 +127,7 @@ for csvFilename in ('tables/pr03-2014-16.csv','tables/pr04-2014-16.csv'):
 			if 'departmentCode' in resets:
 				departments.resetSequence()
 			if row['departmentCode']:
-				departments.add(row['departmentCode'],row['departmentName'])
+				departments.add(row)
 			if row['categoryCode']:
 				categories.add(row)
 			if row['typeCode']:
@@ -150,30 +149,31 @@ for csvFilename in ('tables/pr05-2014-16.csv','tables/pr06-2014-16.csv'):
 			if row['typeCode']:
 				types.add(row)
 
-for csvFilename in glob.glob('tables/3765.*.csv'):
-	# copypasted from dept struct csvs
-	# testOrder=makeTestOrder(['departmentCode','sectionCode','categoryCode','typeCode'],[False,True,True,True])
-	with open(csvFilename,encoding='utf8',newline='') as csvFile:
-		for row in csv.DictReader(csvFile):
-			# resets=testOrder(row)
-			# if 'departmentCode' in resets:
-				# departments.resetSequence()
-			if row['departmentCode']:
-				departments.resetSequence() # ignore order
-				departments.add(row['departmentCode'],row['departmentName'])
-			if row['categoryCode']:
-				categories.add(row)
-			if row['typeCode']:
-				types.add(row)
-				if row['ydsscctAmount']!='0.0':
-					items.append(row)
-				if row['sectionCode'] not in sections.names:
-					print('!!! unknown section code',row)
-		amendments.append({
-			'amendmentNumber':int(row['amendmentNumber']),
-			'documentNumber':'3765',
-			'paragraphNumber':csvFilename[12:-4],
-		})
+for documentNumber in ('3765','3781'):
+	for csvFilename in glob.glob('tables/'+documentNumber+'.*.csv'):
+		# copypasted from dept struct csvs
+		# testOrder=makeTestOrder(['departmentCode','sectionCode','categoryCode','typeCode'],[False,True,True,True])
+		with open(csvFilename,encoding='utf8',newline='') as csvFile:
+			for row in csv.DictReader(csvFile):
+				# resets=testOrder(row)
+				# if 'departmentCode' in resets:
+					# departments.resetSequence()
+				if row['departmentCode']:
+					departments.resetSequence() # ignore order
+					departments.add(row)
+				if row['categoryCode']:
+					categories.add(row)
+				if row['typeCode']:
+					types.add(row)
+					if row['ydsscctAmount']!='0.0':
+						items.append(row)
+					if row['sectionCode'] not in sections.names:
+						print('!!! unknown section code',row)
+			amendments.append({
+				'amendmentNumber':int(row['amendmentNumber']),
+				'documentNumber':documentNumber,
+				'paragraphNumber':csvFilename[12:-4],
+			})
 
 # temp fix for new section
 sections.add({'sectionCode':'0109','sectionName':'TBD'})
