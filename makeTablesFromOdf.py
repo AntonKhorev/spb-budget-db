@@ -16,6 +16,9 @@ def makeTableReaderFromOdfTable(table):
 					found=True
 				else:
 					continue
+			categoryCode=row[4].value.strip()
+			if categoryCode:
+				categoryCode=categoryCode.zfill(7)
 			sc1=row[2].value.strip()
 			sc2=row[3].value.strip()
 			if sc1:
@@ -23,7 +26,7 @@ def makeTableReaderFromOdfTable(table):
 			if sc2:
 				sc2=sc2.zfill(2)
 			sectionCode=sc1+sc2
-			keys=(row[0].value.strip(),row[1].value.strip(),sectionCode,row[4].value.strip(),row[5].value.strip())
+			keys=(row[0].value.strip(),row[1].value.strip(),sectionCode,categoryCode,row[5].value.strip())
 			def makeAmount(cell):
 				amount=cell.value.strip()
 				if '.' not in amount:
