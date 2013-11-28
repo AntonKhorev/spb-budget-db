@@ -257,9 +257,11 @@ with sqlite3.connect(':memory:') as conn:
 			JOIN departments USING(departmentCode)
 			JOIN categories USING(categoryCode)
 			JOIN types USING(typeCode)
-			WHERE amendmentNumber=0
+			JOIN edits USING(editNumber)
+			JOIN documents USING(documentNumber)
+			WHERE amendmentFlag=0
 			ORDER BY departmentOrder,sectionCode,categoryCode,typeCode,year
-		""") # TODO filter years
+		""")
 	)
 	table.makeXls(
 		"Данные из приложений 3 и 4 к Закону Санкт-Петербурга «О бюджете Санкт-Петербурга на 2014 год и на плановый период 2015 и 2016 годов»",
@@ -291,10 +293,12 @@ with sqlite3.connect(':memory:') as conn:
 			JOIN superSections USING(superSectionCode)
 			JOIN categories USING(categoryCode)
 			JOIN types USING(typeCode)
-			WHERE amendmentNumber=0
+			JOIN edits USING(editNumber)
+			JOIN documents USING(documentNumber)
+			WHERE amendmentFlag=0
 			GROUP BY superSectionName,sectionName,categoryName,typeName,superSectionCode,sectionCode,categoryCode,typeCode,year
 			ORDER BY superSectionCode,sectionCode,categoryCode,typeCode,year
-		""") # TODO filter years
+		""")
 	)
 	table.makeXls(
 		"Данные из приложений 5 и 6 к Закону Санкт-Петербурга «О бюджете Санкт-Петербурга на 2014 год и на плановый период 2015 и 2016 годов»",
@@ -327,11 +331,11 @@ with sqlite3.connect(':memory:') as conn:
 				JOIN departments USING(departmentCode)
 				JOIN categories USING(categoryCode)
 				JOIN types USING(typeCode)
-				JOIN amendments USING(amendmentNumber)
+				JOIN edits USING(editNumber)
 				WHERE documentNumber=?
 				GROUP BY departmentName,categoryName,typeName,departmentCode,sectionCode,categoryCode,typeCode,year
 				ORDER BY departmentOrder,sectionCode,categoryCode,typeCode,year
-			""",[documentNumber]) # TODO filter years
+			""",[documentNumber])
 		)
 		table.makeXlsx(
 			"Поправка "+whose+" к Закону Санкт-Петербурга «О бюджете Санкт-Петербурга на 2014 год и на плановый период 2015 и 2016 годов»",
@@ -341,12 +345,11 @@ with sqlite3.connect(':memory:') as conn:
 	# experimental project+amendments table
 	fakeYears=[]
 	for row in conn.execute("""
-		SELECT DISTINCT year,amendmentNumber,documentNumber,paragraphNumber, year||'.'||documentNumber||'.'||paragraphNumber AS fakeYear
+		SELECT DISTINCT year,editNumber,documentNumber,paragraphNumber, year||'.'||documentNumber||'.'||paragraphNumber AS fakeYear
 		FROM items
-		JOIN amendments USING(amendmentNumber)
-		ORDER BY year,amendmentNumber
+		JOIN edits USING(editNumber)
+		ORDER BY year,editNumber
 	"""):
-		# print(dict(row))
 		fakeYears.append(row['fakeYear'])
 	table=LevelTable(
 		[
@@ -367,9 +370,9 @@ with sqlite3.connect(':memory:') as conn:
 			JOIN departments USING(departmentCode)
 			JOIN categories USING(categoryCode)
 			JOIN types USING(typeCode)
-			JOIN amendments USING(amendmentNumber)
-			ORDER BY departmentOrder,sectionCode,categoryCode,typeCode,year,amendmentNumber
-		""") # TODO filter years
+			JOIN edits USING(editNumber)
+			ORDER BY departmentOrder,sectionCode,categoryCode,typeCode,year,editNumber
+		""")
 	)
 	table.makeXlsx(
 		"Данные из приложений 3 и 4 с поправками - ЭКПЕРИМЕНТАЛЬНО!",

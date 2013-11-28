@@ -27,19 +27,20 @@ def makeTableReaderFromXlsxFile(inputFilename):
 			)
 	return reader
 
+documentNumber=3574
 tableWriters.DepartmentTableWriter(
 	makeTableReaderFromXlsxFile('fincom/pr03-2014-16.xlsx'),
-	0,[2014]
-).write('tables/pr03-2014-16.csv')
+	[2014]
+).write('tables/department.'+str(documentNumber)+'.3.csv')
 tableWriters.DepartmentTableWriter(
 	makeTableReaderFromXlsxFile('fincom/pr04-2014-16.xlsx'),
-	0,[2015,2016]
-).write('tables/pr04-2014-16.csv')
+	[2015,2016]
+).write('tables/department.'+str(documentNumber)+'.4.csv')
 tableWriters.SectionTableWriter(
 	makeTableReaderFromXlsxFile('fincom/pr05-2014-16.xlsx'),
-	0,[2014]
-).write('tables/pr05-2014-16.csv')
+	[2014]
+).write('tables/section.'+str(documentNumber)+'.5.csv')
 tableWriters.SectionTableWriter(
 	makeTableReaderFromXlsxFile('fincom/pr06-2014-16.xlsx'),
-	0,[2015,2016]
-).write('tables/pr06-2014-16.csv')
+	[2015,2016]
+).write('tables/section.'+str(documentNumber)+'.6.csv')

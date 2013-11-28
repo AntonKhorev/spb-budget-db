@@ -48,14 +48,14 @@ class TableWriteWatcher:
 		self.paragraphNumber=None
 	def setParagraphNumber(self,paragraphNumber):
 		self.paragraphNumber=paragraphNumber
-	def write(self,table,documentNumber,amendmentNumber):
+	def write(self,table,documentNumber):
 		# print('writing table for amendment',self.paragraphNumber)
 		if not self.paragraphNumber:
 			raise Exception('paragraph number for table not set')
 		tableWriters.DepartmentTableWriter(
 			makeTableReaderFromOdfTable(table),
-                        amendmentNumber,self.years
-		).write('tables/'+documentNumber+'.'+self.paragraphNumber+'csv')
+                        self.years
+		).write('tables/department.'+documentNumber+'.'+self.paragraphNumber+'csv')
 		self.paragraphNumber=None
 
 # paragraphRe=re.compile(r'Пункт N (?P<paragraphNumber>\d+(?:\.\d+)*)')
@@ -64,7 +64,6 @@ amendParagraphAppendixRe=re.compile(r'(?P<paragraphNumber>(?:\d+\.)+) В при�
 amendAppendixRe=re.compile(r'В приложение (?P<appendixNumber>\d+)')
 subParagraphRe=re.compile(r'\s+(?P<paragraphNumber>(?:\d+\.){2,})')
 
-amendmentNumber=0
 for documentNumber in ('3765','3781'):
 	filename='assembly/'+documentNumber+'.odt'
 	doc=ezodf.opendoc(filename)
@@ -105,5 +104,4 @@ for documentNumber in ('3765','3781'):
 		elif type(obj) is ezodf.table.Table:
 			# print('table',obj.nrows(),'x',obj.ncols())
 			if tableWriteWatcher:
-				amendmentNumber+=1
-				tableWriteWatcher.write(obj,documentNumber,amendmentNumber)
+				tableWriteWatcher.write(obj,documentNumber)

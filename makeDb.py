@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import itertools
 import collections
 import glob
 import csv
@@ -87,9 +88,19 @@ class TypeList(AbstractList):
 		self.codeCol='typeCode'
 		self.nameCol='typeName'
 
-amendments=[
-	{'amendmentNumber':0,'documentNumber':'','paragraphNumber':''}
+def listDocumentParagraphs(csvFilenamePrefix,csvFilenameSuffix):
+	return itertools.groupby(((numbers[0],'.'.join(str(n) for n in numbers[1:]),csvFilename) for numbers,csvFilename in sorted(
+		(tuple(
+			int(n) for n in csvFilename[len(csvFilenamePrefix):-len(csvFilenameSuffix)].split('.')
+		),csvFilename) for csvFilename in glob.glob(csvFilenamePrefix+'*'+csvFilenameSuffix)
+	)), lambda t:t[0])
+
+documents=[
+	{'documentNumber':3574,'documentDate':'2013-10-07','governorFlag':True,'amendmentFlag':False},
+	{'documentNumber':3765,'documentDate':'2013-11-01','governorFlag':True,'amendmentFlag':True},
+	{'documentNumber':3781,'documentDate':'2013-11-08','governorFlag':False,'amendmentFlag':True},
 ]
+edits=[]
 departments=DepartmentList()
 superSections=SuperSectionList()
 sections=SectionList()
@@ -119,61 +130,55 @@ def makeTestOrder(cols,stricts):
 		return resets
 	return testOrder
 
-for csvFilename in ('tables/pr03-2014-16.csv','tables/pr04-2014-16.csv'):
-	testOrder=makeTestOrder(['departmentCode','sectionCode','categoryCode','typeCode'],[False,True,True,True])
-	with open(csvFilename,encoding='utf8',newline='') as csvFile:
-		for row in csv.DictReader(csvFile):
-			resets=testOrder(row)
-			if 'departmentCode' in resets:
-				departments.resetSequence()
-			if row['departmentCode']:
-				departments.add(row)
-			if row['categoryCode']:
-				categories.add(row)
-			if row['typeCode']:
-				types.add(row)
-				if row['ydsscctAmount']!='0.0':
-					items.append(row)
-
-for csvFilename in ('tables/pr05-2014-16.csv','tables/pr06-2014-16.csv'):
-	testOrder=makeTestOrder(['superSectionCode','sectionCode','categoryCode','typeCode'],[True,True,True,True])
-	with open(csvFilename,encoding='utf8',newline='') as csvFile:
-		for row in csv.DictReader(csvFile):
-			resets=testOrder(row)
-			if row['superSectionCode']:
-				superSections.add(row)
-			if row['sectionCode']:
-				sections.add(row)
-			if row['categoryCode']:
-				categories.add(row)
-			if row['typeCode']:
-				types.add(row)
-
-for documentNumber in ('3765','3781'):
-	for csvFilename in glob.glob('tables/'+documentNumber+'.*.csv'):
-		# copypasted from dept struct csvs
-		# testOrder=makeTestOrder(['departmentCode','sectionCode','categoryCode','typeCode'],[False,True,True,True])
+# scan section codes
+for documentNumber,paragraphs in listDocumentParagraphs('tables/section.','.csv'):
+	for documentNumber,paragraphNumber,csvFilename in paragraphs:
+		testOrder=makeTestOrder(['superSectionCode','sectionCode','categoryCode','typeCode'],[True,True,True,True])
 		with open(csvFilename,encoding='utf8',newline='') as csvFile:
 			for row in csv.DictReader(csvFile):
-				# resets=testOrder(row)
-				# if 'departmentCode' in resets:
-					# departments.resetSequence()
+				resets=testOrder(row)
+				if row['superSectionCode']:
+					superSections.add(row)
+				if row['sectionCode']:
+					sections.add(row)
+				if row['categoryCode']:
+					categories.add(row)
+				if row['typeCode']:
+					types.add(row)
+
+# read monetary data
+amendmentFlag=False
+editNumber=0
+for documentNumber,paragraphs in listDocumentParagraphs('tables/department.','.csv'):
+	for documentNumber,paragraphNumber,csvFilename in paragraphs:
+		editNumber+=1
+		edits.append({
+			'editNumber':editNumber,
+			'documentNumber':documentNumber,
+			'paragraphNumber':paragraphNumber,
+		})
+		if not amendmentFlag:
+			testOrder=makeTestOrder(['departmentCode','sectionCode','categoryCode','typeCode'],[False,True,True,True])
+		with open(csvFilename,encoding='utf8',newline='') as csvFile:
+			for row in csv.DictReader(csvFile):
+				if not amendmentFlag:
+					resets=testOrder(row)
+					if 'departmentCode' in resets:
+						departments.resetSequence()
 				if row['departmentCode']:
-					departments.resetSequence() # ignore order
+					if amendmentFlag:
+						departments.resetSequence() # ignore order
 					departments.add(row)
 				if row['categoryCode']:
 					categories.add(row)
 				if row['typeCode']:
 					types.add(row)
 					if row['ydsscctAmount']!='0.0':
+						row['editNumber']=editNumber
 						items.append(row)
 					if row['sectionCode'] not in sections.names:
 						print('!!! unknown section code',row)
-			amendments.append({
-				'amendmentNumber':int(row['amendmentNumber']),
-				'documentNumber':documentNumber,
-				'paragraphNumber':csvFilename[12:-4],
-			})
+	amendmentFlag=True
 
 # temp fix for new section
 sections.add({'sectionCode':'0109','sectionName':'TBD'})
@@ -182,14 +187,32 @@ sql=open('db/pr-bd-2014-16.sql','w',encoding='utf8')
 sql.write("-- проект бюджета Санкт-Петербурга на 2014-2016 гг.\n")
 
 sql.write("""
-CREATE TABLE amendments(
-	amendmentNumber INT PRIMARY KEY,
-	documentNumber TEXT,
-	paragraphNumber TEXT
+CREATE TABLE documents(
+	documentNumber INT PRIMARY KEY,
+	documentDate TEXT,
+	governorFlag INT(1),
+	amendmentFlag INT(1)
 );
 """);
-for row in sorted(amendments,key=lambda r: r['amendmentNumber']):
-	sql.write("INSERT INTO amendments(amendmentNumber,documentNumber,paragraphNumber) VALUES ("+str(row['amendmentNumber'])+",'"+row['documentNumber']+"','"+row['paragraphNumber']+"');\n")
+for row in documents:
+	sql.write(
+		"INSERT INTO documents(documentNumber,documentDate,governorFlag,amendmentFlag) VALUES ("+
+		str(row['documentNumber'])+",'"+row['documentDate']+"',"+str(int(row['governorFlag']))+","+str(int(row['amendmentFlag']))+");\n"
+	)
+
+sql.write("""
+CREATE TABLE edits(
+	editNumber INT PRIMARY KEY,
+	documentNumber INT,
+	paragraphNumber TEXT,
+	FOREIGN KEY (documentNumber) REFERENCES documents(documentNumber)
+);
+""");
+for row in edits:
+	sql.write(
+		"INSERT INTO edits(editNumber,documentNumber,paragraphNumber) VALUES ("+
+		str(row['editNumber'])+","+str(row['documentNumber'])+",'"+row['paragraphNumber']+"');\n"
+	)
 
 sql.write("""
 CREATE TABLE departments(
@@ -199,7 +222,10 @@ CREATE TABLE departments(
 );
 """)
 for row in departments.getOrderedRows():
-	sql.write("INSERT INTO departments(departmentCode,departmentName,departmentOrder) VALUES ('"+row['departmentCode']+"','"+row['departmentName']+"',"+str(row['departmentOrder'])+");\n")
+	sql.write(
+		"INSERT INTO departments(departmentCode,departmentName,departmentOrder) VALUES ('"+
+		row['departmentCode']+"','"+row['departmentName']+"',"+str(row['departmentOrder'])+");\n"
+	)
 
 sql.write("""
 CREATE TABLE superSections(
@@ -208,7 +234,10 @@ CREATE TABLE superSections(
 );
 """)
 for row in superSections.getOrderedRows():
-	sql.write("INSERT INTO superSections(superSectionCode,superSectionName) VALUES ('"+row['superSectionCode']+"','"+row['superSectionName']+"');\n")
+	sql.write(
+		"INSERT INTO superSections(superSectionCode,superSectionName) VALUES ('"+
+		row['superSectionCode']+"','"+row['superSectionName']+"');\n"
+	)
 
 sql.write("""
 CREATE TABLE sections(
@@ -219,7 +248,10 @@ CREATE TABLE sections(
 );
 """)
 for row in sections.getOrderedRows():
-	sql.write("INSERT INTO sections(sectionCode,superSectionCode,sectionName) VALUES ('"+row['sectionCode']+"','"+row['superSectionCode']+"','"+row['sectionName']+"');\n")
+	sql.write(
+		"INSERT INTO sections(sectionCode,superSectionCode,sectionName) VALUES ('"+
+		row['sectionCode']+"','"+row['superSectionCode']+"','"+row['sectionName']+"');\n"
+	)
 
 sql.write("""
 CREATE TABLE categories(
@@ -228,7 +260,10 @@ CREATE TABLE categories(
 );
 """)
 for row in categories.getOrderedRows():
-	sql.write("INSERT INTO categories(categoryCode,categoryName) VALUES ('"+row['categoryCode']+"','"+row['categoryName']+"');\n")
+	sql.write(
+		"INSERT INTO categories(categoryCode,categoryName) VALUES ('"+
+		row['categoryCode']+"','"+row['categoryName']+"');\n"
+	)
 
 sql.write("""
 CREATE TABLE types(
@@ -237,7 +272,10 @@ CREATE TABLE types(
 );
 """)
 for row in types.getOrderedRows():
-	sql.write("INSERT INTO types(typeCode,typeName) VALUES ('"+row['typeCode']+"','"+row['typeName']+"');\n")
+	sql.write(
+		"INSERT INTO types(typeCode,typeName) VALUES ('"+
+		row['typeCode']+"','"+row['typeName']+"');\n"
+	)
 
 def amount(amount):
 	if amount[-2]!='.':
@@ -245,24 +283,24 @@ def amount(amount):
 	return str(int(amount[:-2]+amount[-1]+'00'))
 sql.write("""
 CREATE TABLE items(
-	amendmentNumber INT,
+	editNumber INT,
 	year INT,
 	departmentCode CHAR(3),
 	sectionCode CHAR(4),
 	categoryCode CHAR(7),
 	typeCode CHAR(3),
 	amount INT,
-	PRIMARY KEY (amendmentNumber,year,departmentCode,sectionCode,categoryCode,typeCode),
-	FOREIGN KEY (amendmentNumber) REFERENCES amendments(amendmentNumber),
+	PRIMARY KEY (editNumber,year,departmentCode,sectionCode,categoryCode,typeCode),
+	FOREIGN KEY (editNumber) REFERENCES edits(editNumber),
 	FOREIGN KEY (departmentCode) REFERENCES departments(departmentCode),
 	FOREIGN KEY (sectionCode) REFERENCES sections(sectionCode),
 	FOREIGN KEY (categoryCode) REFERENCES categories(categoryCode),
 	FOREIGN KEY (typeCode) REFERENCES types(typeCode)
 );
 """); # amount DECIMAL(10,1) - but sqlite doesn't support decimal
-for row in sorted(items,key=lambda r: (int(r['amendmentNumber']),r['year'],r['departmentCode'],r['sectionCode'],r['categoryCode'],r['typeCode'])):
+for row in sorted(items,key=lambda r: (int(r['editNumber']),r['year'],r['departmentCode'],r['sectionCode'],r['categoryCode'],r['typeCode'])):
 	sql.write(
-		"INSERT INTO items(amendmentNumber,year,departmentCode,sectionCode,categoryCode,typeCode,amount) VALUES ("+
-		row['amendmentNumber']+","+row['year']+",'"+row['departmentCode']+"','"+row['sectionCode']+"','"+row['categoryCode']+"','"+row['typeCode']+"',"+amount(row['ydsscctAmount'])+
+		"INSERT INTO items(editNumber,year,departmentCode,sectionCode,categoryCode,typeCode,amount) VALUES ("+
+		str(row['editNumber'])+","+row['year']+",'"+row['departmentCode']+"','"+row['sectionCode']+"','"+row['categoryCode']+"','"+row['typeCode']+"',"+amount(row['ydsscctAmount'])+
 		");\n"
 	)
