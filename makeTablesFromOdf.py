@@ -55,7 +55,7 @@ class TableWriteWatcher:
 		tableWriters.DepartmentTableWriter(
 			makeTableReaderFromOdfTable(table),
                         self.years
-		).write('tables/department.'+documentNumber+'.'+self.paragraphNumber+'csv')
+		).write('tables/department.edit.'+documentNumber+'.'+self.paragraphNumber+'csv')
 		self.paragraphNumber=None
 
 # paragraphRe=re.compile(r'Пункт N (?P<paragraphNumber>\d+(?:\.\d+)*)')

@@ -131,25 +131,26 @@ def makeTestOrder(cols,stricts):
 	return testOrder
 
 # scan section codes
-for documentNumber,paragraphs in listDocumentParagraphs('tables/section.','.csv'):
-	for documentNumber,paragraphNumber,csvFilename in paragraphs:
-		testOrder=makeTestOrder(['superSectionCode','sectionCode','categoryCode','typeCode'],[True,True,True,True])
-		with open(csvFilename,encoding='utf8',newline='') as csvFile:
-			for row in csv.DictReader(csvFile):
-				resets=testOrder(row)
-				if row['superSectionCode']:
-					superSections.add(row)
-				if row['sectionCode']:
-					sections.add(row)
-				if row['categoryCode']:
-					categories.add(row)
-				if row['typeCode']:
-					types.add(row)
+for csvFilenamePrefix in ('tables/section.edit.','tables/section.sum.'):
+	for documentNumber,paragraphs in listDocumentParagraphs(csvFilenamePrefix,'.csv'):
+		for documentNumber,paragraphNumber,csvFilename in paragraphs:
+			testOrder=makeTestOrder(['superSectionCode','sectionCode','categoryCode','typeCode'],[True,True,True,True])
+			with open(csvFilename,encoding='utf8',newline='') as csvFile:
+				for row in csv.DictReader(csvFile):
+					resets=testOrder(row)
+					if row['superSectionCode']:
+						superSections.add(row)
+					if row['sectionCode']:
+						sections.add(row)
+					if row['categoryCode']:
+						categories.add(row)
+					if row['typeCode']:
+						types.add(row)
 
 # read monetary data
 amendmentFlag=False
 editNumber=0
-for documentNumber,paragraphs in listDocumentParagraphs('tables/department.','.csv'):
+for documentNumber,paragraphs in listDocumentParagraphs('tables/department.edit.','.csv'):
 	for documentNumber,paragraphNumber,csvFilename in paragraphs:
 		editNumber+=1
 		edits.append({
@@ -176,12 +177,7 @@ for documentNumber,paragraphs in listDocumentParagraphs('tables/department.','.c
 					if row['ydsscctAmount']!='0.0':
 						row['editNumber']=editNumber
 						items.append(row)
-					if row['sectionCode'] not in sections.names:
-						print('!!! unknown section code',row)
 	amendmentFlag=True
-
-# temp fix for new section
-sections.add({'sectionCode':'0109','sectionName':'TBD'})
 
 sql=open('db/pr-bd-2014-16.sql','w',encoding='utf8')
 sql.write("-- проект бюджета Санкт-Петербурга на 2014-2016 гг.\n")

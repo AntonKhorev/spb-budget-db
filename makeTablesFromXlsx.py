@@ -27,20 +27,40 @@ def makeTableReaderFromXlsxFile(inputFilename):
 			)
 	return reader
 
+# project
 documentNumber=3574
 tableWriters.DepartmentTableWriter(
-	makeTableReaderFromXlsxFile('fincom/pr03-2014-16.xlsx'),
+	makeTableReaderFromXlsxFile('fincom/2014.0.p/pr03-2014-16.xlsx'),
 	[2014]
-).write('tables/department.'+str(documentNumber)+'.3.csv')
+).write('tables/department.edit.'+str(documentNumber)+'.3.csv')
 tableWriters.DepartmentTableWriter(
-	makeTableReaderFromXlsxFile('fincom/pr04-2014-16.xlsx'),
+	makeTableReaderFromXlsxFile('fincom/2014.0.p/pr04-2014-16.xlsx'),
 	[2015,2016]
-).write('tables/department.'+str(documentNumber)+'.4.csv')
+).write('tables/department.edit.'+str(documentNumber)+'.4.csv')
 tableWriters.SectionTableWriter(
-	makeTableReaderFromXlsxFile('fincom/pr05-2014-16.xlsx'),
+	makeTableReaderFromXlsxFile('fincom/2014.0.p/pr05-2014-16.xlsx'),
 	[2014]
-).write('tables/section.'+str(documentNumber)+'.5.csv')
+).write('tables/section.edit.'+str(documentNumber)+'.5.csv')
 tableWriters.SectionTableWriter(
-	makeTableReaderFromXlsxFile('fincom/pr06-2014-16.xlsx'),
+	makeTableReaderFromXlsxFile('fincom/2014.0.p/pr06-2014-16.xlsx'),
 	[2015,2016]
-).write('tables/section.'+str(documentNumber)+'.6.csv')
+).write('tables/section.edit.'+str(documentNumber)+'.6.csv')
+
+# law
+documentNumber=3781
+tableWriters.DepartmentTableWriter(
+	makeTableReaderFromXlsxFile('fincom/2014.0.z/pr03_bd2014-16.xlsx'),
+	[2014]
+).write('tables/department.sum.'+str(documentNumber)+'.3.csv')
+tableWriters.DepartmentTableWriter(
+	makeTableReaderFromXlsxFile('fincom/2014.0.z/pr04_bd2014-16.xlsx'),
+	[2015,2016]
+).write('tables/department.sum.'+str(documentNumber)+'.4.csv')
+tableWriters.SectionTableWriter(
+	makeTableReaderFromXlsxFile('fincom/2014.0.z/pr05_bd2014-16.xlsx'),
+	[2014]
+).write('tables/section.sum.'+str(documentNumber)+'.5.csv')
+tableWriters.SectionTableWriter(
+	makeTableReaderFromXlsxFile('fincom/2014.0.z/pr06_bd2014-16.xlsx'),
+	[2015,2016]
+).write('tables/section.sum.'+str(documentNumber)+'.6.csv')
