@@ -155,3 +155,10 @@ class SectionTableWriter(TableWriter):
 			'typeName','typeCode',
 			'yAmount','ysAmount','yssAmount','yssccAmount','ysscctAmount',
 		]
+
+def writeMoveTable(outputFilename,s,t):
+	with open(outputFilename,'w',newline='',encoding='utf8') as file:
+		writer=csv.writer(file,quoting=csv.QUOTE_NONNUMERIC)
+		writer.writerow(['departmentCode','sectionCode','categoryCode','typeCode'])
+		writer.writerow(s)
+		writer.writerow(t)

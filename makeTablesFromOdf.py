@@ -113,28 +113,40 @@ for documentNumber in ('3765','3781'):
 					if tableWriteWatcher:
 						tableWriteWatcher.setParagraphNumber(m.group('paragraphNumber'))
 				# print('line:',line)
+				def getMoveFilename(m):
+					return 'tables/department.move.'+documentNumber+'.'+m.group('paragraphNumber')+'csv'
 				m=moveDepartmentRe.match(line)
 				if m:
-					print(moveDepartmentCodes[m.group('departmentName1')],'*',m.group('categoryCode'),'*')
-					print(moveDepartmentCodes[m.group('departmentName2')],'*',m.group('categoryCode'),'*')
+					tableWriters.writeMoveTable(getMoveFilename(m),
+						(moveDepartmentCodes[m.group('departmentName1')],'*',m.group('categoryCode'),'*'),
+						(moveDepartmentCodes[m.group('departmentName2')],'*',m.group('categoryCode'),'*')
+					)
 				m=moveSectionRe.match(line)
 				if m:
-					print('*',m.group('sectionCode1'),m.group('categoryCode'),'*')
-					print('*',m.group('sectionCode2'),m.group('categoryCode'),'*')
+					tableWriters.writeMoveTable(getMoveFilename(m),
+						('*',m.group('sectionCode1'),m.group('categoryCode'),'*'),
+						('*',m.group('sectionCode2'),m.group('categoryCode'),'*')
+					)
 				m=moveCategoryTypeRe.match(line)
 				if m:
 					# FIXME possibly wrong - may also need to match departments
-					print('*','*',m.group('categoryCode1'),m.group('typeCode1'))
-					print('*','*',m.group('categoryCode2'),m.group('typeCode2'))
+					tableWriters.writeMoveTable(getMoveFilename(m),
+						('*','*',m.group('categoryCode1'),m.group('typeCode1')),
+						('*','*',m.group('categoryCode2'),m.group('typeCode2'))
+					)
 				else:
 					m=moveCategoryRe.match(line)
 					if m:
-						print('*','*',m.group('categoryCode1'),'*')
-						print('*','*',m.group('categoryCode2'),'*')
+						tableWriters.writeMoveTable(getMoveFilename(m),
+							('*','*',m.group('categoryCode1'),'*'),
+							('*','*',m.group('categoryCode2'),'*')
+						)
 				m=moveTypeRe.match(line)
 				if m:
-					print('*','*',m.group('categoryCode'),m.group('typeCode1'))
-					print('*','*',m.group('categoryCode'),m.group('typeCode2'))
+					tableWriters.writeMoveTable(getMoveFilename(m),
+						('*','*',m.group('categoryCode'),m.group('typeCode1')),
+						('*','*',m.group('categoryCode'),m.group('typeCode2'))
+					)
 			# print('}')
 		elif type(obj) is ezodf.table.Table:
 			# print('table',obj.nrows(),'x',obj.ncols())
