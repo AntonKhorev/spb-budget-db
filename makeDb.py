@@ -133,8 +133,8 @@ def makeTestOrder(cols,stricts):
 	return testOrder
 
 # scan section codes
-for csvFilenamePrefix in ('tables/section.edit.','tables/section.sum.'):
-	for documentNumber,paragraphs in listDocumentParagraphs(csvFilenamePrefix,'.csv'):
+for csvFilenamePrefix in ('tables/2014.0.p.','tables/2014.0.z.'):
+	for documentNumber,paragraphs in listDocumentParagraphs(csvFilenamePrefix,'.section.csv'):
 		for documentNumber,paragraphNumber,csvFilename in paragraphs:
 			testOrder=makeTestOrder(['superSectionCode','sectionCode','categoryCode','typeCode'],[True,True,True,True])
 			with open(csvFilename,encoding='utf8',newline='') as csvFile:
@@ -152,7 +152,7 @@ for csvFilenamePrefix in ('tables/section.edit.','tables/section.sum.'):
 # read monetary data
 amendmentFlag=False
 editNumber=0
-for documentNumber,paragraphs in listDocumentParagraphs('tables/department.edit.','.csv'):
+for documentNumber,paragraphs in listDocumentParagraphs('tables/2014.0.p.','.department.csv'):
 	for documentNumber,paragraphNumber,csvFilename in paragraphs:
 		editNumber+=1
 		edits.append({
@@ -194,7 +194,7 @@ for documentNumber,paragraphs in listDocumentParagraphs('tables/department.edit.
 
 # compare with the law
 # uniqueCheck=makeUniqueCheck()
-for documentNumber,paragraphs in listDocumentParagraphs('tables/department.sum.','.csv'):
+for documentNumber,paragraphs in listDocumentParagraphs('tables/2014.0.z.','.department.csv'):
 	for documentNumber,paragraphNumber,csvFilename in paragraphs:
 		testOrder=makeTestOrder(['departmentCode','sectionCode','categoryCode','typeCode'],[False,True,True,True])
 		with open(csvFilename,encoding='utf8',newline='') as csvFile:

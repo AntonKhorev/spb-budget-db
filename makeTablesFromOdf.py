@@ -55,7 +55,7 @@ class TableWriteWatcher:
 		tableWriters.DepartmentTableWriter(
 			makeTableReaderFromOdfTable(table),
                         self.years
-		).write('tables/department.edit.'+documentNumber+'.'+self.paragraphNumber+'csv')
+		).write('tables/2014.0.p.'+documentNumber+'.'+self.paragraphNumber+'department.csv')
 		self.paragraphNumber=None
 
 pn=r'(?P<paragraphNumber>(?:\d+\.)+)'
@@ -114,7 +114,7 @@ for documentNumber in ('3765','3781'):
 						tableWriteWatcher.setParagraphNumber(m.group('paragraphNumber'))
 				# print('line:',line)
 				def getMoveFilename(m):
-					return 'tables/department.move.'+documentNumber+'.'+m.group('paragraphNumber')+'csv'
+					return 'tables/2014.0.p.'+documentNumber+'.'+m.group('paragraphNumber')+'move.csv'
 				m=moveDepartmentRe.match(line)
 				if m:
 					tableWriters.writeMoveTable(getMoveFilename(m),
