@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import itertools
+import decimal
 import collections
 import glob
 import csv
@@ -107,6 +108,7 @@ sections=SectionList()
 categories=CategoryList()
 types=TypeList()
 items=[]
+itemSums=collections.defaultdict(decimal.Decimal) # key=year,departmentCode,sectionCode,categoryCode,typeCode
 
 def makeTestOrder(cols,stricts):
 	prevs=[None]*len(cols)
@@ -177,7 +179,35 @@ for documentNumber,paragraphs in listDocumentParagraphs('tables/department.edit.
 					if row['ydsscctAmount']!='0.0':
 						row['editNumber']=editNumber
 						items.append(row)
+						itemSums[tuple(
+							row[k] for k in ('year','departmentCode','sectionCode','categoryCode','typeCode')
+						)]-=decimal.Decimal(row['ydsscctAmount']) # subtract this, then add amount stated in the law
 	amendmentFlag=True
+
+# compare with the law
+for documentNumber,paragraphs in listDocumentParagraphs('tables/department.sum.','.csv'):
+	for documentNumber,paragraphNumber,csvFilename in paragraphs:
+		testOrder=makeTestOrder(['departmentCode','sectionCode','categoryCode','typeCode'],[False,True,True,True])
+		with open(csvFilename,encoding='utf8',newline='') as csvFile:
+			for row in csv.DictReader(csvFile):
+				resets=testOrder(row)
+				if 'departmentCode' in resets:
+					departments.resetSequence()
+				if row['departmentCode']:
+					departments.add(row)
+				if row['categoryCode']:
+					categories.add(row)
+				if row['typeCode']:
+					types.add(row)
+					if row['ydsscctAmount']!='0.0':
+						itemSums[tuple(
+							row[k] for k in ('year','departmentCode','sectionCode','categoryCode','typeCode')
+						)]+=decimal.Decimal(row['ydsscctAmount'])
+for key in sorted(itemSums):
+	if itemSums[key]:
+		print('* unknown amendment:',key,itemSums[key])
+
+### write sql ###
 
 sql=open('db/pr-bd-2014-16.sql','w',encoding='utf8')
 sql.write("-- проект бюджета Санкт-Петербурга на 2014-2016 гг.\n")
