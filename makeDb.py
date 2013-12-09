@@ -184,7 +184,16 @@ for documentNumber,paragraphs in listDocumentParagraphs('tables/department.edit.
 						)]-=decimal.Decimal(row['ydsscctAmount']) # subtract this, then add amount stated in the law
 	amendmentFlag=True
 
+# def makeUniqueCheck():
+	# kv={}
+	# def uniqueCheck(k,v):
+		# if k in kv and kv[k]!=v:
+			# print('@',k,':',kv[k],'vs',v)
+		# kv[k]=v
+	# return uniqueCheck
+
 # compare with the law
+# uniqueCheck=makeUniqueCheck()
 for documentNumber,paragraphs in listDocumentParagraphs('tables/department.sum.','.csv'):
 	for documentNumber,paragraphNumber,csvFilename in paragraphs:
 		testOrder=makeTestOrder(['departmentCode','sectionCode','categoryCode','typeCode'],[False,True,True,True])
@@ -203,6 +212,7 @@ for documentNumber,paragraphs in listDocumentParagraphs('tables/department.sum.'
 						itemSums[tuple(
 							row[k] for k in ('year','departmentCode','sectionCode','categoryCode','typeCode')
 						)]+=decimal.Decimal(row['ydsscctAmount'])
+					# uniqueCheck(row['categoryCode'],row['sectionCode'])
 for key in sorted(itemSums):
 	if itemSums[key]:
 		print('* unknown amendment:',key,itemSums[key])

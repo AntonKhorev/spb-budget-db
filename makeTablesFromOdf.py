@@ -58,11 +58,24 @@ class TableWriteWatcher:
 		).write('tables/department.edit.'+documentNumber+'.'+self.paragraphNumber+'csv')
 		self.paragraphNumber=None
 
-# paragraphRe=re.compile(r'Пункт N (?P<paragraphNumber>\d+(?:\.\d+)*)')
-amendParagraphTextRe=re.compile(r'(?P<paragraphNumber>(?:\d+\.)+) В текстовую часть')
-amendParagraphAppendixRe=re.compile(r'(?P<paragraphNumber>(?:\d+\.)+) В приложение (?P<appendixNumber>\d+)')
+pn=r'(?P<paragraphNumber>(?:\d+\.)+)'
+cc=r'(?P<categoryCode>\d{7})'
+# paragraphRe=re.compile(r'Пункт N '+pn)
+amendParagraphTextRe=re.compile(pn+r' В текстовую часть')
+amendParagraphAppendixRe=re.compile(pn+r' В приложение (?P<appendixNumber>\d+)')
 amendAppendixRe=re.compile(r'В приложение (?P<appendixNumber>\d+)')
 subParagraphRe=re.compile(r'\s+(?P<paragraphNumber>(?:\d+\.){2,})')
+
+# regexes for move:
+moveDepartmentRe=re.compile(r'\s*'+pn+r' Главного распорядителя "(?P<departmentName1>.*?)" в целевой статье '+cc+r' ".*?" изменить на "(?P<departmentName2>.*?)"')
+moveDepartmentCodes={
+	'Комитет по промышленной политике и инновациям Санкт-Петербурга':870,
+	'Комитет по развитию предпринимательства и потребительского рынка Санкт-Петербурга':871,
+}
+moveSectionRe=re.compile(r'\s*'+pn+r' Подраздел (?P<sectionCode1>\d{4}) ".*?" в целевой статье '+cc+r' ".*?" \(.*?\) изменить на (?P<sectionCode2>\d{4}) ".*?"')
+moveCategoryRe=re.compile(r'\s*'+pn+r' Изложить наименование целевой статьи (?P<categoryCode1>\d{7}) ".*?" \(.*?\) в следующей редакции: ".*?" с изменением кода целевой статьи на (?P<categoryCode2>\d{7})')
+moveCategoryTypeRe=re.compile(r'\s*'+pn+r' Изложить наименование целевой статьи (?P<categoryCode1>\d{7}) ".*?" \(.*?\) в следующей редакции: ".*?" с изменением кода целевой статьи на (?P<categoryCode2>\d{7}) и с изменением(?: кода)? вида расходов (?P<typeCode1>\d{3}) ".*?" на (?P<typeCode2>\d{3}) ".*?"')
+moveTypeRe=re.compile(r'\s*'+pn+r' Код вида расходов (?P<typeCode1>\d{3}) ".*?" в целевой статье '+cc+r' ".*?" \(.*?\) изменить на (?P<typeCode2>\d{3}) ".*?"')
 
 for documentNumber in ('3765','3781'):
 	filename='assembly/'+documentNumber+'.odt'
@@ -100,6 +113,28 @@ for documentNumber in ('3765','3781'):
 					if tableWriteWatcher:
 						tableWriteWatcher.setParagraphNumber(m.group('paragraphNumber'))
 				# print('line:',line)
+				m=moveDepartmentRe.match(line)
+				if m:
+					print(moveDepartmentCodes[m.group('departmentName1')],'*',m.group('categoryCode'),'*')
+					print(moveDepartmentCodes[m.group('departmentName2')],'*',m.group('categoryCode'),'*')
+				m=moveSectionRe.match(line)
+				if m:
+					print('*',m.group('sectionCode1'),m.group('categoryCode'),'*')
+					print('*',m.group('sectionCode2'),m.group('categoryCode'),'*')
+				m=moveCategoryTypeRe.match(line)
+				if m:
+					# FIXME possibly wrong - may also need to match departments
+					print('*','*',m.group('categoryCode1'),m.group('typeCode1'))
+					print('*','*',m.group('categoryCode2'),m.group('typeCode2'))
+				else:
+					m=moveCategoryRe.match(line)
+					if m:
+						print('*','*',m.group('categoryCode1'),'*')
+						print('*','*',m.group('categoryCode2'),'*')
+				m=moveTypeRe.match(line)
+				if m:
+					print('*','*',m.group('categoryCode'),m.group('typeCode1'))
+					print('*','*',m.group('categoryCode'),m.group('typeCode2'))
 			# print('}')
 		elif type(obj) is ezodf.table.Table:
 			# print('table',obj.nrows(),'x',obj.ncols())
