@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 
-import itertools
 import decimal
-import collections
-import glob
+import itertools,collections
+import re,glob
 import csv
 
 class AbstractList:
@@ -89,11 +88,15 @@ class TypeList(AbstractList):
 		self.codeCol='typeCode'
 		self.nameCol='typeName'
 
-def listDocumentParagraphs(csvFilenamePrefix,csvFilenameSuffix):
-	return itertools.groupby(((numbers[0],'.'.join(str(n) for n in numbers[1:]),csvFilename) for numbers,csvFilename in sorted(
-		(tuple(
-			int(n) for n in csvFilename[len(csvFilenamePrefix):-len(csvFilenameSuffix)].split('.')
-		),csvFilename) for csvFilename in glob.glob(csvFilenamePrefix+'*'+csvFilenameSuffix)
+def listDocumentParagraphs(csvFilenameGlob):
+	r=re.compile(r'^.+[/\\]\d+\.\d\.[pz]\.(?P<number>\d[0-9.]+)\.(?P<table>[a-z]+)\.csv$')
+	def parse(csvFilename):
+		m=r.match(csvFilename)
+		if not m: raise Exception('invalid filename '+str(csvFilename))
+		sortKey=tuple(int(n) for n in m.group('number').split('.'))
+		return sortKey,m.group('table'),csvFilename
+	return itertools.groupby(((numbers[0],'.'.join(str(n) for n in numbers[1:]),table,csvFilename) for numbers,table,csvFilename in sorted(
+		parse(csvFilename) for csvFilename in glob.glob(csvFilenameGlob)
 	)), lambda t:t[0])
 
 documents=[
@@ -134,8 +137,8 @@ def makeTestOrder(cols,stricts):
 
 # scan section codes
 for csvFilenamePrefix in ('tables/2014.0.p.','tables/2014.0.z.'):
-	for documentNumber,paragraphs in listDocumentParagraphs(csvFilenamePrefix,'.section.csv'):
-		for documentNumber,paragraphNumber,csvFilename in paragraphs:
+	for documentNumber,paragraphs in listDocumentParagraphs(csvFilenamePrefix+'*.section.csv'):
+		for documentNumber,paragraphNumber,table,csvFilename in paragraphs:
 			testOrder=makeTestOrder(['superSectionCode','sectionCode','categoryCode','typeCode'],[True,True,True,True])
 			with open(csvFilename,encoding='utf8',newline='') as csvFile:
 				for row in csv.DictReader(csvFile):
@@ -152,8 +155,9 @@ for csvFilenamePrefix in ('tables/2014.0.p.','tables/2014.0.z.'):
 # read monetary data
 amendmentFlag=False
 editNumber=0
-for documentNumber,paragraphs in listDocumentParagraphs('tables/2014.0.p.','.department.csv'):
-	for documentNumber,paragraphNumber,csvFilename in paragraphs:
+for documentNumber,paragraphs in listDocumentParagraphs('tables/2014.0.p.*.csv'):
+	for documentNumber,paragraphNumber,table,csvFilename in paragraphs:
+		if table!='department': continue
 		editNumber+=1
 		edits.append({
 			'editNumber':editNumber,
@@ -194,8 +198,8 @@ for documentNumber,paragraphs in listDocumentParagraphs('tables/2014.0.p.','.dep
 
 # compare with the law
 # uniqueCheck=makeUniqueCheck()
-for documentNumber,paragraphs in listDocumentParagraphs('tables/2014.0.z.','.department.csv'):
-	for documentNumber,paragraphNumber,csvFilename in paragraphs:
+for documentNumber,paragraphs in listDocumentParagraphs('tables/2014.0.z.*.department.csv'):
+	for documentNumber,paragraphNumber,table,csvFilename in paragraphs:
 		testOrder=makeTestOrder(['departmentCode','sectionCode','categoryCode','typeCode'],[False,True,True,True])
 		with open(csvFilename,encoding='utf8',newline='') as csvFile:
 			for row in csv.DictReader(csvFile):
