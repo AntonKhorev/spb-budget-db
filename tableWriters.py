@@ -156,9 +156,9 @@ class SectionTableWriter(TableWriter):
 			'yAmount','ysAmount','yssAmount','yssccAmount','ysscctAmount',
 		]
 
-def writeMoveTable(outputFilename,s,t):
+def writeMoveTable(outputFilename,rows):
 	with open(outputFilename,'w',newline='',encoding='utf8') as file:
 		writer=csv.writer(file,quoting=csv.QUOTE_NONNUMERIC)
-		writer.writerow(['departmentCode','sectionCode','categoryCode','typeCode'])
-		writer.writerow(s)
-		writer.writerow(t)
+		writer.writerow(['departmentName','sectionCode','categoryCode','typeCode'])
+		for row in rows:
+			writer.writerow(row)

@@ -60,6 +60,7 @@ class TableWriteWatcher:
 
 pn=r'(?P<paragraphNumber>(?:\d+\.)+)'
 cc=r'(?P<categoryCode>\d{7})'
+dnms=r'\(.*?распорядител. - (?P<departmentNames>.*?)\)'
 # paragraphRe=re.compile(r'Пункт N '+pn)
 amendParagraphTextRe=re.compile(pn+r' В текстовую часть')
 amendParagraphAppendixRe=re.compile(pn+r' В приложение (?P<appendixNumber>\d+)')
@@ -68,14 +69,10 @@ subParagraphRe=re.compile(r'\s+(?P<paragraphNumber>(?:\d+\.){2,})')
 
 # regexes for move:
 moveDepartmentRe=re.compile(r'\s*'+pn+r' Главного распорядителя "(?P<departmentName1>.*?)" в целевой статье '+cc+r' ".*?" изменить на "(?P<departmentName2>.*?)"')
-moveDepartmentCodes={
-	'Комитет по промышленной политике и инновациям Санкт-Петербурга':870,
-	'Комитет по развитию предпринимательства и потребительского рынка Санкт-Петербурга':871,
-}
-moveSectionRe=re.compile(r'\s*'+pn+r' Подраздел (?P<sectionCode1>\d{4}) ".*?" в целевой статье '+cc+r' ".*?" \(.*?\) изменить на (?P<sectionCode2>\d{4}) ".*?"')
-moveCategoryRe=re.compile(r'\s*'+pn+r' Изложить наименование целевой статьи (?P<categoryCode1>\d{7}) ".*?" \(.*?\) в следующей редакции: ".*?" с изменением кода целевой статьи на (?P<categoryCode2>\d{7})')
-moveCategoryTypeRe=re.compile(r'\s*'+pn+r' Изложить наименование целевой статьи (?P<categoryCode1>\d{7}) ".*?" \(.*?\) в следующей редакции: ".*?" с изменением кода целевой статьи на (?P<categoryCode2>\d{7}) и с изменением(?: кода)? вида расходов (?P<typeCode1>\d{3}) ".*?" на (?P<typeCode2>\d{3}) ".*?"')
-moveTypeRe=re.compile(r'\s*'+pn+r' Код вида расходов (?P<typeCode1>\d{3}) ".*?" в целевой статье '+cc+r' ".*?" \(.*?\) изменить на (?P<typeCode2>\d{3}) ".*?"')
+moveSectionRe=re.compile(r'\s*'+pn+r' Подраздел (?P<sectionCode1>\d{4}) ".*?" в целевой статье '+cc+r' ".*?" '+dnms+r' изменить на (?P<sectionCode2>\d{4}) ".*?"')
+moveCategoryRe=re.compile(r'\s*'+pn+r' Изложить наименование целевой статьи (?P<categoryCode1>\d{7}) ".*?" '+dnms+r' в следующей редакции: ".*?" с изменением кода целевой статьи на (?P<categoryCode2>\d{7})')
+moveCategoryTypeRe=re.compile(r'\s*'+pn+r' Изложить наименование целевой статьи (?P<categoryCode1>\d{7}) ".*?" '+dnms+r' в следующей редакции: ".*?" с изменением кода целевой статьи на (?P<categoryCode2>\d{7}) и с изменением(?: кода)? вида расходов (?P<typeCode1>\d{3}) ".*?" на (?P<typeCode2>\d{3}) ".*?"')
+moveTypeRe=re.compile(r'\s*'+pn+r' Код вида расходов (?P<typeCode1>\d{3}) ".*?" в целевой статье '+cc+r' ".*?" '+dnms+r' изменить на (?P<typeCode2>\d{3}) ".*?"')
 
 for documentNumber in ('3765','3781'):
 	filename='assembly/'+documentNumber+'.odt'
@@ -115,38 +112,40 @@ for documentNumber in ('3765','3781'):
 				# print('line:',line)
 				def getMoveFilename(m):
 					return 'tables/2014.0.p.'+documentNumber+'.'+m.group('paragraphNumber')+'move.csv'
+				def listDepartmentMoves(m,s,t):
+					return ((d,p1,p2,p3) for d in m.group('departmentNames').split(', ') for p1,p2,p3 in (s,t))
 				m=moveDepartmentRe.match(line)
 				if m:
-					tableWriters.writeMoveTable(getMoveFilename(m),
-						(moveDepartmentCodes[m.group('departmentName1')],'*',m.group('categoryCode'),'*'),
-						(moveDepartmentCodes[m.group('departmentName2')],'*',m.group('categoryCode'),'*')
-					)
+					tableWriters.writeMoveTable(getMoveFilename(m),(
+						(m.group('departmentName1'),'*',m.group('categoryCode'),'*'),
+						(m.group('departmentName2'),'*',m.group('categoryCode'),'*')
+					))
 				m=moveSectionRe.match(line)
 				if m:
-					tableWriters.writeMoveTable(getMoveFilename(m),
-						('*',m.group('sectionCode1'),m.group('categoryCode'),'*'),
-						('*',m.group('sectionCode2'),m.group('categoryCode'),'*')
-					)
+					tableWriters.writeMoveTable(getMoveFilename(m),listDepartmentMoves(m,
+						(m.group('sectionCode1'),m.group('categoryCode'),'*'),
+						(m.group('sectionCode2'),m.group('categoryCode'),'*')
+					))
 				m=moveCategoryTypeRe.match(line)
 				if m:
 					# FIXME possibly wrong - may also need to match departments
-					tableWriters.writeMoveTable(getMoveFilename(m),
-						('*','*',m.group('categoryCode1'),m.group('typeCode1')),
-						('*','*',m.group('categoryCode2'),m.group('typeCode2'))
-					)
+					tableWriters.writeMoveTable(getMoveFilename(m),listDepartmentMoves(m,
+						('*',m.group('categoryCode1'),m.group('typeCode1')),
+						('*',m.group('categoryCode2'),m.group('typeCode2'))
+					))
 				else:
 					m=moveCategoryRe.match(line)
 					if m:
-						tableWriters.writeMoveTable(getMoveFilename(m),
-							('*','*',m.group('categoryCode1'),'*'),
-							('*','*',m.group('categoryCode2'),'*')
-						)
+						tableWriters.writeMoveTable(getMoveFilename(m),listDepartmentMoves(m,
+							('*',m.group('categoryCode1'),'*'),
+							('*',m.group('categoryCode2'),'*')
+						))
 				m=moveTypeRe.match(line)
 				if m:
-					tableWriters.writeMoveTable(getMoveFilename(m),
-						('*','*',m.group('categoryCode'),m.group('typeCode1')),
-						('*','*',m.group('categoryCode'),m.group('typeCode2'))
-					)
+					tableWriters.writeMoveTable(getMoveFilename(m),listDepartmentMoves(m,
+						('*',m.group('categoryCode'),m.group('typeCode1')),
+						('*',m.group('categoryCode'),m.group('typeCode2'))
+					))
 			# print('}')
 		elif type(obj) is ezodf.table.Table:
 			# print('table',obj.nrows(),'x',obj.ncols())
