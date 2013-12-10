@@ -111,7 +111,43 @@ sections=SectionList()
 categories=CategoryList()
 types=TypeList()
 items=[]
-itemSums=collections.defaultdict(decimal.Decimal) # key=year,departmentCode,sectionCode,categoryCode,typeCode
+
+class ItemSums(collections.defaultdict):
+	def __init__(self):
+		super().__init__(decimal.Decimal) # key=year,departmentCode,sectionCode,categoryCode,typeCode
+	def keyToDict(self,k):
+		return dict(zip(('year','departmentCode','sectionCode','categoryCode','typeCode'),k))
+	def keyToTuple(self,row):
+		return tuple(row[k] for k in ('year','departmentCode','sectionCode','categoryCode','typeCode'))
+	def add(self,row):
+		self[self.keyToTuple(row)]-=decimal.Decimal(row['ydsscctAmount']) # subtract this, then add amount stated in the law
+	def fix(self,row):
+		itemSums[self.keyToTuple(row)]+=decimal.Decimal(row['ydsscctAmount'])
+	def makeMoveItems(self,s,t):
+		moves=[]
+		for k,v in self.items():
+			kd1=self.keyToDict(k)
+			kd2=dict(kd1)
+			for col in s:
+				if s[col]=='*':
+					pass
+				elif s[col]==kd1[col]:
+					kd2[col]=t[col]
+				else:
+					break
+			else:
+				moves.append((kd1,kd2))
+		for kd1,kd2 in moves:
+			k1=self.keyToTuple(kd1)
+			k2=self.keyToTuple(kd2)
+			amount=self[k1]
+			del self[k1]
+			self[k2]=amount
+			kd1['ydsscctAmount']=amount
+			kd2['ydsscctAmount']=-amount
+			yield kd1
+			yield kd2
+itemSums=ItemSums()
 
 def makeTestOrder(cols,stricts):
 	prevs=[None]*len(cols)
@@ -157,35 +193,40 @@ amendmentFlag=False
 editNumber=0
 for documentNumber,paragraphs in listDocumentParagraphs('tables/2014.0.p.*.csv'):
 	for documentNumber,paragraphNumber,table,csvFilename in paragraphs:
-		if table!='department': continue
+		if table not in ('department','move'): continue
 		editNumber+=1
 		edits.append({
 			'editNumber':editNumber,
 			'documentNumber':documentNumber,
 			'paragraphNumber':paragraphNumber,
 		})
-		if not amendmentFlag:
-			testOrder=makeTestOrder(['departmentCode','sectionCode','categoryCode','typeCode'],[False,True,True,True])
-		with open(csvFilename,encoding='utf8',newline='') as csvFile:
-			for row in csv.DictReader(csvFile):
-				if not amendmentFlag:
-					resets=testOrder(row)
-					if 'departmentCode' in resets:
-						departments.resetSequence()
-				if row['departmentCode']:
-					if amendmentFlag:
-						departments.resetSequence() # ignore order
-					departments.add(row)
-				if row['categoryCode']:
-					categories.add(row)
-				if row['typeCode']:
-					types.add(row)
-					if row['ydsscctAmount']!='0.0':
-						row['editNumber']=editNumber
-						items.append(row)
-						itemSums[tuple(
-							row[k] for k in ('year','departmentCode','sectionCode','categoryCode','typeCode')
-						)]-=decimal.Decimal(row['ydsscctAmount']) # subtract this, then add amount stated in the law
+		if table=='department':
+			if not amendmentFlag:
+				testOrder=makeTestOrder(['departmentCode','sectionCode','categoryCode','typeCode'],[False,True,True,True])
+			with open(csvFilename,encoding='utf8',newline='') as csvFile:
+				for row in csv.DictReader(csvFile):
+					if not amendmentFlag:
+						resets=testOrder(row)
+						if 'departmentCode' in resets:
+							departments.resetSequence()
+					if row['departmentCode']:
+						if amendmentFlag:
+							departments.resetSequence() # ignore order
+						departments.add(row)
+					if row['categoryCode']:
+						categories.add(row)
+					if row['typeCode']:
+						types.add(row)
+						if row['ydsscctAmount']!='0.0':
+							row['editNumber']=editNumber
+							items.append(row)
+							itemSums.add(row)
+		elif table=='move':
+			with open(csvFilename,encoding='utf8',newline='') as csvFile:
+				s,t=tuple(csv.DictReader(csvFile))
+				for row in itemSums.makeMoveItems(s,t):
+					row['editNumber']=editNumber
+					items.append(row)
 	amendmentFlag=True
 
 # def makeUniqueCheck():
@@ -213,9 +254,7 @@ for documentNumber,paragraphs in listDocumentParagraphs('tables/2014.0.z.*.depar
 				if row['typeCode']:
 					types.add(row)
 					if row['ydsscctAmount']!='0.0':
-						itemSums[tuple(
-							row[k] for k in ('year','departmentCode','sectionCode','categoryCode','typeCode')
-						)]+=decimal.Decimal(row['ydsscctAmount'])
+						itemSums.fix(row)
 					# uniqueCheck(row['categoryCode'],row['sectionCode'])
 for key in sorted(itemSums):
 	if itemSums[key]:
@@ -318,6 +357,7 @@ for row in types.getOrderedRows():
 	)
 
 def amount(amount):
+	amount=str(amount)
 	if amount[-2]!='.':
 		raise Exception('invalid amount '+amount)
 	return str(int(amount[:-2]+amount[-1]+'00'))
