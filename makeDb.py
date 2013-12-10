@@ -23,6 +23,11 @@ class AbstractList:
 	def getOrderedRows(self):
 		for code,name in sorted(self.names.items()):
 			yield {self.codeCol:code,self.nameCol:name}
+	def getCodeForName(self,name):
+		for c,n in self.names.items():
+			if n.lower()==name.lower():
+				return c
+		raise Exception('unknown name: '+name)
 
 class DepartmentList(AbstractList):
 	def __init__(self):
@@ -223,10 +228,15 @@ for documentNumber,paragraphs in listDocumentParagraphs('tables/2014.0.p.*.csv')
 							itemSums.add(row)
 		elif table=='move':
 			with open(csvFilename,encoding='utf8',newline='') as csvFile:
-				s,t=tuple(csv.DictReader(csvFile))
-				for row in itemSums.makeMoveItems(s,t):
-					row['editNumber']=editNumber
-					items.append(row)
+				reader=csv.DictReader(csvFile)
+				for s,t in zip(reader,reader):
+					s['departmentCode']=departments.getCodeForName(s['departmentName'])
+					del s['departmentName']
+					t['departmentCode']=departments.getCodeForName(t['departmentName'])
+					del t['departmentName']
+					for row in itemSums.makeMoveItems(s,t):
+						row['editNumber']=editNumber
+						items.append(row)
 	amendmentFlag=True
 
 # def makeUniqueCheck():
