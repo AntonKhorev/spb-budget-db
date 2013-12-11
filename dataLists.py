@@ -115,7 +115,7 @@ class ItemList:
 		kt=self.rowKey(t)
 		moves=[]
 		for k1 in self.items:
-			k2=tuple(k1)
+			k2=list(k1)
 			for i in range(len(ks)):
 				if ks[i]=='*':
 					pass
@@ -124,6 +124,7 @@ class ItemList:
 				else:
 					break
 			else:
+				k2=tuple(k2)
 				moves.append((k1,k2))
 		for k1,k2 in moves:
 			v=self.keySum(k1)
