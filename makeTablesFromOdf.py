@@ -71,7 +71,7 @@ subParagraphRe=re.compile(r'\s+(?P<paragraphNumber>(?:\d+\.){2,})')
 moveDepartmentRe=re.compile(r'\s*'+pn+r' Главного распорядителя "(?P<departmentName1>.*?)" в целевой статье '+cc+r' ".*?" изменить на "(?P<departmentName2>.*?)"')
 moveSectionRe=re.compile(r'\s*'+pn+r' Подраздел (?P<sectionCode1>\d{4}) ".*?" в целевой статье '+cc+r' ".*?" '+dnms+r' изменить на (?P<sectionCode2>\d{4}) ".*?"')
 moveCategoryRe=re.compile(r'\s*'+pn+r' Изложить наименование целевой статьи (?P<categoryCode1>\d{7}) ".*?" '+dnms+r' в следующей редакции: ".*?" с изменением кода целевой статьи на (?P<categoryCode2>\d{7})')
-moveCategoryTypeRe=re.compile(r'\s*'+pn+r' Изложить наименование целевой статьи (?P<categoryCode1>\d{7}) ".*?" '+dnms+r' в следующей редакции: ".*?" с изменением кода целевой статьи на (?P<categoryCode2>\d{7}) и с изменением(?: кода)? вида расходов (?P<typeCode1>\d{3}) ".*?" на (?P<typeCode2>\d{3}) ".*?"')
+moveCategoryTypeRe=re.compile(r'\s*'+pn+r' Изложить наименование целевой статьи (?P<categoryCode1>\d{7}) ".*?" '+dnms+r' в следующей редакции: ".*?" с изменением кода целевой статьи на (?P<categoryCode2>\d{7}) и с изменением(?: кода)? вида расходов (?P<typeCode1>\d{3}) ".*?" на (?P<typeCode2>\d{3}) ".*?" по (?P<departmentNamesForType>.*?)\.')
 moveTypeRe=re.compile(r'\s*'+pn+r' Код вида расходов (?P<typeCode1>\d{3}) ".*?" в целевой статье '+cc+r' ".*?" '+dnms+r' изменить на (?P<typeCode2>\d{3}) ".*?"')
 
 for documentNumber in ('3765','3781'):
@@ -112,8 +112,10 @@ for documentNumber in ('3765','3781'):
 				# print('line:',line)
 				def getMoveFilename(m):
 					return 'tables/2014.0.p.'+documentNumber+'.'+m.group('paragraphNumber')+'move.csv'
-				def listDepartmentMoves(m,s,t):
-					return ((d,p1,p2,p3) for d in m.group('departmentNames').split(', ') for p1,p2,p3 in (s,t))
+				def listDepartmentMoves(m,s,t,deptGroupName='departmentNames'):
+					def processName(d):
+						return d.replace('Администрации','Администрация')
+					return ((processName(d),p1,p2,p3) for d in m.group(deptGroupName).split(', ') for p1,p2,p3 in (s,t))
 				m=moveDepartmentRe.match(line)
 				if m:
 					tableWriters.writeMoveTable(getMoveFilename(m),(
@@ -128,11 +130,14 @@ for documentNumber in ('3765','3781'):
 					))
 				m=moveCategoryTypeRe.match(line)
 				if m:
-					# FIXME possibly wrong - may also need to match departments
-					tableWriters.writeMoveTable(getMoveFilename(m),listDepartmentMoves(m,
-						('*',m.group('categoryCode1'),m.group('typeCode1')),
-						('*',m.group('categoryCode2'),m.group('typeCode2'))
-					))
+					tableWriters.writeMoveTable(getMoveFilename(m),list(listDepartmentMoves(m,
+						('*',m.group('categoryCode1'),'*'),
+						('*',m.group('categoryCode2'),'*')
+					))+list(listDepartmentMoves(m,
+						('*',m.group('categoryCode2'),m.group('typeCode1')),
+						('*',m.group('categoryCode2'),m.group('typeCode2')),
+						'departmentNamesForType'
+					)))
 				else:
 					m=moveCategoryRe.match(line)
 					if m:
