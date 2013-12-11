@@ -106,10 +106,30 @@ class ItemList:
 		return self.keySum(self.rowKey(row))
 	def add(self,row,editNumber):
 		self.items[self.rowKey(row)][editNumber]+=self.rowValue(row)
-	def needFix(self,row):
-		return self.rowSum(row)!=self.rowValue(row)
-	def fix(self,row,editNumber):
-		self.items[self.rowKey(row)][editNumber]+=self.rowValue(row)-self.rowSum(row)
+	def makeFixer(self,editNumberCallback):
+		class Fixer:
+			def __init__(self,itemList):
+				self.itemList=itemList
+			def __enter__(self):
+				self.editNumber=None
+				self.residuals=collections.defaultdict(decimal.Decimal)
+				for k in self.itemList.items:
+					self.residuals[k]=self.itemList.keySum(k)
+				return self
+			def fix(self,row):
+				k=self.itemList.rowKey(row)
+				if self.editNumber is None and self.residuals[k]!=self.itemList.rowValue(row):
+					self.editNumber=editNumberCallback()
+				if self.editNumber is not None:
+					self.itemList.items[k][self.editNumber]+=self.itemList.rowValue(row)-self.residuals[k]
+				del self.residuals[k]
+			def __exit__(self,exc_type,exc_value,traceback):
+				for k,v in self.residuals.items():
+					if self.editNumber is None and v:
+						self.editNumber=editNumberCallback()
+					if self.editNumber is not None:
+						self.itemList.items[k][self.editNumber]-=v
+		return Fixer(self)
 	def move(self,s,t,editNumber):
 		ks=self.rowKey(s)
 		kt=self.rowKey(t)

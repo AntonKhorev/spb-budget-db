@@ -124,30 +124,31 @@ for documentNumber,paragraphs in listDocumentParagraphs('tables/2014.0.p.*.csv')
 
 # compare with the law
 # uniqueCheck=makeUniqueCheck()
-fixed=False
-for documentNumber,paragraphs in listDocumentParagraphs('tables/2014.0.z.*.department.csv'):
-	for documentNumber,paragraphNumber,table,csvFilename in paragraphs:
-		testOrder=makeTestOrder(['departmentCode','sectionCode','categoryCode','typeCode'],[False,True,True,True])
-		for row in readCsv(csvFilename):
-			resets=testOrder(row)
-			if 'departmentCode' in resets:
-				departments.resetSequence()
-			if row['departmentCode']:
-				departments.add(row)
-			if row['categoryCode']:
-				categories.add(row)
-			if row['typeCode']:
-				types.add(row)
-				if not fixed and items.needFix(row):
-					fixed=True
-					editNumber+=1
-					edits.append({
-						'editNumber':editNumber,
-						'documentNumber':None,
-						'paragraphNumber':None,
-					})
-				items.fix(row,editNumber)
-				# uniqueCheck(row['categoryCode'],row['sectionCode'])
+def editNumberCallback():
+	global editNumber
+	editNumber+=1
+	edits.append({
+		'editNumber':editNumber,
+		'documentNumber':None,
+		'paragraphNumber':None,
+	})
+	return editNumber
+with items.makeFixer(editNumberCallback) as fixer:
+	for documentNumber,paragraphs in listDocumentParagraphs('tables/2014.0.z.*.department.csv'):
+		for documentNumber,paragraphNumber,table,csvFilename in paragraphs:
+			testOrder=makeTestOrder(['departmentCode','sectionCode','categoryCode','typeCode'],[False,True,True,True])
+			for row in readCsv(csvFilename):
+				resets=testOrder(row)
+				if 'departmentCode' in resets:
+					departments.resetSequence()
+				if row['departmentCode']:
+					departments.add(row)
+				if row['categoryCode']:
+					categories.add(row)
+				if row['typeCode']:
+					types.add(row)
+					fixer.fix(row)
+					# uniqueCheck(row['categoryCode'],row['sectionCode'])
 
 ### write sql ###
 
