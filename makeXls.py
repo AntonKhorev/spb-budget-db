@@ -342,6 +342,35 @@ with sqlite3.connect(':memory:') as conn:
 			'out/amendment'+documentNumber+'-2014-16.xlsx'
 		)
 
+	# unknown amendments
+	table=LevelTable(
+		[
+			['departmentCode'],
+			['sectionCode','categoryCode'],
+			['typeCode'],
+		],[
+			'departmentName',
+			'categoryName',
+			'typeName',
+		],
+		[2014,2015,2016],
+		conn.execute("""
+			SELECT departmentName,categoryName,typeName,departmentCode,sectionCode,categoryCode,typeCode,year, SUM(amount) AS amount
+			FROM items
+			JOIN departments USING(departmentCode)
+			JOIN categories USING(categoryCode)
+			JOIN types USING(typeCode)
+			JOIN edits USING(editNumber)
+			WHERE documentNumber IS NULL
+			GROUP BY departmentName,categoryName,typeName,departmentCode,sectionCode,categoryCode,typeCode,year
+			ORDER BY departmentOrder,sectionCode,categoryCode,typeCode,year
+		""")
+	)
+	table.makeXlsx(
+		"Неизвестные поправки к Закону Санкт-Петербурга «О бюджете Санкт-Петербурга на 2014 год и на плановый период 2015 и 2016 годов»",
+		'out/amendmentUnk-2014-16.xlsx'
+	)
+
 	# experimental project+amendments table
 	fakeYears=[]
 	for row in conn.execute("""
