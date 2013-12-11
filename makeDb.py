@@ -27,8 +27,7 @@ superSections=dataLists.SuperSectionList()
 sections=dataLists.SectionList()
 categories=dataLists.CategoryList()
 types=dataLists.TypeList()
-items=[]
-itemSums=dataLists.ItemSums()
+items=dataLists.ItemList()
 
 def makeTestOrder(cols,stricts):
 	prevs=[None]*len(cols)
@@ -98,10 +97,7 @@ for documentNumber,paragraphs in listDocumentParagraphs('tables/2014.0.p.*.csv')
 						categories.add(row)
 					if row['typeCode']:
 						types.add(row)
-						if row['ydsscctAmount']!='0.0':
-							row['editNumber']=editNumber
-							items.append(row)
-							itemSums.add(row)
+						items.add(row,editNumber)
 		elif table=='move':
 			with open(csvFilename,encoding='utf8',newline='') as csvFile:
 				reader=csv.DictReader(csvFile)
@@ -110,9 +106,7 @@ for documentNumber,paragraphs in listDocumentParagraphs('tables/2014.0.p.*.csv')
 					del s['departmentName']
 					t['departmentCode']=departments.getCodeForName(t['departmentName'])
 					del t['departmentName']
-					for row in itemSums.makeMoveItems(s,t):
-						row['editNumber']=editNumber
-						items.append(row)
+					items.move(s,t,editNumber)
 	amendmentFlag=True
 
 # def makeUniqueCheck():
@@ -125,6 +119,7 @@ for documentNumber,paragraphs in listDocumentParagraphs('tables/2014.0.p.*.csv')
 
 # compare with the law
 # uniqueCheck=makeUniqueCheck()
+fixed=False
 for documentNumber,paragraphs in listDocumentParagraphs('tables/2014.0.z.*.department.csv'):
 	for documentNumber,paragraphNumber,table,csvFilename in paragraphs:
 		testOrder=makeTestOrder(['departmentCode','sectionCode','categoryCode','typeCode'],[False,True,True,True])
@@ -139,12 +134,16 @@ for documentNumber,paragraphs in listDocumentParagraphs('tables/2014.0.z.*.depar
 					categories.add(row)
 				if row['typeCode']:
 					types.add(row)
-					if row['ydsscctAmount']!='0.0':
-						itemSums.fix(row)
+					if not fixed and items.needFix(row):
+						fixed=True
+						editNumber+=1
+						edits.append({
+							'editNumber':editNumber,
+							'documentNumber':None,
+							'paragraphNumber':None,
+						})
+					items.fix(row,editNumber)
 					# uniqueCheck(row['categoryCode'],row['sectionCode'])
-for key in sorted(itemSums):
-	if itemSums[key]:
-		print('* unknown amendment:',key,itemSums[key])
 
 ### write sql ###
 
@@ -264,7 +263,7 @@ CREATE TABLE items(
 	FOREIGN KEY (typeCode) REFERENCES types(typeCode)
 );
 """); # amount DECIMAL(10,1) - but sqlite doesn't support decimal
-for row in sorted(items,key=lambda r: (int(r['editNumber']),r['year'],r['departmentCode'],r['sectionCode'],r['categoryCode'],r['typeCode'])):
+for row in items.getOrderedRows():
 	sql.write(
 		"INSERT INTO items(editNumber,year,departmentCode,sectionCode,categoryCode,typeCode,amount) VALUES ("+
 		str(row['editNumber'])+","+row['year']+",'"+row['departmentCode']+"','"+row['sectionCode']+"','"+row['categoryCode']+"','"+row['typeCode']+"',"+amount(row['ydsscctAmount'])+

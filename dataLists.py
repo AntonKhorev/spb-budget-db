@@ -89,38 +89,49 @@ class TypeList(AbstractList):
 		self.codeCol='typeCode'
 		self.nameCol='typeName'
 
-class ItemSums(collections.defaultdict):
+class ItemList:
+	keyCols=('year','departmentCode','sectionCode','categoryCode','typeCode')
 	def __init__(self):
-		super().__init__(decimal.Decimal) # key=year,departmentCode,sectionCode,categoryCode,typeCode
-	def keyToDict(self,k):
-		return dict(zip(('year','departmentCode','sectionCode','categoryCode','typeCode'),k))
-	def keyToTuple(self,row):
-		return tuple(row[k] for k in ('year','departmentCode','sectionCode','categoryCode','typeCode'))
-	def add(self,row):
-		self[self.keyToTuple(row)]-=decimal.Decimal(row['ydsscctAmount']) # subtract this, then add amount stated in the law
-	def fix(self,row):
-		self[self.keyToTuple(row)]+=decimal.Decimal(row['ydsscctAmount'])
-	def makeMoveItems(self,s,t):
+		# (year,departmentCode,sectionCode,categoryCode,typeCode) -> editNumber)-> decimal amount
+		self.items=collections.defaultdict(lambda: collections.defaultdict(decimal.Decimal))
+		# TODO save running sum to make it faster
+		# TODO clean up zeros to make it faster
+	def rowKey(self,row):
+		return tuple(row[k] for k in self.keyCols)
+	def rowValue(self,row):
+		return decimal.Decimal(row['ydsscctAmount'])
+	def keySum(self,k):
+		return sum(self.items[k].values())
+	def rowSum(self,row):
+		return self.keySum(self.rowKey(row))
+	def add(self,row,editNumber):
+		self.items[self.rowKey(row)][editNumber]+=self.rowValue(row)
+	def needFix(self,row):
+		return self.rowSum(row)!=self.rowValue(row)
+	def fix(self,row,editNumber):
+		self.items[self.rowKey(row)][editNumber]+=self.rowValue(row)-self.rowSum(row)
+	def move(self,s,t,editNumber):
+		ks=self.rowKey(s)
+		kt=self.rowKey(t)
 		moves=[]
-		for k,v in self.items():
-			kd1=self.keyToDict(k)
-			kd2=dict(kd1)
-			for col in s:
-				if s[col]=='*':
+		for k1 in self.items:
+			k2=tuple(k1)
+			for i in range(len(ks)):
+				if ks[i]=='*':
 					pass
-				elif s[col]==kd1[col]:
-					kd2[col]=t[col]
+				elif ks[i]==k1[i]:
+					k2[i]=kt[i]
 				else:
 					break
 			else:
-				moves.append((kd1,kd2))
-		for kd1,kd2 in moves:
-			k1=self.keyToTuple(kd1)
-			k2=self.keyToTuple(kd2)
-			amount=self[k1]
-			del self[k1]
-			self[k2]=amount
-			kd1['ydsscctAmount']=amount
-			kd2['ydsscctAmount']=-amount
-			yield kd1
-			yield kd2
+				moves.append((k1,k2))
+		for k1,k2 in moves:
+			v=self.keySum(k1)
+			self.items[k1][editNumber]-=v
+			self.items[k2][editNumber]+=v
+	def getOrderedRows(self):
+		for k in sorted(self.items):
+			for e in sorted(self.items[k]):
+				v=self.items[k][e]
+				if v:
+					yield dict(tuple(zip(self.keyCols,k))+(('editNumber',e),('ydsscctAmount',v)))
