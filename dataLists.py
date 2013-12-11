@@ -135,4 +135,4 @@ class ItemList:
 			for e in sorted(self.items[k]):
 				v=self.items[k][e]
 				if v:
-					yield dict(tuple(zip(self.keyCols,k))+(('editNumber',e),('ydsscctAmount',v)))
+					yield dict(tuple(zip(self.keyCols,k))+(('editNumber',e),('amount',v)))

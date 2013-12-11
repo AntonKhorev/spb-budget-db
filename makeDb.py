@@ -4,6 +4,7 @@ import itertools
 import re,glob
 import csv
 import dataLists
+import decimal
 
 def listDocumentParagraphs(csvFilenameGlob):
 	r=re.compile(r'^.+[/\\]\d+\.\d\.[pz]\.(?P<number>\d[0-9.]+)\.(?P<table>[a-z]+)\.csv$')
@@ -150,6 +151,25 @@ for documentNumber,paragraphs in listDocumentParagraphs('tables/2014.0.z.*.depar
 sql=open('db/pr-bd-2014-16.sql','w',encoding='utf8')
 sql.write("-- проект бюджета Санкт-Петербурга на 2014-2016 гг.\n")
 
+def putValue(v):
+	if type(v) is str:
+		return "'"+v+"'"
+	elif type(v) is int:
+		return str(v)
+	elif type(v) is decimal.Decimal:
+		return str(int(v*1000))
+	elif type(v) is bool:
+		return str(int(v))
+	elif v is None:
+		return 'NULL'
+	else:
+		raise Exception('invalid type')
+def putRowValues(row,cols):
+	return ','.join(putValue(row[col]) for col in cols)
+def writeTable(name,rows,cols):
+	for row in rows:
+		sql.write("INSERT INTO "+name+"("+','.join(cols)+") VALUES ("+putRowValues(row,cols)+");\n")
+
 sql.write("""
 CREATE TABLE documents(
 	documentNumber INT PRIMARY KEY,
@@ -158,11 +178,7 @@ CREATE TABLE documents(
 	amendmentFlag INT(1)
 );
 """);
-for row in documents:
-	sql.write(
-		"INSERT INTO documents(documentNumber,documentDate,governorFlag,amendmentFlag) VALUES ("+
-		str(row['documentNumber'])+",'"+row['documentDate']+"',"+str(int(row['governorFlag']))+","+str(int(row['amendmentFlag']))+");\n"
-	)
+writeTable('documents',documents,('documentNumber','documentDate','governorFlag','amendmentFlag'))
 
 sql.write("""
 CREATE TABLE edits(
@@ -172,11 +188,7 @@ CREATE TABLE edits(
 	FOREIGN KEY (documentNumber) REFERENCES documents(documentNumber)
 );
 """);
-for row in edits:
-	sql.write(
-		"INSERT INTO edits(editNumber,documentNumber,paragraphNumber) VALUES ("+
-		str(row['editNumber'])+","+str(row['documentNumber'])+",'"+row['paragraphNumber']+"');\n"
-	)
+writeTable('edits',edits,('editNumber','documentNumber','paragraphNumber'))
 
 sql.write("""
 CREATE TABLE departments(
@@ -185,11 +197,7 @@ CREATE TABLE departments(
 	departmentOrder INT
 );
 """)
-for row in departments.getOrderedRows():
-	sql.write(
-		"INSERT INTO departments(departmentCode,departmentName,departmentOrder) VALUES ('"+
-		row['departmentCode']+"','"+row['departmentName']+"',"+str(row['departmentOrder'])+");\n"
-	)
+writeTable('departments',departments.getOrderedRows(),('departmentCode','departmentName','departmentOrder'))
 
 sql.write("""
 CREATE TABLE superSections(
@@ -197,11 +205,7 @@ CREATE TABLE superSections(
 	superSectionName TEXT
 );
 """)
-for row in superSections.getOrderedRows():
-	sql.write(
-		"INSERT INTO superSections(superSectionCode,superSectionName) VALUES ('"+
-		row['superSectionCode']+"','"+row['superSectionName']+"');\n"
-	)
+writeTable('superSections',superSections.getOrderedRows(),('superSectionCode','superSectionName'))
 
 sql.write("""
 CREATE TABLE sections(
@@ -211,11 +215,7 @@ CREATE TABLE sections(
 	FOREIGN KEY (superSectionCode) REFERENCES superSections(superSectionCode)
 );
 """)
-for row in sections.getOrderedRows():
-	sql.write(
-		"INSERT INTO sections(sectionCode,superSectionCode,sectionName) VALUES ('"+
-		row['sectionCode']+"','"+row['superSectionCode']+"','"+row['sectionName']+"');\n"
-	)
+writeTable('sections',sections.getOrderedRows(),('sectionCode','superSectionCode','sectionName'))
 
 sql.write("""
 CREATE TABLE categories(
@@ -223,11 +223,7 @@ CREATE TABLE categories(
 	categoryName TEXT
 );
 """)
-for row in categories.getOrderedRows():
-	sql.write(
-		"INSERT INTO categories(categoryCode,categoryName) VALUES ('"+
-		row['categoryCode']+"','"+row['categoryName']+"');\n"
-	)
+writeTable('categories',categories.getOrderedRows(),('categoryCode','categoryName'))
 
 sql.write("""
 CREATE TABLE types(
@@ -235,17 +231,8 @@ CREATE TABLE types(
 	typeName TEXT
 );
 """)
-for row in types.getOrderedRows():
-	sql.write(
-		"INSERT INTO types(typeCode,typeName) VALUES ('"+
-		row['typeCode']+"','"+row['typeName']+"');\n"
-	)
+writeTable('types',types.getOrderedRows(),('typeCode','typeName'))
 
-def amount(amount):
-	amount=str(amount)
-	if amount[-2]!='.':
-		raise Exception('invalid amount '+amount)
-	return str(int(amount[:-2]+amount[-1]+'00'))
 sql.write("""
 CREATE TABLE items(
 	editNumber INT,
@@ -263,9 +250,4 @@ CREATE TABLE items(
 	FOREIGN KEY (typeCode) REFERENCES types(typeCode)
 );
 """); # amount DECIMAL(10,1) - but sqlite doesn't support decimal
-for row in items.getOrderedRows():
-	sql.write(
-		"INSERT INTO items(editNumber,year,departmentCode,sectionCode,categoryCode,typeCode,amount) VALUES ("+
-		str(row['editNumber'])+","+row['year']+",'"+row['departmentCode']+"','"+row['sectionCode']+"','"+row['categoryCode']+"','"+row['typeCode']+"',"+amount(row['ydsscctAmount'])+
-		");\n"
-	)
+writeTable('items',items.getOrderedRows(),('editNumber','year','departmentCode','sectionCode','categoryCode','typeCode','amount'))
