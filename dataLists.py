@@ -1,3 +1,4 @@
+import decimal
 import collections
 
 class AbstractList:
@@ -87,3 +88,39 @@ class TypeList(AbstractList):
 		super().__init__()
 		self.codeCol='typeCode'
 		self.nameCol='typeName'
+
+class ItemSums(collections.defaultdict):
+	def __init__(self):
+		super().__init__(decimal.Decimal) # key=year,departmentCode,sectionCode,categoryCode,typeCode
+	def keyToDict(self,k):
+		return dict(zip(('year','departmentCode','sectionCode','categoryCode','typeCode'),k))
+	def keyToTuple(self,row):
+		return tuple(row[k] for k in ('year','departmentCode','sectionCode','categoryCode','typeCode'))
+	def add(self,row):
+		self[self.keyToTuple(row)]-=decimal.Decimal(row['ydsscctAmount']) # subtract this, then add amount stated in the law
+	def fix(self,row):
+		self[self.keyToTuple(row)]+=decimal.Decimal(row['ydsscctAmount'])
+	def makeMoveItems(self,s,t):
+		moves=[]
+		for k,v in self.items():
+			kd1=self.keyToDict(k)
+			kd2=dict(kd1)
+			for col in s:
+				if s[col]=='*':
+					pass
+				elif s[col]==kd1[col]:
+					kd2[col]=t[col]
+				else:
+					break
+			else:
+				moves.append((kd1,kd2))
+		for kd1,kd2 in moves:
+			k1=self.keyToTuple(kd1)
+			k2=self.keyToTuple(kd2)
+			amount=self[k1]
+			del self[k1]
+			self[k2]=amount
+			kd1['ydsscctAmount']=amount
+			kd2['ydsscctAmount']=-amount
+			yield kd1
+			yield kd2
