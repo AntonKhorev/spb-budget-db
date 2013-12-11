@@ -26,7 +26,14 @@ def makeTableReaderFromOdfTable(table):
 			if sc2:
 				sc2=sc2.zfill(2)
 			sectionCode=sc1+sc2
-			keys=(row[0].value.strip(),row[1].value.strip(),sectionCode,categoryCode,row[5].value.strip())
+			name=row[1].value.strip()
+			typeCode=row[5].value.strip()
+			if typeCode=='00': # quirk in 3781.2.11.14.1
+				if name=='Предоставление субсидий бюджетным, автономным учреждениям и иным некоммерческим организациям':
+					typeCode='600'
+				else:
+					raise Exception('unknown quirk')
+			keys=(row[0].value.strip(),name,sectionCode,categoryCode,typeCode)
 			def makeAmount(cell):
 				amount=cell.value.strip()
 				if '.' not in amount:
