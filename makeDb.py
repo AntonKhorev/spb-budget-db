@@ -52,22 +52,28 @@ def makeTestOrder(cols,stricts):
 		return resets
 	return testOrder
 
+def readCsv(csvFilename):
+	with open(csvFilename,encoding='utf8',newline='') as csvFile:
+		for row in csv.DictReader(csvFile):
+			if 'year' in row:
+				row['year']=int(row['year'])
+			yield row
+
 # scan section codes
 for csvFilenamePrefix in ('tables/2014.0.p.','tables/2014.0.z.'):
 	for documentNumber,paragraphs in listDocumentParagraphs(csvFilenamePrefix+'*.section.csv'):
 		for documentNumber,paragraphNumber,table,csvFilename in paragraphs:
 			testOrder=makeTestOrder(['superSectionCode','sectionCode','categoryCode','typeCode'],[True,True,True,True])
-			with open(csvFilename,encoding='utf8',newline='') as csvFile:
-				for row in csv.DictReader(csvFile):
-					resets=testOrder(row)
-					if row['superSectionCode']:
-						superSections.add(row)
-					if row['sectionCode']:
-						sections.add(row)
-					if row['categoryCode']:
-						categories.add(row)
-					if row['typeCode']:
-						types.add(row)
+			for row in readCsv(csvFilename):
+				resets=testOrder(row)
+				if row['superSectionCode']:
+					superSections.add(row)
+				if row['sectionCode']:
+					sections.add(row)
+				if row['categoryCode']:
+					categories.add(row)
+				if row['typeCode']:
+					types.add(row)
 
 # read monetary data
 amendmentFlag=False
@@ -84,30 +90,28 @@ for documentNumber,paragraphs in listDocumentParagraphs('tables/2014.0.p.*.csv')
 		if table=='department':
 			if not amendmentFlag:
 				testOrder=makeTestOrder(['departmentCode','sectionCode','categoryCode','typeCode'],[False,True,True,True])
-			with open(csvFilename,encoding='utf8',newline='') as csvFile:
-				for row in csv.DictReader(csvFile):
-					if not amendmentFlag:
-						resets=testOrder(row)
-						if 'departmentCode' in resets:
-							departments.resetSequence()
-					if row['departmentCode']:
-						if amendmentFlag:
-							departments.resetSequence() # ignore order
-						departments.add(row)
-					if row['categoryCode']:
-						categories.add(row)
-					if row['typeCode']:
-						types.add(row)
-						items.add(row,editNumber)
+			for row in readCsv(csvFilename):
+				if not amendmentFlag:
+					resets=testOrder(row)
+					if 'departmentCode' in resets:
+						departments.resetSequence()
+				if row['departmentCode']:
+					if amendmentFlag:
+						departments.resetSequence() # ignore order
+					departments.add(row)
+				if row['categoryCode']:
+					categories.add(row)
+				if row['typeCode']:
+					types.add(row)
+					items.add(row,editNumber)
 		elif table=='move':
-			with open(csvFilename,encoding='utf8',newline='') as csvFile:
-				reader=csv.DictReader(csvFile)
-				for s,t in zip(reader,reader):
-					s['departmentCode']=departments.getCodeForName(s['departmentName'])
-					del s['departmentName']
-					t['departmentCode']=departments.getCodeForName(t['departmentName'])
-					del t['departmentName']
-					items.move(s,t,editNumber)
+			reader=readCsv(csvFilename)
+			for s,t in zip(reader,reader):
+				s['departmentCode']=departments.getCodeForName(s['departmentName'])
+				del s['departmentName']
+				t['departmentCode']=departments.getCodeForName(t['departmentName'])
+				del t['departmentName']
+				items.move(s,t,editNumber)
 	amendmentFlag=True
 
 # def makeUniqueCheck():
@@ -124,27 +128,26 @@ fixed=False
 for documentNumber,paragraphs in listDocumentParagraphs('tables/2014.0.z.*.department.csv'):
 	for documentNumber,paragraphNumber,table,csvFilename in paragraphs:
 		testOrder=makeTestOrder(['departmentCode','sectionCode','categoryCode','typeCode'],[False,True,True,True])
-		with open(csvFilename,encoding='utf8',newline='') as csvFile:
-			for row in csv.DictReader(csvFile):
-				resets=testOrder(row)
-				if 'departmentCode' in resets:
-					departments.resetSequence()
-				if row['departmentCode']:
-					departments.add(row)
-				if row['categoryCode']:
-					categories.add(row)
-				if row['typeCode']:
-					types.add(row)
-					if not fixed and items.needFix(row):
-						fixed=True
-						editNumber+=1
-						edits.append({
-							'editNumber':editNumber,
-							'documentNumber':None,
-							'paragraphNumber':None,
-						})
-					items.fix(row,editNumber)
-					# uniqueCheck(row['categoryCode'],row['sectionCode'])
+		for row in readCsv(csvFilename):
+			resets=testOrder(row)
+			if 'departmentCode' in resets:
+				departments.resetSequence()
+			if row['departmentCode']:
+				departments.add(row)
+			if row['categoryCode']:
+				categories.add(row)
+			if row['typeCode']:
+				types.add(row)
+				if not fixed and items.needFix(row):
+					fixed=True
+					editNumber+=1
+					edits.append({
+						'editNumber':editNumber,
+						'documentNumber':None,
+						'paragraphNumber':None,
+					})
+				items.fix(row,editNumber)
+				# uniqueCheck(row['categoryCode'],row['sectionCode'])
 
 ### write sql ###
 
