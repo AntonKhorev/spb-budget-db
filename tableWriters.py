@@ -159,6 +159,6 @@ class SectionTableWriter(TableWriter):
 def writeMoveTable(outputFilename,rows):
 	with open(outputFilename,'w',newline='',encoding='utf8') as file:
 		writer=csv.writer(file,quoting=csv.QUOTE_NONNUMERIC)
-		writer.writerow(['departmentName','sectionCode','categoryCode','typeCode'])
+		writer.writerow(['year','departmentName','sectionCode','categoryCode','typeCode'])
 		for row in rows:
 			writer.writerow(row)

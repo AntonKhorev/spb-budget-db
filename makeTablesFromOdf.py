@@ -116,21 +116,25 @@ for documentNumber in ('3765','3781'):
 					def processName(d):
 						return d.replace('Администрации','Администрация')
 					return ((processName(d),p1,p2,p3) for d in m.group(deptGroupName).split(', ') for p1,p2,p3 in (s,t))
+				def writeMove(m,data):
+					rows=list(data)
+					years=[2014,2015,2016]
+					def listData():
+						return ((year,)+row for year in years for row in rows)
+					tableWriters.writeMoveTable(getMoveFilename(m),listData())
 				m=moveDepartmentRe.match(line)
-				if m:
-					tableWriters.writeMoveTable(getMoveFilename(m),(
-						(m.group('departmentName1'),'*',m.group('categoryCode'),'*'),
-						(m.group('departmentName2'),'*',m.group('categoryCode'),'*')
-					))
+				if m: writeMove(m,(
+					(m.group('departmentName1'),'*',m.group('categoryCode'),'*'),
+					(m.group('departmentName2'),'*',m.group('categoryCode'),'*')
+				))
 				m=moveSectionRe.match(line)
-				if m:
-					tableWriters.writeMoveTable(getMoveFilename(m),listDepartmentMoves(m,
-						(m.group('sectionCode1'),m.group('categoryCode'),'*'),
-						(m.group('sectionCode2'),m.group('categoryCode'),'*')
-					))
+				if m: writeMove(m,listDepartmentMoves(m,
+					(m.group('sectionCode1'),m.group('categoryCode'),'*'),
+					(m.group('sectionCode2'),m.group('categoryCode'),'*')
+				))
 				m=moveCategoryTypeRe.match(line)
 				if m:
-					tableWriters.writeMoveTable(getMoveFilename(m),list(listDepartmentMoves(m,
+					writeMove(m,list(listDepartmentMoves(m,
 						('*',m.group('categoryCode1'),'*'),
 						('*',m.group('categoryCode2'),'*')
 					))+list(listDepartmentMoves(m,
@@ -141,16 +145,15 @@ for documentNumber in ('3765','3781'):
 				else:
 					m=moveCategoryRe.match(line)
 					if m:
-						tableWriters.writeMoveTable(getMoveFilename(m),listDepartmentMoves(m,
+						writeMove(m,listDepartmentMoves(m,
 							('*',m.group('categoryCode1'),'*'),
 							('*',m.group('categoryCode2'),'*')
 						))
 				m=moveTypeRe.match(line)
-				if m:
-					tableWriters.writeMoveTable(getMoveFilename(m),listDepartmentMoves(m,
-						('*',m.group('categoryCode'),m.group('typeCode1')),
-						('*',m.group('categoryCode'),m.group('typeCode2'))
-					))
+				if m: writeMove(m,listDepartmentMoves(m,
+					('*',m.group('categoryCode'),m.group('typeCode1')),
+					('*',m.group('categoryCode'),m.group('typeCode2'))
+				))
 			# print('}')
 		elif type(obj) is ezodf.table.Table:
 			# print('table',obj.nrows(),'x',obj.ncols())
