@@ -346,6 +346,44 @@ with sqlite3.connect(':memory:') as conn:
 	# experimental project+amendments table
 	fakeYears=[]
 	for row in conn.execute("""
+		SELECT DISTINCT year,documentNumber, year||'.'||documentNumber AS fakeYear
+		FROM items
+		JOIN edits USING(editNumber)
+		ORDER BY year,documentNumber
+	"""):
+		fakeYears.append(row['fakeYear'])
+	table=LevelTable(
+		[
+			['departmentCode'],
+			['sectionCode','categoryCode'],
+			['typeCode'],
+		],[
+			'departmentName',
+			'categoryName',
+			'typeName',
+		],
+		fakeYears,
+		conn.execute("""
+			SELECT departmentName,categoryName,typeName,departmentCode,sectionCode,categoryCode,typeCode,
+				year||'.'||documentNumber AS year,
+				SUM(amount) AS amount
+			FROM items
+			JOIN departments USING(departmentCode)
+			JOIN categories USING(categoryCode)
+			JOIN types USING(typeCode)
+			JOIN edits USING(editNumber)
+			GROUP BY departmentName,categoryName,typeName,departmentCode,sectionCode,categoryCode,typeCode,year
+			ORDER BY departmentOrder,sectionCode,categoryCode,typeCode,year,documentNumber
+		""")
+	)
+	table.makeXlsx(
+		"Данные из приложений 3 и 4 с поправками - ЭКПЕРИМЕНТАЛЬНО!",
+		'out/project-amendments-2014-16.xlsx'
+	)
+
+	# experimental project+amendments+paragraphs table
+	fakeYears=[]
+	for row in conn.execute("""
 		SELECT DISTINCT year,editNumber,documentNumber,paragraphNumber, year||'.'||documentNumber||'.'||paragraphNumber AS fakeYear
 		FROM items
 		JOIN edits USING(editNumber)
@@ -377,5 +415,5 @@ with sqlite3.connect(':memory:') as conn:
 	)
 	table.makeXlsx(
 		"Данные из приложений 3 и 4 с поправками - ЭКПЕРИМЕНТАЛЬНО!",
-		'out/project-amendments-2014-16.xlsx'
+		'out/project-amendments-paragraphs-2014-16.xlsx'
 	)
