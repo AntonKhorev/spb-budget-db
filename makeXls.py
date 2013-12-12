@@ -9,7 +9,13 @@ import xlwt3 as xlwt
 import xlsxwriter
 
 class LevelTable:
-	def __init__(self,levelColLists,levelNames,yearsInAppendices,rows,nHeaderRows=2):
+	def __init__(self,levelColLists,levelNames,fakeYearCols,fakeYearNameFns,yearsInAppendices,rows,nHeaderRows=None):
+		if nHeaderRows is None:
+			nHeaderRows=1+len(fakeYearCols)
+		# years below are not really years - they are spreadsheet columns
+		def rowFakeYear(row):
+			return tuple(row[k] for k in fakeYearCols)
+		# levelCols are spreadsheet rows, db cols
 		self.levelColLists=levelColLists
 		if type(yearsInAppendices) is dict:
 			self.yearsInAppendices=yearsInAppendices
@@ -119,10 +125,10 @@ class LevelTable:
 						clearRow=nRow
 			for fn in reversed(clearStack):
 				fn(clearRow)
-			nCol=nFirstAmountCol+self.years.index(row['year'])
+			nCol=nFirstAmountCol+self.years.index(rowFakeYear(row))
 			self.formulaValues[nRow][nCol]=outRow[nCol]=Decimal(row['amount'])/1000
 			for nCol,(appendix,yearsInAppendix) in enumerate(self.yearsInAppendices.items()):
-				if row['year'] in yearsInAppendix:
+				if rowFakeYear(row) in yearsInAppendix:
 					putAppendixNumber(nCol)
 		clearStack=[]
 		for level in range(-1,nLevels):
@@ -249,8 +255,12 @@ with sqlite3.connect(':memory:') as conn:
 			'departmentName',
 			'categoryName',
 			'typeName',
+		],[
+			'year',
+		],[
+			lambda year: 'Сумма на '+str(year)+' г. (тыс. руб.)',
 		],
-		{3:[2014],4:[2015,2016]},
+		{3:[(2014,)],4:[(2015,),(2016,)]},
 		conn.execute("""
 			SELECT departmentName,categoryName,typeName,departmentCode,sectionCode,categoryCode,typeCode,year,amount
 			FROM items
@@ -284,8 +294,12 @@ with sqlite3.connect(':memory:') as conn:
 			'sectionName',
 			'categoryName',
 			'typeName',
+		],[
+			'year',
+		],[
+			lambda year: 'Сумма на '+str(year)+' г. (тыс. руб.)',
 		],
-		{5:[2014],6:[2015,2016]},
+		{5:[(2014,)],6:[(2015,),(2016,)]},
 		conn.execute("""
 			SELECT superSectionName,sectionName,categoryName,typeName,superSectionCode,sectionCode,categoryCode,typeCode,year, SUM(amount) AS amount
 			FROM items
@@ -324,8 +338,12 @@ with sqlite3.connect(':memory:') as conn:
 				'departmentName',
 				'categoryName',
 				'typeName',
+			],[
+				'year',
+			],[
+				lambda year: 'Изменеия на '+str(year)+' г. (тыс. руб.)',
 			],
-			[2014,2015,2016],
+			[(2014,),(2015,),(2016,)],
 			conn.execute("""
 				SELECT departmentName,categoryName,typeName,departmentCode,sectionCode,categoryCode,typeCode,year, SUM(amount) AS amount
 				FROM items
@@ -346,12 +364,12 @@ with sqlite3.connect(':memory:') as conn:
 	# experimental project+amendments table
 	fakeYears=[]
 	for row in conn.execute("""
-		SELECT DISTINCT year,documentNumber, year||'.'||documentNumber AS fakeYear
+		SELECT DISTINCT year,documentNumber
 		FROM items
 		JOIN edits USING(editNumber)
 		ORDER BY year,documentNumber
 	"""):
-		fakeYears.append(row['fakeYear'])
+		fakeYears.append((row['year'],row['documentNumber']))
 	table=LevelTable(
 		[
 			['departmentCode'],
@@ -361,18 +379,24 @@ with sqlite3.connect(':memory:') as conn:
 			'departmentName',
 			'categoryName',
 			'typeName',
+		],[
+			'year',
+			'documentNumber',
+		],[
+			lambda year: str(year)+' г. (тыс. руб.)',
+			lambda documentNumber: 'док. '+str(documentNumber),
 		],
 		fakeYears,
 		conn.execute("""
 			SELECT departmentName,categoryName,typeName,departmentCode,sectionCode,categoryCode,typeCode,
-				year||'.'||documentNumber AS year,
+				year,documentNumber,
 				SUM(amount) AS amount
 			FROM items
 			JOIN departments USING(departmentCode)
 			JOIN categories USING(categoryCode)
 			JOIN types USING(typeCode)
 			JOIN edits USING(editNumber)
-			GROUP BY departmentName,categoryName,typeName,departmentCode,sectionCode,categoryCode,typeCode,year
+			GROUP BY departmentName,categoryName,typeName,departmentCode,sectionCode,categoryCode,typeCode,year,documentNumber
 			ORDER BY departmentOrder,sectionCode,categoryCode,typeCode,year,documentNumber
 		""")
 	)
@@ -384,12 +408,12 @@ with sqlite3.connect(':memory:') as conn:
 	# experimental project+amendments+paragraphs table
 	fakeYears=[]
 	for row in conn.execute("""
-		SELECT DISTINCT year,editNumber,documentNumber,paragraphNumber, year||'.'||documentNumber||'.'||paragraphNumber AS fakeYear
+		SELECT DISTINCT year,documentNumber,paragraphNumber
 		FROM items
 		JOIN edits USING(editNumber)
 		ORDER BY year,editNumber
 	"""):
-		fakeYears.append(row['fakeYear'])
+		fakeYears.append((row['year'],row['documentNumber'],row['paragraphNumber']))
 	table=LevelTable(
 		[
 			['departmentCode'],
@@ -399,11 +423,19 @@ with sqlite3.connect(':memory:') as conn:
 			'departmentName',
 			'categoryName',
 			'typeName',
+		],[
+			'year',
+			'documentNumber',
+			'paragraphNumber',
+		],[
+			lambda year: str(year)+' г. (тыс. руб.)',
+			lambda documentNumber: 'док. '+str(documentNumber),
+			lambda paragraphNumber: 'пункт '+str(paragraphNumber),
 		],
 		fakeYears,
 		conn.execute("""
 			SELECT departmentName,categoryName,typeName,departmentCode,sectionCode,categoryCode,typeCode,
-				year||'.'||documentNumber||'.'||paragraphNumber AS year,
+				year,documentNumber,paragraphNumber,
 				amount
 			FROM items
 			JOIN departments USING(departmentCode)
