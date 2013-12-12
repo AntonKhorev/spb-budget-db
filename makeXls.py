@@ -12,6 +12,7 @@ class LevelTable:
 	def __init__(self,levelColLists,levelNames,fakeYearCols,fakeYearNameFns,yearsInAppendices,rows,nHeaderRows=None):
 		if nHeaderRows is None:
 			nHeaderRows=1+len(fakeYearCols)
+		self.fakeYearNameFns=fakeYearNameFns
 		# years below are not really years - they are spreadsheet columns
 		def rowFakeYear(row):
 			return tuple(row[k] for k in fakeYearCols)
@@ -136,6 +137,19 @@ class LevelTable:
 		for fn in reversed(clearStack):
 			fn(nRow+1)
 
+	def makeSheetHeader(self,columns,setCellWidth,writeCellText,writeMergedCellText):
+		nRow=self.nHeaderRows-len(self.fakeYearNameFns)
+		for nCol,col in enumerate(columns):
+			setCellWidth(nCol,col['width'])
+			if type(col['text']) is list:
+				for i,textLine in enumerate(col['text']):
+					writeCellText(nRow+i,nCol,textLine,col['headerStyle'])
+			else:
+				if len(self.fakeYearNameFns)>1:
+					writeMergedCellText(nRow,nCol,self.nHeaderRows-1,nCol,col['text'],col['headerStyle'])
+				else:
+					writeCellText(nRow,nCol,col['text'],col['headerStyle'])
+
 	def makeXls(self,tableTitle,outputFilename):
 		nLevels=len(self.levelColLists)
 		wb=xlwt.Workbook()
@@ -162,17 +176,20 @@ class LevelTable:
 		]+[
 			codeColumnsData[col] for cols in self.levelColLists for col in cols
 		]+[
-			{'text':'Сумма на '+str(year)+' г. (тыс. руб.)','width':15,'headerStyle':styleHeader,'cellStyle':styleAmount,'shallowCellStyle':styleShallowAmount} for year in self.years
+			{'text':[f(v) for f,v in zip(self.fakeYearNameFns,year)],'width':15,'headerStyle':styleHeader,'cellStyle':styleAmount,'shallowCellStyle':styleShallowAmount} for year in self.years
 		]
 		ws.set_panes_frozen(True)
 		ws.set_horz_split_pos(self.nHeaderRows)
 		ws.row(0).height=400
 		ws.merge(0,0,0,len(columns)-1)
 		ws.write(0,0,tableTitle,styleTableTitle)
-		ws.row(self.nHeaderRows-1).height=1200
-		for nCol,col in enumerate(columns):
-			ws.col(nCol).width=256*col['width']
-			ws.write(self.nHeaderRows-1,nCol,col['text'],col['headerStyle'])
+		ws.row(self.nHeaderRows-1).height=1200 # what to do in multiline header?
+		def setCellWidth(nCol,width):
+			ws.col(nCol).width=256*width
+		def writeMergedCellText(nRow1,nCol1,nRow2,nCol2,text,style):
+			ws.merge(nRow1,nRow2,nCol1,nCol2)
+			ws.write(nRow1,nCol1,text,style)
+		self.makeSheetHeader(columns,setCellWidth,ws.write,writeMergedCellText)
 		for nRow,row in enumerate(self.outRows):
 			for nCol,(cell,col) in enumerate(zip(row,columns)):
 				shallow=self.levels[nRow]<nLevels//2
@@ -218,15 +235,18 @@ class LevelTable:
 		]+[
 			codeColumnsData[col] for cols in self.levelColLists for col in cols
 		]+[
-			{'text':'Сумма на '+str(year)+' г. (тыс. руб.)','width':15,'headerStyle':styleHeader,'cellStyle':styleAmount,'shallowCellStyle':styleShallowAmount,'writer':numericWriter} for year in self.years
+			{'text':[f(v) for f,v in zip(self.fakeYearNameFns,year)],'width':15,'headerStyle':styleHeader,'cellStyle':styleAmount,'shallowCellStyle':styleShallowAmount,'writer':numericWriter} for year in self.years
 		]
 		ws.freeze_panes(self.nHeaderRows,0)
 		ws.set_row(0,22)
 		ws.merge_range(0,0,0,len(columns)-1,tableTitle,styleTableTitle)
-		ws.set_row(self.nHeaderRows-1,60)
-		for nCol,col in enumerate(columns):
-			ws.set_column(nCol,nCol,col['width'])
-			ws.write(self.nHeaderRows-1,nCol,col['text'],col['headerStyle'])
+		ws.set_row(self.nHeaderRows-1,60) # what to do in multiline header?
+		self.makeSheetHeader(
+			columns,
+			lambda nCol,width: ws.set_column(nCol,nCol,width),
+			ws.write,
+			ws.merge_range
+		)
 		for nRow,row in enumerate(self.outRows):
 			if self.levels[nRow]>=0:
 				ws.set_row(self.nHeaderRows+nRow,options={'level':self.levels[nRow]+1})
