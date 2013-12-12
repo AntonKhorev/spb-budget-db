@@ -28,15 +28,7 @@ def makeTableReaderFromOdfTable(table,nAmountCols):
 			name=row[1].value.strip()
 			typeCode=row[5].value.strip()
 			keys=[row[0].value.strip(),name,sectionCode,categoryCode,typeCode]
-			def makeAmount(cell):
-				# TODO move quirks to fixer
-				amount=cell.value.strip()
-				if '.' not in amount:
-					# quirk in 3765.7.1.1 and 3765.7.5.1
-					return amount[:-1]+'.'+amount[-1]
-				else:
-					return amount
-			amounts=[makeAmount(row[i]) for i in range(6,6+nAmountCols)]
+			amounts=[row[i].value.strip() for i in range(6,6+nAmountCols)]
 			yield keys+amounts
 		if not found:
 			raise Exception('table start not found')
