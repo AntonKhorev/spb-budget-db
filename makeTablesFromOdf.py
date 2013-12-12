@@ -34,9 +34,6 @@ def makeTableReaderFromOdfTable(table,nAmountCols):
 				if '.' not in amount:
 					# quirk in 3765.7.1.1 and 3765.7.5.1
 					return amount[:-1]+'.'+amount[-1]
-				elif amount.count('.')==2:
-					# quirk in 3781.2.34.7.1.
-					return amount.replace('.','',1)
 				else:
 					return amount
 			amounts=[makeAmount(row[i]) for i in range(6,6+nAmountCols)]
