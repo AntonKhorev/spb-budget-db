@@ -27,11 +27,6 @@ def makeTableReaderFromOdfTable(table,nAmountCols):
 			sectionCode=sc1+sc2
 			name=row[1].value.strip()
 			typeCode=row[5].value.strip()
-			if typeCode=='00': # quirk in 3781.2.11.14.1
-				if name=='Предоставление субсидий бюджетным, автономным учреждениям и иным некоммерческим организациям':
-					typeCode='600'
-				else:
-					raise Exception('unknown quirk')
 			if name=='Предоставление субсидий бюджетным, автономным учреждениям и иным некоммерческим организациям' and categoryCode=='4310270': # quirk in 3781.2.12.4.1
 				categoryCode='4310170'
 			keys=[row[0].value.strip(),name,sectionCode,categoryCode,typeCode]
