@@ -138,12 +138,24 @@ class LevelTable:
 			fn(nRow+1)
 
 	def makeSheetHeader(self,columns,setCellWidth,writeCellText,writeMergedCellText):
+		skip={}
 		nRow=self.nHeaderRows-len(self.fakeYearNameFns)
 		for nCol,col in enumerate(columns):
 			setCellWidth(nCol,col['width'])
 			if type(col['text']) is list:
-				for i,textLine in enumerate(col['text']):
-					writeCellText(nRow+i,nCol,textLine,col['headerStyle'])
+				for nRow2,textLine in enumerate(col['text']):
+					if nRow2 in skip and nCol<skip[nRow2]:
+						continue
+					nCol2=nCol
+					while nCol2<len(columns):
+						if type(columns[nCol2]['text']) is not list or columns[nCol2]['text'][nRow2]!=textLine:
+							break
+						nCol2+=1
+					if nCol2>nCol+1:
+						skip[nRow2]=nCol2
+						writeMergedCellText(nRow+nRow2,nCol,nRow+nRow2,nCol2-1,textLine,col['headerStyle'])
+					else:
+						writeCellText(nRow+nRow2,nCol,textLine,col['headerStyle'])
 			else:
 				if len(self.fakeYearNameFns)>1:
 					writeMergedCellText(nRow,nCol,self.nHeaderRows-1,nCol,col['text'],col['headerStyle'])
