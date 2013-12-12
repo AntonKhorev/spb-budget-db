@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 
-import decimal
 import re
 import ezodf
-import tableWriters
+import errorFixers,tableWriters
 
-def makeTableReaderFromOdfTable(table):
-	def reader(years):
+def makeTableReaderFromOdfTable(table,nAmountCols):
+	def reader():
 		found=False
 		for row in obj.rows():
 			if not found:
@@ -35,18 +34,20 @@ def makeTableReaderFromOdfTable(table):
 					raise Exception('unknown quirk')
 			if name=='Предоставление субсидий бюджетным, автономным учреждениям и иным некоммерческим организациям' and categoryCode=='4310270': # quirk in 3781.2.12.4.1
 				categoryCode='4310170'
-			keys=(row[0].value.strip(),name,sectionCode,categoryCode,typeCode)
+			keys=[row[0].value.strip(),name,sectionCode,categoryCode,typeCode]
 			def makeAmount(cell):
+				# TODO move quirks to fixer
 				amount=cell.value.strip()
 				if '.' not in amount:
 					# quirk in 3765.7.1.1 and 3765.7.5.1
-					amount=amount[:-1]+'.'+amount[-1]
+					return amount[:-1]+'.'+amount[-1]
 				elif amount.count('.')==2:
 					# quirk in 3781.2.34.7.1.
-					amount=amount.replace('.','',1)
-				return decimal.Decimal(amount)
-			amounts=[makeAmount(row[i]) for i in range(6,6+len(years))]
-			yield (keys,amounts)
+					return amount.replace('.','',1)
+				else:
+					return amount
+			amounts=[makeAmount(row[i]) for i in range(6,6+nAmountCols)]
+			yield keys+amounts
 		if not found:
 			raise Exception('table start not found')
 	return reader
@@ -62,7 +63,9 @@ class TableWriteWatcher:
 		if not self.paragraphNumber:
 			raise Exception('paragraph number for table not set')
 		tableWriters.DepartmentTableWriter(
-			makeTableReaderFromOdfTable(table),
+			errorFixers.departmentFixer.fixTableReader(documentNumber,self.paragraphNumber,
+				makeTableReaderFromOdfTable(table,len(self.years))
+			),
                         self.years
 		).write('tables/2014.0.p.'+documentNumber+'.'+self.paragraphNumber+'department.csv')
 		self.paragraphNumber=None

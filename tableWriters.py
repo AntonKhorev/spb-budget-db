@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import decimal
 import re
 import csv
 
@@ -8,7 +9,7 @@ class TableWriter:
 		self.years=years
 		self.rows=[{}]*len(years) # reserve first rows for totals
 		self.punctWithoutSpaceRe=re.compile(r'(?<=[.,])(?=[^\W\d_])')
-		self.processTable(tableReader(years))
+		self.processTable(tableReader)
 
 	def processName(self,name):
 		name=' '.join(name.split())
@@ -39,7 +40,8 @@ class TableWriter:
 class DepartmentTableWriter(TableWriter):
 	def processTable(self,tableReader):
 		departmentNameRe=re.compile(r'(?P<departmentName>.*?)\s*\((?P<departmentCode>...)\)')
-		for (number,name,sectionCode,categoryCode,typeCode),amounts in tableReader:
+		for number,name,sectionCode,categoryCode,typeCode,*amounts in tableReader():
+			amounts=[decimal.Decimal(amount) for amount in amounts]
 			name=self.processName(name)
 			sectionCode=sectionCode[:2]+sectionCode[-2:]
 			typeCode=str(typeCode)
@@ -91,7 +93,8 @@ class DepartmentTableWriter(TableWriter):
 
 class SectionTableWriter(TableWriter):
 	def processTable(self,tableReader):
-		for (number,name,sectionCode,categoryCode,typeCode),amounts in tableReader:
+		for number,name,sectionCode,categoryCode,typeCode,*amounts in tableReader():
+			amounts=[decimal.Decimal(amount) for amount in amounts]
 			name=self.processName(name)
 			# sectionCode=sectionCode[:2]+sectionCode[-2:]
 			if sectionCode[:2]!='  ':
