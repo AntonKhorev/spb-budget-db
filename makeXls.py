@@ -195,7 +195,8 @@ class LevelTable:
 		ws.row(0).height=400
 		ws.merge(0,0,0,len(columns)-1)
 		ws.write(0,0,tableTitle,styleTableTitle)
-		ws.row(self.nHeaderRows-1).height=1200 # what to do in multiline header?
+		for i in range(self.nHeaderRows-len(self.fakeYearNameFns),self.nHeaderRows):
+			ws.row(i).height=1200//len(self.fakeYearNameFns)
 		def setCellWidth(nCol,width):
 			ws.col(nCol).width=256*width
 		def writeMergedCellText(nRow1,nCol1,nRow2,nCol2,text,style):
@@ -252,7 +253,8 @@ class LevelTable:
 		ws.freeze_panes(self.nHeaderRows,0)
 		ws.set_row(0,22)
 		ws.merge_range(0,0,0,len(columns)-1,tableTitle,styleTableTitle)
-		ws.set_row(self.nHeaderRows-1,60) # what to do in multiline header?
+		for i in range(self.nHeaderRows-len(self.fakeYearNameFns),self.nHeaderRows):
+			ws.set_row(i,60//len(self.fakeYearNameFns))
 		self.makeSheetHeader(
 			columns,
 			lambda nCol,width: ws.set_column(nCol,nCol,width),
