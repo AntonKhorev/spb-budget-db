@@ -106,7 +106,7 @@ class ItemList:
 		return self.keySum(self.rowKey(row))
 	def add(self,row,editNumber):
 		self.items[self.rowKey(row)][editNumber]+=self.rowValue(row)
-	def makeFixer(self,editNumberCallback):
+	def makeFixer(self,editNumberForYear):
 		class Fixer:
 			def __init__(self,itemList):
 				self.itemList=itemList
@@ -118,17 +118,11 @@ class ItemList:
 				return self
 			def fix(self,row):
 				k=self.itemList.rowKey(row)
-				if self.editNumber is None and self.residuals[k]!=self.itemList.rowValue(row):
-					self.editNumber=editNumberCallback()
-				if self.editNumber is not None:
-					self.itemList.items[k][self.editNumber]+=self.itemList.rowValue(row)-self.residuals[k]
+				self.itemList.items[k][editNumberForYear(k[0])]+=self.itemList.rowValue(row)-self.residuals[k]
 				del self.residuals[k]
 			def __exit__(self,exc_type,exc_value,traceback):
 				for k,v in self.residuals.items():
-					if self.editNumber is None and v:
-						self.editNumber=editNumberCallback()
-					if self.editNumber is not None:
-						self.itemList.items[k][self.editNumber]-=v
+					self.itemList.items[k][editNumberForYear(k[0])]-=v
 		return Fixer(self)
 	def move(self,s,t,editNumber):
 		ks=self.rowKey(s)

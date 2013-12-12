@@ -42,7 +42,7 @@ tableWriters.SectionTableWriter(
 ).write('tables/2014.0.p.'+str(documentNumber)+'.6.section.csv')
 
 # law
-documentNumber='0000'
+documentNumber=3850
 tableWriters.DepartmentTableWriter(
 	makeTableReaderFromXlsxFile('fincom/2014.0.z/pr03_bd2014-16.xlsx',1),
 	[2014]

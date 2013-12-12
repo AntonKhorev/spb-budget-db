@@ -21,6 +21,7 @@ documents=[
 	{'documentNumber':3574,'documentDate':'2013-10-07','governorFlag':True,'amendmentFlag':False},
 	{'documentNumber':3765,'documentDate':'2013-11-01','governorFlag':True,'amendmentFlag':True},
 	{'documentNumber':3781,'documentDate':'2013-11-08','governorFlag':False,'amendmentFlag':True},
+	{'documentNumber':3850,'documentDate':'2013-11-15','governorFlag':False,'amendmentFlag':True},
 ]
 edits=[]
 departments=dataLists.DepartmentList()
@@ -124,16 +125,29 @@ for documentNumber,paragraphs in listDocumentParagraphs('tables/2014.0.p.*.csv')
 
 # compare with the law
 # uniqueCheck=makeUniqueCheck()
-def editNumberCallback():
+def makeEditNumberForYear():
 	global editNumber
 	editNumber+=1
 	edits.append({
 		'editNumber':editNumber,
-		'documentNumber':None,
-		'paragraphNumber':None,
+		'documentNumber':3850,
+		'paragraphNumber':'3',
 	})
-	return editNumber
-with items.makeFixer(editNumberCallback) as fixer:
+	editNumber2014=editNumber
+	editNumber+=1
+	edits.append({
+		'editNumber':editNumber,
+		'documentNumber':3850,
+		'paragraphNumber':'4',
+	})
+	editNumber2015_2016=editNumber
+	def editNumberForYear(year):
+		if year==2014:
+			return editNumber2014
+		elif year==2015 or year==2016:
+			return editNumber2015_2016
+	return editNumberForYear
+with items.makeFixer(makeEditNumberForYear()) as fixer:
 	for documentNumber,paragraphs in listDocumentParagraphs('tables/2014.0.z.*.department.csv'):
 		for documentNumber,paragraphNumber,table,csvFilename in paragraphs:
 			testOrder=makeTestOrder(['departmentCode','sectionCode','categoryCode','typeCode'],[False,True,True,True])
