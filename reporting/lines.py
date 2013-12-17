@@ -108,14 +108,14 @@ class AmendmentCols(Lines):
 		]
 	def listItemLevelKeys(self,item):
 		return [
-			(item['year'],item['documentNumber']),
 			(item['year'],),
+			(item['year'],item['documentNumber']),
 		]
-	def getItemValue(self,item,level):
+	def getItemValues(self,item,level):
 		if level==0:
-			return (str(item['year']+' г.'),'Итого (тыс. руб.)')
+			return (str(item['year'])+' г.','Итого (тыс. руб.)')
 		elif level==1:
-			return (str(item['year']+' г.'),'Изменения в док. '+str(item['documentNumber'])+ ' (тыс. руб.)')
+			return (str(item['year'])+' г.','Изменения в док. '+str(item['documentNumber'])+ ' (тыс. руб.)')
 		raise ValueError()
 	def buildSqlQuery(self,where):
 		return """
