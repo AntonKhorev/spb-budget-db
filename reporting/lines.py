@@ -14,7 +14,9 @@ class Lines:
 		raise NotImplementedError
 	def getItemValues(self,item,level):
 		raise NotImplementedError
-	def buildSqlQuery(self,where):
+	def listQuerySelects(self):
+		raise NotImplementedError
+	def listQueryOrderbys(self):
 		raise NotImplementedError
 	def getData(self,sqlConn):
 		# TODO store/return key->line# map
@@ -23,7 +25,10 @@ class Lines:
 		oldItem=None
 		oldLevelKeys=noneKeys
 		for item in itertools.chain(
-			sqlConn.execute(self.buildSqlQuery("1")),
+			sqlConn.queryHeaders(
+				self.listQuerySelects(),
+				self.listQueryOrderbys()
+			),
 			(None,)
 		):
 			if item is None:
@@ -81,17 +86,13 @@ class DepartmentRows(Lines):
 		elif level==3:
 			return (item['typeName'],item['departmentCode'],item['sectionCode'],item['categoryCode'],item['typeCode'])
 		raise ValueError()
-	def buildSqlQuery(self,where):
-		return """
-			SELECT DISTINCT departmentCode,sectionCode,categoryCode,typeCode,
-			                departmentName,            categoryName,typeName
-			FROM items
-			JOIN departments USING(departmentCode)
-			JOIN categories USING(categoryCode)
-			JOIN types USING(typeCode)
-		"""+"WHERE "+where+"""
-			ORDER BY departmentOrder,sectionCode,categoryCode,typeCode
-		""";
+	def listQuerySelects(self):
+		return (
+			'departmentCode','sectionCode','categoryCode','typeCode',
+			'departmentName',              'categoryName','typeName'
+		)
+	def listQueryOrderbys(self):
+		return 'departmentOrder','sectionCode','categoryCode','typeCode'
 
 class SectionRows(Lines):
 	def listEntries(self):
@@ -122,7 +123,7 @@ class SectionRows(Lines):
 			(item['superSectionCode'],),
 			(item['sectionCode'],),
 			(item['sectionCode'],item['categoryCode']),
-			(item['sectionCode'],item['categoryCode'],item['typeCode']),
+			(item['sectionCode'],item['categoryCode'],item['typeCode']), # TODO prevent superSectionCode from getting into amounts query
 		]
 	def getItemValues(self,item,level):
 		if level==0:
@@ -136,18 +137,13 @@ class SectionRows(Lines):
 		elif level==4:
 			return (item['typeName'],item['sectionCode'],item['categoryCode'],item['typeCode'])
 		raise ValueError()
-	def buildSqlQuery(self,where):
-		return """
-			SELECT DISTINCT superSectionCode,sectionCode,categoryCode,typeCode,
-			                superSectionName,sectionName,categoryName,typeName
-			FROM items
-			JOIN sections USING(sectionCode)
-			JOIN superSections USING(superSectionCode)
-			JOIN categories USING(categoryCode)
-			JOIN types USING(typeCode)
-		"""+"WHERE "+where+"""
-			ORDER BY superSectionCode,sectionCode,categoryCode,typeCode
-		""";
+	def listQuerySelects(self):
+		return (
+			'superSectionCode','sectionCode','categoryCode','typeCode',
+			'superSectionName','sectionName','categoryName','typeName'
+		)
+	def listQueryOrderbys(self):
+		return 'superSectionCode','sectionCode','categoryCode','typeCode'
 
 class AmendmentCols(Lines):
 	def listEntries(self):
@@ -173,11 +169,7 @@ class AmendmentCols(Lines):
 		elif level==1:
 			return (str(item['year'])+' г.','Изменения в док. '+str(item['documentNumber'])+ ' (тыс. руб.)')
 		raise ValueError()
-	def buildSqlQuery(self,where):
-		return """
-			SELECT DISTINCT year,documentNumber
-			FROM items
-			JOIN edits USING(editNumber)
-		"""+"WHERE "+where+"""
-			ORDER BY year,documentNumber
-		"""
+	def listQuerySelects(self):
+		return 'year','documentNumber'
+	def listQueryOrderbys(self):
+		return 'year','documentNumber'

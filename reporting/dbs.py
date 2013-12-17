@@ -30,11 +30,9 @@ class Conn:
 	}
 	def execute(self,query):
 		raise NotImplementedError
-	def queryAmounts(self,keys):
-		qg=','.join(keys)
-		q='SELECT '+qg+',SUM(amount) AS amount\n'
-		q+='FROM items\n'
+	def buildFroms(self,keys):
 		froms={'items'}
+		q='FROM items\n'
 		def rec(key):
 			nonlocal q
 			if key not in self.entries:
@@ -44,10 +42,22 @@ class Conn:
 				return
 			joinKey=self.tables[table]
 			rec(joinKey)
+			froms.add(table)
 			q+='JOIN '+table+' USING('+joinKey+')\n'
 		for key in keys:
 			rec(key)
-		q+='GROUP BY '+qg
+		return q
+	def queryAmounts(self,keys):
+		qg=','.join(keys)
+		q='SELECT '+qg+',SUM(amount) AS amount\n'
+		q+=self.buildFroms(keys)
+		q+='GROUP BY '+qg+'\n'
+		print(q) ##
+		return self.execute(q)
+	def queryHeaders(self,selects,orderbys):
+		q='SELECT DISTINCT '+','.join(selects)+'\n'
+		q+=self.buildFroms(selects+orderbys)
+		q+='ORDER BY '+','.join(orderbys)+'\n'
 		print(q) ##
 		return self.execute(q)
 
