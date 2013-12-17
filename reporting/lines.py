@@ -30,7 +30,6 @@ class Lines:
 				levelKeys=noneKeys
 			else:
 				levelKeys=self.listItemLevelKeys(item)
-			print(levelKeys) ##
 			reset=False
 			for level,levelKey in enumerate(levelKeys):
 				if reset or levelKey!=oldLevelKeys[level]:

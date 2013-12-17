@@ -25,6 +25,7 @@ class XlsxSpreadsheet(Spreadsheet):
 		class XlsxLayout(Layout):
 			def writeRowHeaders(self,rowHeaders):
 				for r,(level,values) in enumerate(rowHeaders):
+					ws.set_row(r,options={'level':level})
 					for c,value in enumerate(values):
 						ws.write(r,c,value)
 		return XlsxLayout()
