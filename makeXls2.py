@@ -14,5 +14,12 @@ with sqlite3.connect(':memory:') as conn:
 		reporting.lines.DepartmentRows(),
 		reporting.lines.AmendmentCols()
 	).save(
-		reporting.spreadsheets.XlsxSpreadsheet('out2/report.xlsx')
+		reporting.spreadsheets.XlsxSpreadsheet('out2/dept.xlsx')
+	)
+	reporting.reports.Report(
+		conn,
+		reporting.lines.SectionRows(),
+		reporting.lines.AmendmentCols()
+	).save(
+		reporting.spreadsheets.XlsxSpreadsheet('out2/sect.xlsx')
 	)

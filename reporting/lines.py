@@ -93,6 +93,62 @@ class DepartmentRows(Lines):
 			ORDER BY departmentOrder,sectionCode,categoryCode,typeCode
 		""";
 
+class SectionRows(Lines):
+	def listEntries(self):
+		return [
+			'name',
+			'sectionCode',
+			'categoryCode',
+			'typeCode',
+		]
+	def listKeyEntries(self):
+		return [
+			'superSectionCode',
+			'sectionCode',
+			'categoryCode',
+			'typeCode',
+		]
+	def listLevelOrders(self):
+		return [
+			self.AFTER,
+			self.BEFORE,
+			self.BEFORE,
+			self.BEFORE,
+			self.BEFORE,
+		]
+	def listItemLevelKeys(self,item):
+		return [
+			tuple(),
+			(item['superSectionCode'],),
+			(item['sectionCode'],),
+			(item['sectionCode'],item['categoryCode']),
+			(item['sectionCode'],item['categoryCode'],item['typeCode']),
+		]
+	def getItemValues(self,item,level):
+		if level==0:
+			return ('Итого',)
+		elif level==1:
+			return (item['superSectionName'],item['superSectionCode'])
+		elif level==2:
+			return (item['sectionName'],item['sectionCode'])
+		elif level==3:
+			return (item['categoryName'],item['sectionCode'],item['categoryCode'])
+		elif level==4:
+			return (item['typeName'],item['sectionCode'],item['categoryCode'],item['typeCode'])
+		raise ValueError()
+	def buildSqlQuery(self,where):
+		return """
+			SELECT DISTINCT superSectionCode,sectionCode,categoryCode,typeCode,
+			                superSectionName,sectionName,categoryName,typeName
+			FROM items
+			JOIN sections USING(sectionCode)
+			JOIN superSections USING(superSectionCode)
+			JOIN categories USING(categoryCode)
+			JOIN types USING(typeCode)
+		"""+"WHERE "+where+"""
+			ORDER BY superSectionCode,sectionCode,categoryCode,typeCode
+		""";
+
 class AmendmentCols(Lines):
 	def listEntries(self):
 		return [
