@@ -1,3 +1,5 @@
+import itertools
+
 class Layout:
 	def writeRowHeaders(self,rowHeaders):
 		raise NotImplementedError
@@ -34,10 +36,22 @@ class XlsxSpreadsheet(Spreadsheet):
 			def writeColHeaders(self,colHeaders):
 				r0=nCaptionLines
 				c0=len(rowEntries)
-				for c,(level,values) in enumerate(colHeaders):
-					ws.set_column(c0+c,c0+c,options={'level':level})
+				noneValues=tuple(None for _ in colEntries)
+				oldValues=noneValues
+				nRepeats=[0 for _ in colEntries]
+				for c,(level,values) in enumerate(itertools.chain(colHeaders,((-1,noneValues),))):
+					if level>=0:
+						ws.set_column(c0+c,c0+c,options={'level':level})
 					for r,value in enumerate(values):
-						ws.write(r0+r,c0+c,value)
+						if values[:r+1]!=oldValues[:r+1] and oldValues[r]!=None:
+							if nRepeats[r]>1:
+								ws.merge_range(r0+r,c0+c-nRepeats[r],r0+r,c0+c-1,oldValues[r])
+							else:
+								ws.write(r0+r,c0+c-1,oldValues[r])
+							nRepeats[r]=1
+						else:
+							nRepeats[r]+=1
+					oldValues=values
 		return XlsxLayout()
 	def save(self):
 		self.wb.close()
