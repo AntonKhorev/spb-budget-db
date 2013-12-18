@@ -1,15 +1,55 @@
 import itertools
 
 class LinesData:
-	def __init__(self,amountsLevel,amountsKey):
-		self.amountsLevel=amountsLevel
+	def __init__(self,levelOrders,amountsKey):
+		self.levelOrders=levelOrders
 		self.amountsKey=amountsKey
 		self.lineList=[] # [(level,values),...]
 		self.amountMap={} # {amountsKey:lineNumber,...}
 	def addLine(self,level,key,values):
-		if level==self.amountsLevel:
+		amountsLevel=len(self.levelOrders)-1
+		if level==amountsLevel:
 			self.amountMap[key]=len(self.lineList)
 		self.lineList.append((level,values))
+	def computeTree(self):
+		self.lineTreeNodes=[None for _ in self.lineList]
+		self.lineTreeRoots=[]
+		amountsLevel=len(self.levelOrders)-1
+		# TODO inefficient version - rewrite
+		def rec(level,minLine,maxLine):
+			if level==amountsLevel:
+				return
+			children=[]
+			if self.levelOrders[level]==Lines.BEFORE:
+				assert self.lineList[minLine][0]==level
+				for l in range(maxLine,minLine-1,-1):
+					if self.lineList[l][0]==level+1:
+						children.insert(0,l)
+					elif self.lineList[l][0]==level:
+						self.lineTreeNodes[l]=[l+1,maxLine,children]
+						if level==0:
+							self.lineTreeRoots.insert(0,l)
+						rec(level+1,l+1,maxLine)
+						children=[]
+						maxLine=l-1
+			else:
+				assert self.lineList[maxLine][0]==level
+				for l in range(minLine,maxLine+1):
+					if self.lineList[l][0]==level+1:
+						children.append(l)
+					elif self.lineList[l][0]==level:
+						self.lineTreeNodes[l]=[minLine,l-1,children]
+						if level==0:
+							self.lineTreeRoots.append(l)
+						rec(level+1,minLine,l-1)
+						children=[]
+						minLine=l+1
+		rec(0,0,len(self.lineList)-1)
+		print('roots:',self.lineTreeRoots)
+		print('nodes{')
+		for l,n in enumerate(self.lineTreeNodes):
+			print(l,':',n)
+		print('}nodes')
 	def listLines(self):
 		return self.lineList
 	def getLineForAmountItem(self,item):
@@ -38,7 +78,7 @@ class Lines:
 	def getData(self,sqlConn):
 		# TODO store/return key->line# map
 		levelOrders=self.listLevelOrders()
-		data=LinesData(len(levelOrders)-1,self.getAmountsKey())
+		data=LinesData(levelOrders,self.getAmountsKey())
 		noneKeys=[None for _ in levelOrders]
 		oldItem=None
 		oldLevelKeys=noneKeys
@@ -63,6 +103,7 @@ class Lines:
 						data.addLine(level,oldLevelKeys[level],self.getItemValues(oldItem,level))
 			oldItem=item
 			oldLevelKeys=levelKeys
+		data.computeTree()
 		return data
 
 class DepartmentRows(Lines):
