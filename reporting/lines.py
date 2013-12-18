@@ -45,15 +45,24 @@ class LinesData:
 						children=[]
 						minLine=l+1
 		rec(0,0,len(self.lineList)-1)
-		print('roots:',self.lineTreeRoots)
-		print('nodes{')
-		for l,n in enumerate(self.lineTreeNodes):
-			print(l,':',n)
-		print('}nodes')
 	def listLines(self):
 		return self.lineList
+	def listBaseIndices(self):
+		amountsLevel=len(self.levelOrders)-1
+		return (l for l,(level,_) in enumerate(self.lineList) if level==amountsLevel)
 	def getLineForAmountItem(self,item):
 		return self.amountMap[tuple(item[k] for k in self.amountsKey)]
+	def walkSums(self):
+		def rec(line):
+			isLowestLevel=True
+			l1,l2,lChildren=self.lineTreeNodes[line]
+			for l in lChildren:
+				if self.lineTreeNodes[l]:
+					isLowestLevel=False
+					yield from rec(l)
+			yield line,l1,l2,lChildren,isLowestLevel
+		for line in self.lineTreeRoots:
+			yield from rec(line)
 
 class Lines:
 	BEFORE=1

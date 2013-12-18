@@ -7,6 +7,8 @@ class Layout:
 		raise NotImplementedError
 	def writeAmount(self,r,c,amount):
 		raise NotImplementedError
+	def writeRowSum(self,r,c,amount,c1,c2,cs,isLowestLevel):
+		raise NotImplementedError
 
 class Spreadsheet:
 	def __init__(self,filename):
@@ -27,6 +29,7 @@ class XlsxSpreadsheet(Spreadsheet):
 		self.ws=self.wb.add_worksheet('expenditures')
 	def makeLayout(self,nCaptionLines,rowEntries,colEntries):
 		ws=self.ws
+		amountStyle=self.wb.add_format({'num_format':'#,##0.0;-#,##0.0;""'})
 		class XlsxLayout(Layout):
 			def writeRowHeaders(self,rowHeaders):
 				r0=nCaptionLines+len(colEntries)
@@ -57,7 +60,25 @@ class XlsxSpreadsheet(Spreadsheet):
 			def writeAmount(self,r,c,amount):
 				r0=nCaptionLines+len(colEntries)
 				c0=len(rowEntries)
-				ws.write(r0+r,c0+c,amount)
+				ws.write_number(r0+r,c0+c,amount,amountStyle)
+			def getCellName(self,r,c):
+				r0=nCaptionLines+len(colEntries)
+				c0=len(rowEntries)
+				a=ord('A')
+				radix=ord('Z')-a+1
+				if c0+c<radix:
+					cn=chr(a+c0+c)
+				else:
+					cn=chr(a+(c0+c)//radix-1)+chr(a+(c0+c)%radix)
+				return cn+str(r0+r+1)
+			def writeRowSum(self,r,c,amount,c1,c2,cs,isLowestLevel):
+				r0=nCaptionLines+len(colEntries)
+				c0=len(rowEntries)
+				if isLowestLevel:
+					formula='=SUM('+self.getCellName(r,c1)+':'+self.getCellName(r,c2)+')'
+				else:
+					formula='='+'+'.join(self.getCellName(r,cc) for cc in cs)
+				ws.write_formula(r0+r,c0+c,formula,amountStyle,amount)
 		return XlsxLayout()
 	def save(self):
 		self.wb.close()
