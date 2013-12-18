@@ -9,6 +9,8 @@ class Layout:
 		raise NotImplementedError
 	def writeRowSum(self,r,c,amount,c1,c2,cs,isLowestLevel):
 		raise NotImplementedError
+	def writeColSum(self,r,c,amount,r1,r2,rs,isLowestLevel):
+		raise NotImplementedError
 
 class Spreadsheet:
 	def __init__(self,filename):
@@ -78,6 +80,11 @@ class XlsxSpreadsheet(Spreadsheet):
 					formula='=SUM('+self.getCellName(r,c1)+':'+self.getCellName(r,c2)+')'
 				else:
 					formula='='+'+'.join(self.getCellName(r,cc) for cc in cs)
+				ws.write_formula(r0+r,c0+c,formula,amountStyle,amount)
+			def writeColSum(self,r,c,amount,r1,r2,rs,isLowestLevel):
+				r0=nCaptionLines+len(colEntries)
+				c0=len(rowEntries)
+				formula='=SUBTOTAL(9,'+self.getCellName(r1,c)+':'+self.getCellName(r2,c)+')'
 				ws.write_formula(r0+r,c0+c,formula,amountStyle,amount)
 		return XlsxLayout()
 	def save(self):

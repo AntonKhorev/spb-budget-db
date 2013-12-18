@@ -23,4 +23,8 @@ class Report:
 			for r in self.rowsData.listBaseIndices():
 				self.grid[r][c]=sum(self.grid[r][cc] for cc in cs)
 				layout.writeRowSum(r,c,Decimal(self.grid[r][c])/1000,c1,c2,cs,isLowestLevel)
+		for r,r1,r2,rs,isLowestLevel in self.rowsData.walkSums():
+			for c in range(len(self.grid[0])):
+				self.grid[r][c]=sum(self.grid[rr][c] for rr in rs)
+				layout.writeColSum(r,c,Decimal(self.grid[r][c])/1000,r1,r2,rs,isLowestLevel)
 		spreadsheet.save()
