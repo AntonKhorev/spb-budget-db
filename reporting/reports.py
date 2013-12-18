@@ -5,10 +5,15 @@ class Report:
 		self.cols=cols
 		self.rowsData=self.rows.getData(sqlConn)
 		self.colsData=self.cols.getData(sqlConn)
-		for item in sqlConn.queryAmounts(rows.getAmountsKey()+cols.getAmountsKey()):
-			print(dict(item))
+		self.amountItems=list(sqlConn.queryAmounts(rows.getAmountsKey()+cols.getAmountsKey()))
 	def save(self,spreadsheet):
 		layout=spreadsheet.makeLayout(1,self.rows.listEntries(),self.cols.listEntries())
-		layout.writeRowHeaders(self.rowsData)
-		layout.writeColHeaders(self.colsData)
+		layout.writeRowHeaders(self.rowsData.listLines())
+		layout.writeColHeaders(self.colsData.listLines())
+		for item in self.amountItems:
+			layout.writeAmount(
+				self.rowsData.getLineForAmountItem(item),
+				self.colsData.getLineForAmountItem(item),
+				item['amount']
+			)
 		spreadsheet.save()

@@ -5,6 +5,8 @@ class Layout:
 		raise NotImplementedError
 	def writeColHeaders(self,colHeaders):
 		raise NotImplementedError
+	def writeAmount(self,r,c,amount):
+		raise NotImplementedError
 
 class Spreadsheet:
 	def __init__(self,filename):
@@ -52,6 +54,10 @@ class XlsxSpreadsheet(Spreadsheet):
 						else:
 							nRepeats[r]+=1
 					oldValues=values
+			def writeAmount(self,r,c,amount):
+				r0=nCaptionLines+len(colEntries)
+				c0=len(rowEntries)
+				ws.write(r0+r,c0+c,amount)
 		return XlsxLayout()
 	def save(self):
 		self.wb.close()

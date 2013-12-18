@@ -1,5 +1,20 @@
 import itertools
 
+class LinesData:
+	def __init__(self,amountsLevel,amountsKey):
+		self.amountsLevel=amountsLevel
+		self.amountsKey=amountsKey
+		self.lineList=[] # [(level,values),...]
+		self.amountMap={} # {amountsKey:lineNumber,...}
+	def addLine(self,level,key,values):
+		if level==self.amountsLevel:
+			self.amountMap[key]=len(self.lineList)
+		self.lineList.append((level,values))
+	def listLines(self):
+		return self.lineList
+	def getLineForAmountItem(self,item):
+		return self.amountMap[tuple(item[k] for k in self.amountsKey)]
+
 class Lines:
 	BEFORE=1
 	AFTER=2
@@ -16,11 +31,14 @@ class Lines:
 		raise NotImplementedError
 	def listQueryOrderbys(self):
 		raise NotImplementedError
+	def getAmountsKey(self):
+		return self.listLevelKeys()[-1]
 	def listItemLevelKeys(self,item):
 		return [tuple(item[k] for k in levelKey) for levelKey in self.listLevelKeys()]
 	def getData(self,sqlConn):
 		# TODO store/return key->line# map
 		levelOrders=self.listLevelOrders()
+		data=LinesData(len(levelOrders)-1,self.getAmountsKey())
 		noneKeys=[None for _ in levelOrders]
 		oldItem=None
 		oldLevelKeys=noneKeys
@@ -40,13 +58,12 @@ class Lines:
 				if reset or levelKey!=oldLevelKeys[level]:
 					reset=True
 					if levelOrders[level]==self.BEFORE and item is not None:
-						yield level,self.getItemValues(item,level)
+						data.addLine(level,levelKey,self.getItemValues(item,level))
 					elif levelOrders[level]==self.AFTER and oldItem is not None:
-						yield level,self.getItemValues(oldItem,level)
+						data.addLine(level,oldLevelKeys[level],self.getItemValues(oldItem,level))
 			oldItem=item
 			oldLevelKeys=levelKeys
-	def getAmountsKey(self):
-		return self.listLevelKeys()[-1]
+		return data
 
 class DepartmentRows(Lines):
 	def listEntries(self):
