@@ -5,7 +5,7 @@ class Report:
 		self.cols=cols
 		self.rowsData=self.rows.getData(sqlConn)
 		self.colsData=self.cols.getData(sqlConn)
-		for item in sqlConn.queryAmounts(rows.listKeyEntries()+self.cols.listKeyEntries()):
+		for item in sqlConn.queryAmounts(rows.getAmountsKey()+cols.getAmountsKey()):
 			print(dict(item))
 	def save(self,spreadsheet):
 		layout=spreadsheet.makeLayout(1,self.rows.listEntries(),self.cols.listEntries())

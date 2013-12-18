@@ -5,8 +5,6 @@ class Lines:
 	AFTER=2
 	def listEntries(self):
 		raise NotImplementedError
-	def listKeyEntries(self):
-		raise NotImplementedError
 	def listLevelOrders(self):
 		# order for final level should be BEFORE
 		raise NotImplementedError
@@ -47,18 +45,13 @@ class Lines:
 						yield level,self.getItemValues(oldItem,level)
 			oldItem=item
 			oldLevelKeys=levelKeys
+	def getAmountsKey(self):
+		return self.listLevelKeys()[-1]
 
 class DepartmentRows(Lines):
 	def listEntries(self):
 		return [
 			'name',
-			'departmentCode',
-			'sectionCode',
-			'categoryCode',
-			'typeCode',
-		]
-	def listKeyEntries(self):
-		return [
 			'departmentCode',
 			'sectionCode',
 			'categoryCode',
@@ -100,13 +93,6 @@ class SectionRows(Lines):
 	def listEntries(self):
 		return [
 			'name',
-			'sectionCode',
-			'categoryCode',
-			'typeCode',
-		]
-	def listKeyEntries(self):
-		return [
-			'superSectionCode',
 			'sectionCode',
 			'categoryCode',
 			'typeCode',
@@ -153,8 +139,6 @@ class AmendmentCols(Lines):
 			'year',
 			'documentNumber',
 		]
-	def listKeyEntries(self):
-		return self.listEntries()
 	def listLevelOrders(self):
 		return [
 			self.AFTER,
