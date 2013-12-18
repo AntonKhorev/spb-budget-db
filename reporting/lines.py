@@ -10,7 +10,7 @@ class Lines:
 	def listLevelOrders(self):
 		# order for final level should be BEFORE
 		raise NotImplementedError
-	def listItemLevelKeys(self,item):
+	def listLevelKeys(self):
 		raise NotImplementedError
 	def getItemValues(self,item,level):
 		raise NotImplementedError
@@ -18,6 +18,8 @@ class Lines:
 		raise NotImplementedError
 	def listQueryOrderbys(self):
 		raise NotImplementedError
+	def listItemLevelKeys(self,item):
+		return [tuple(item[k] for k in levelKey) for levelKey in self.listLevelKeys()]
 	def getData(self,sqlConn):
 		# TODO store/return key->line# map
 		levelOrders=self.listLevelOrders()
@@ -69,12 +71,12 @@ class DepartmentRows(Lines):
 			self.BEFORE,
 			self.BEFORE,
 		]
-	def listItemLevelKeys(self,item):
+	def listLevelKeys(self):
 		return [
 			tuple(),
-			(item['departmentCode'],),
-			(item['departmentCode'],item['sectionCode'],item['categoryCode']),
-			(item['departmentCode'],item['sectionCode'],item['categoryCode'],item['typeCode']),
+			('departmentCode',),
+			('departmentCode','sectionCode','categoryCode'),
+			('departmentCode','sectionCode','categoryCode','typeCode'),
 		]
 	def getItemValues(self,item,level):
 		if level==0:
@@ -117,13 +119,13 @@ class SectionRows(Lines):
 			self.BEFORE,
 			self.BEFORE,
 		]
-	def listItemLevelKeys(self,item):
+	def listLevelKeys(self):
 		return [
 			tuple(),
-			(item['superSectionCode'],),
-			(item['sectionCode'],),
-			(item['sectionCode'],item['categoryCode']),
-			(item['sectionCode'],item['categoryCode'],item['typeCode']), # TODO prevent superSectionCode from getting into amounts query
+			('superSectionCode',),
+			('sectionCode',),
+			('sectionCode','categoryCode'),
+			('sectionCode','categoryCode','typeCode'),
 		]
 	def getItemValues(self,item,level):
 		if level==0:
@@ -158,10 +160,10 @@ class AmendmentCols(Lines):
 			self.AFTER,
 			self.BEFORE,
 		]
-	def listItemLevelKeys(self,item):
+	def listLevelKeys(self):
 		return [
-			(item['year'],),
-			(item['year'],item['documentNumber']),
+			('year',),
+			('year','documentNumber'),
 		]
 	def getItemValues(self,item,level):
 		if level==0:
