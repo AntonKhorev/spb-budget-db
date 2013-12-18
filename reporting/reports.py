@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 class Report:
 	def __init__(self,sqlConn,rows,cols):
 		# TODO specify filter
@@ -14,6 +16,6 @@ class Report:
 			layout.writeAmount(
 				self.rowsData.getLineForAmountItem(item),
 				self.colsData.getLineForAmountItem(item),
-				item['amount']
+				Decimal(item['amount'])/1000
 			)
 		spreadsheet.save()
