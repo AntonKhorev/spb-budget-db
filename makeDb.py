@@ -61,25 +61,26 @@ def readCsv(csvFilename):
 			yield row
 
 # scan section codes
-for csvFilenamePrefix in ('tables/2014.0.p.','tables/2014.0.z.'):
+for csvFilenamePrefix,priority in (('tables/2014.0.p.',2),('tables/2014.0.z.',1)):
 	for documentNumber,paragraphs in listDocumentParagraphs(csvFilenamePrefix+'*.section.csv'):
 		for documentNumber,paragraphNumber,table,csvFilename in paragraphs:
 			testOrder=makeTestOrder(['superSectionCode','sectionCode','categoryCode','typeCode'],[True,True,True,True])
 			for row in readCsv(csvFilename):
 				resets=testOrder(row)
 				if row['superSectionCode']:
-					superSections.add(row)
+					superSections.add(row,priority)
 				if row['sectionCode']:
-					sections.add(row)
+					sections.add(row,priority)
 				if row['categoryCode']:
-					categories.add(row)
+					categories.add(row,priority)
 				if row['typeCode']:
-					types.add(row)
+					types.add(row,priority)
 
 # read monetary data
 amendmentFlag=False
 editNumber=0
 for documentNumber,paragraphs in listDocumentParagraphs('tables/2014.0.p.*.csv'):
+	priority=2 if documentNumber==3574 else 3
 	for documentNumber,paragraphNumber,table,csvFilename in paragraphs:
 		if table not in ('department','move'): continue
 		editNumber+=1
@@ -99,11 +100,11 @@ for documentNumber,paragraphs in listDocumentParagraphs('tables/2014.0.p.*.csv')
 				if row['departmentCode']:
 					if amendmentFlag:
 						departments.resetSequence() # ignore order
-					departments.add(row)
+					departments.add(row,priority)
 				if row['categoryCode']:
-					categories.add(row)
+					categories.add(row,priority)
 				if row['typeCode']:
-					types.add(row)
+					types.add(row,priority)
 					items.add(row,editNumber)
 		elif table=='move':
 			reader=readCsv(csvFilename)
@@ -148,6 +149,7 @@ def makeEditNumberForYear():
 			return editNumber2015_2016
 	return editNumberForYear
 with items.makeFixer(makeEditNumberForYear()) as fixer:
+	priority=1
 	for documentNumber,paragraphs in listDocumentParagraphs('tables/2014.0.z.*.department.csv'):
 		for documentNumber,paragraphNumber,table,csvFilename in paragraphs:
 			testOrder=makeTestOrder(['departmentCode','sectionCode','categoryCode','typeCode'],[False,True,True,True])
@@ -156,11 +158,11 @@ with items.makeFixer(makeEditNumberForYear()) as fixer:
 				if 'departmentCode' in resets:
 					departments.resetSequence()
 				if row['departmentCode']:
-					departments.add(row)
+					departments.add(row,priority)
 				if row['categoryCode']:
-					categories.add(row)
+					categories.add(row,priority)
 				if row['typeCode']:
-					types.add(row)
+					types.add(row,priority)
 					fixer.fix(row)
 					# uniqueCheck(row['categoryCode'],row['sectionCode'])
 

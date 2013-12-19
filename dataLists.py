@@ -4,18 +4,25 @@ import collections
 class AbstractList:
 	def __init__(self):
 		self.names={}
+		self.priorities={}
 		self.nameCollisions=collections.defaultdict(set)
-	def add(self,row):
+	def add(self,row,priority):
 		code=row[self.codeCol]
 		name=row[self.nameCol]
 		if code in self.names:
-			if self.names[code]!=name and name not in self.nameCollisions[code]:
+			if self.names[code]!=name:
+				if priority<self.priorities[code]:
+					print('- priority = '+str(self.priorities[code])+'; '+self.codeCol+' = '+code+'; '+self.nameCol+' = '+str(self.names[code]))
+					self.names[code]=name
+					self.priorities[code]=priority
+					print('+ priority = '+str(self.priorities[code])+'; '+self.codeCol+' = '+code+'; '+self.nameCol+' = '+str(self.names[code]))
+				elif name not in self.nameCollisions[code]:
+					print('c priority = '+str(priority)+'; '+self.codeCol+' = '+code+'; '+self.nameCol+' = '+str(name))
+					print('+ priority = '+str(self.priorities[code])+'; '+self.codeCol+' = '+code+'; '+self.nameCol+' = '+str(self.names[code]))
 				self.nameCollisions[code].add(name)
-				# raise Exception('code collision: '+self.codeCol+' = '+code+'; '+self.nameCol+' = '+str(self.names[code])+' vs '+str(name))
-				print('+ '+self.codeCol+' = '+code+'; '+self.nameCol+' = '+str(self.names[code]))
-				print('- '+self.codeCol+' = '+code+'; '+self.nameCol+' = '+str(name))
 		else:
 			self.names[code]=name
+			self.priorities[code]=priority
 	def getOrderedRows(self):
 		for code,name in sorted(self.names.items()):
 			yield {self.codeCol:code,self.nameCol:name}
@@ -34,8 +41,8 @@ class DepartmentList(AbstractList):
 		self.prevCode=None
 	def resetSequence(self):
 		self.prevCode=None
-	def add(self,row):
-		super().add(row)
+	def add(self,row,priority):
+		super().add(row,priority)
 		code=row[self.codeCol]
 		if self.prevCode is not None:
 			if self.prevCode==code:
