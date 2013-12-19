@@ -35,7 +35,27 @@ class XlsxSpreadsheet(Spreadsheet):
 		class XlsxLayout(Layout):
 			def __init__(self):
 				r0=nCaptionLines+len(colEntries)
+				c0=0
 				ws.freeze_panes(r0,0)
+				def width(style):
+					if 'name' in style:
+						return 100
+					elif 'department' in style:
+						return 4
+					elif 'section' in style:
+						return 5
+					elif 'category' in style:
+						return 8
+					elif 'type' in style:
+						return 4
+					elif 'amount' in style:
+						return 15
+				for c,style in enumerate(itertools.chain(staticColStyles,amountColStyles)):
+					w=width(style)
+					if w:
+						self.setColWidth(c,w)
+			def setColWidth(self,c,width):
+				ws.set_column(c,c,width)
 			def write(self,r,c,value):
 				ws.write(r,c,value)
 			def writeRange(self,r1,c1,r2,c2,value):
