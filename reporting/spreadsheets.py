@@ -31,7 +31,8 @@ class XlsxSpreadsheet(Spreadsheet):
 		self.ws=self.wb.add_worksheet('expenditures')
 	def makeLayout(self,nCaptionLines,rowEntries,colEntries,staticColStyles,amountColStyles):
 		ws=self.ws
-		amountStyle=self.wb.add_format({'num_format':'#,##0.0;-#,##0.0;""'})
+		absoluteAmountStyle=self.wb.add_format({'num_format':'#,##0.0;-#,##0.0;""'})
+		relativeAmountStyle=self.wb.add_format({'num_format':'+#,##0.0;-#,##0.0;""'})
 		class XlsxLayout(Layout):
 			def __init__(self):
 				r0=nCaptionLines+len(colEntries)
@@ -94,10 +95,15 @@ class XlsxSpreadsheet(Spreadsheet):
 						else:
 							nRepeats[r]+=1
 					oldValues=values
+			def getAmountStyle(self,c):
+				if 'relative' in amountColStyles[c]:
+					return relativeAmountStyle
+				else:
+					return absoluteAmountStyle
 			def writeAmount(self,r,c,amount):
 				r0=nCaptionLines+len(colEntries)
 				c0=len(rowEntries)
-				ws.write_number(r0+r,c0+c,amount,amountStyle)
+				ws.write_number(r0+r,c0+c,amount,self.getAmountStyle(c))
 			def getCellName(self,r,c):
 				r0=nCaptionLines+len(colEntries)
 				c0=len(rowEntries)
@@ -115,12 +121,12 @@ class XlsxSpreadsheet(Spreadsheet):
 					formula='=SUM('+self.getCellName(r,c1)+':'+self.getCellName(r,c2)+')'
 				else:
 					formula='='+'+'.join(self.getCellName(r,cc) for cc in cs)
-				ws.write_formula(r0+r,c0+c,formula,amountStyle,amount)
+				ws.write_formula(r0+r,c0+c,formula,self.getAmountStyle(c),amount)
 			def writeColSum(self,r,c,amount,r1,r2,rs,isLowestLevel):
 				r0=nCaptionLines+len(colEntries)
 				c0=len(rowEntries)
 				formula='=SUBTOTAL(9,'+self.getCellName(r1,c)+':'+self.getCellName(r2,c)+')'
-				ws.write_formula(r0+r,c0+c,formula,amountStyle,amount)
+				ws.write_formula(r0+r,c0+c,formula,self.getAmountStyle(c),amount)
 		return XlsxLayout()
 	def save(self):
 		self.wb.close()
