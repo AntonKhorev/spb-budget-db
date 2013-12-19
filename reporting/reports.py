@@ -14,7 +14,7 @@ class Report:
 			self.grid[self.rowsData.getLineForAmountItem(item)][self.colsData.getLineForAmountItem(item)]=item['amount']
 	def save(self,spreadsheet):
 		layout=spreadsheet.makeLayout(
-			1,self.rows.listEntries(),self.cols.listEntries(),
+			1,len(self.rows.listEntries()),len(self.cols.listEntries()),len(self.rows.listLevelOrders()),
 			self.rows.listStaticStyles(),self.colsData.listAmountStyles()
 		)
 		layout.writeStaticHeaders(self.rows.listStaticHeaders())
@@ -23,12 +23,12 @@ class Report:
 		for r in self.rowsData.listBaseIndices():
 			for c in self.colsData.listBaseIndices():
 				layout.writeAmount(r,c,Decimal(self.grid[r][c])/1000)
-		for c,c1,c2,cs,isLowestLevel in self.colsData.walkSums():
+		for c,c1,c2,cs,level,isDeepestSum in self.colsData.walkSums():
 			for r in self.rowsData.listBaseIndices():
 				self.grid[r][c]=sum(self.grid[r][cc] for cc in cs)
-				layout.writeRowSum(r,c,Decimal(self.grid[r][c])/1000,c1,c2,cs,isLowestLevel)
-		for r,r1,r2,rs,isLowestLevel in self.rowsData.walkSums():
+				layout.writeRowSum(r,c,Decimal(self.grid[r][c])/1000,c1,c2,cs,level,isDeepestSum)
+		for r,r1,r2,rs,level,isDeepestSum in self.rowsData.walkSums():
 			for c in range(len(self.grid[0])):
 				self.grid[r][c]=sum(self.grid[rr][c] for rr in rs)
-				layout.writeColSum(r,c,Decimal(self.grid[r][c])/1000,r1,r2,rs,isLowestLevel)
+				layout.writeColSum(r,c,Decimal(self.grid[r][c])/1000,r1,r2,rs,level,isDeepestSum)
 		spreadsheet.save()

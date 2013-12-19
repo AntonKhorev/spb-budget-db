@@ -53,16 +53,16 @@ class LinesData:
 	def getLineForAmountItem(self,item):
 		return self.amountMap[tuple(item[k] for k in self.amountsKey)]
 	def walkSums(self):
-		def rec(line):
-			isLowestLevel=True
+		def rec(line,level):
+			isDeepestSum=True
 			l1,l2,lChildren=self.lineTreeNodes[line]
 			for l in lChildren:
 				if self.lineTreeNodes[l]:
-					isLowestLevel=False
-					yield from rec(l)
-			yield line,l1,l2,lChildren,isLowestLevel
+					isDeepestSum=False
+					yield from rec(l,level+1)
+			yield line,l1,l2,lChildren,level,isDeepestSum
 		for line in self.lineTreeRoots:
-			yield from rec(line)
+			yield from rec(line,0)
 	def listAmountStyles(self):
 		styles=[]
 		first1=True
