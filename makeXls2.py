@@ -15,7 +15,7 @@ with reporting.dbs.Sqlite('db/pr-bd-2014-16.sql') as db:
 		reporting.lines.AmendmentCols(),
 		"Ведомственная структура расходов бюджета Санкт-Петербурга"
 	).save(
-		reporting.spreadsheets.XlsxSpreadsheet('out2/dept.xlsx')
+		reporting.spreadsheets.XlsxSpreadsheet('out2/departments.xlsx')
 	)
 	reporting.reports.Report(
 		db,
@@ -23,5 +23,5 @@ with reporting.dbs.Sqlite('db/pr-bd-2014-16.sql') as db:
 		reporting.lines.AmendmentCols(),
 		"Функциональная структура расходов бюджета Санкт-Петербурга"
 	).save(
-		reporting.spreadsheets.XlsxSpreadsheet('out2/sect.xlsx')
+		reporting.spreadsheets.XlsxSpreadsheet('out2/sections.xlsx')
 	)
