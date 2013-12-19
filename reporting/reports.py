@@ -14,6 +14,7 @@ class Report:
 			self.grid[self.rowsData.getLineForAmountItem(item)][self.colsData.getLineForAmountItem(item)]=item['amount']
 	def save(self,spreadsheet):
 		layout=spreadsheet.makeLayout(1,self.rows.listEntries(),self.cols.listEntries())
+		layout.writeStaticHeaders(self.rows.listStaticHeaders())
 		layout.writeRowHeaders(self.rowsData.listLines())
 		layout.writeColHeaders(self.colsData.listLines())
 		for r in self.rowsData.listBaseIndices():

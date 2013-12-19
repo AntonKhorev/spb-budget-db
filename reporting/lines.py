@@ -84,6 +84,16 @@ class Lines:
 		return self.listLevelKeys()[-1]
 	def listItemLevelKeys(self,item):
 		return [tuple(item[k] for k in levelKey) for levelKey in self.listLevelKeys()]
+	def listStaticHeaders(self):
+		heads={
+			'name':'Наименование',
+			'departmentCode':'Код ведомства',
+			'superSectionCode':'Код надраздела',
+			'sectionCode':'Код раздела',
+			'categoryCode':'Код целевой статьи',
+			'typeCode':'Код вида расходов',
+		}
+		return [heads[k] for k in self.listEntries()]
 	def getData(self,sqlConn):
 		# TODO store/return key->line# map
 		levelOrders=self.listLevelOrders()

@@ -33,13 +33,27 @@ class XlsxSpreadsheet(Spreadsheet):
 		ws=self.ws
 		amountStyle=self.wb.add_format({'num_format':'#,##0.0;-#,##0.0;""'})
 		class XlsxLayout(Layout):
+			def write(self,r,c,value):
+				ws.write(r,c,value)
+			def writeRange(self,r1,c1,r2,c2,value):
+				if c1!=c2 or r1!=r2:
+					ws.merge_range(r1,c1,r2,c2,value)
+				else:
+					ws.write(r1,c1,value)
+			# candidates for superclass
+			def writeStaticHeaders(self,staticHeaders):
+				r0=nCaptionLines
+				c0=0
+				r1=r0+len(colEntries)-1
+				for c,value in enumerate(staticHeaders):
+					self.writeRange(r0,c0+c,r1,c0+c,value)
 			def writeRowHeaders(self,rowHeaders):
 				r0=nCaptionLines+len(colEntries)
 				c0=0
 				for r,(level,values) in enumerate(rowHeaders):
 					ws.set_row(r0+r,options={'level':level})
 					for c,value in enumerate(values):
-						ws.write(r0+r,c0+c,value)
+						self.write(r0+r,c0+c,value)
 			def writeColHeaders(self,colHeaders):
 				r0=nCaptionLines
 				c0=len(rowEntries)
@@ -51,10 +65,7 @@ class XlsxSpreadsheet(Spreadsheet):
 						ws.set_column(c0+c,c0+c,options={'level':level})
 					for r,value in enumerate(values):
 						if values[:r+1]!=oldValues[:r+1] and oldValues[r]!=None:
-							if nRepeats[r]>1:
-								ws.merge_range(r0+r,c0+c-nRepeats[r],r0+r,c0+c-1,oldValues[r])
-							else:
-								ws.write(r0+r,c0+c-1,oldValues[r])
+							self.writeRange(r0+r,c0+c-nRepeats[r],r0+r,c0+c-1,oldValues[r])
 							nRepeats[r]=1
 						else:
 							nRepeats[r]+=1
