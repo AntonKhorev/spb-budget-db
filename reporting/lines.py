@@ -64,19 +64,21 @@ class LinesData:
 		for line in self.lineTreeRoots:
 			yield from rec(line)
 	def listAmountStyles(self):
+		styles=[]
 		first1=True
 		for level,_ in self.lineList:
 			if level==0:
-				yield {'amount','absolute'}
+				styles.append({'amount','absolute'})
 				first1=True
 			elif level==1:
 				if first1:
-					yield {'amount','absolute'}
+					styles.append({'amount','absolute'})
 				else:
-					yield {'amount','relative'}
+					styles.append({'amount','relative'})
 				first1=False
 			else:
-				yield {'amount','relative'}
+				styles.append({'amount','relative'})
+		return styles
 class Lines:
 	BEFORE=1
 	AFTER=2

@@ -37,6 +37,19 @@ class XlsxSpreadsheet(Spreadsheet):
 				r0=nCaptionLines+len(colEntries)
 				c0=0
 				ws.freeze_panes(r0,0)
+			def setColWidth(self,c,width):
+				ws.set_column(c,c,width)
+			def setColWidthAndLevel(self,c,width,level):
+				ws.set_column(c,c,width=width,options={'level':level})
+			def write(self,r,c,value):
+				ws.write(r,c,value)
+			def writeRange(self,r1,c1,r2,c2,value):
+				if c1!=c2 or r1!=r2:
+					ws.merge_range(r1,c1,r2,c2,value)
+				else:
+					ws.write(r1,c1,value)
+			# candidates for superclass
+			def writeStaticHeaders(self,staticHeaders):
 				def width(style):
 					if 'name' in style:
 						return 100
@@ -48,27 +61,15 @@ class XlsxSpreadsheet(Spreadsheet):
 						return 8
 					elif 'type' in style:
 						return 4
-					elif 'amount' in style:
-						return 15
-				for c,style in enumerate(itertools.chain(staticColStyles,amountColStyles)):
-					w=width(style)
-					if w:
-						self.setColWidth(c,w)
-			def setColWidth(self,c,width):
-				ws.set_column(c,c,width)
-			def write(self,r,c,value):
-				ws.write(r,c,value)
-			def writeRange(self,r1,c1,r2,c2,value):
-				if c1!=c2 or r1!=r2:
-					ws.merge_range(r1,c1,r2,c2,value)
-				else:
-					ws.write(r1,c1,value)
-			# candidates for superclass
-			def writeStaticHeaders(self,staticHeaders):
+					# elif 'amount' in style:
+						# return 12 # set in writeColHeaders
 				r0=nCaptionLines
 				c0=0
 				r1=r0+len(colEntries)-1
-				for c,value in enumerate(staticHeaders):
+				for c,(value,style) in enumerate(zip(staticHeaders,staticColStyles)):
+					w=width(style)
+					if w:
+						self.setColWidth(c,w)
 					self.writeRange(r0,c0+c,r1,c0+c,value)
 			def writeRowHeaders(self,rowHeaders):
 				r0=nCaptionLines+len(colEntries)
@@ -85,7 +86,7 @@ class XlsxSpreadsheet(Spreadsheet):
 				nRepeats=[0 for _ in colEntries]
 				for c,(level,values) in enumerate(itertools.chain(colHeaders,((-1,noneValues),))):
 					if level>=0:
-						ws.set_column(c0+c,c0+c,options={'level':level})
+						self.setColWidthAndLevel(c0+c,12,level) # FIXME 12 = width for amount
 					for r,value in enumerate(values):
 						if values[:r+1]!=oldValues[:r+1] and oldValues[r]!=None:
 							self.writeRange(r0+r,c0+c-nRepeats[r],r0+r,c0+c-1,oldValues[r])
