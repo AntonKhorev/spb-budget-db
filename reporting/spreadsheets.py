@@ -41,7 +41,7 @@ class XlsxSpreadsheet(Spreadsheet):
 		absoluteAmountFormat=makeFormat({'num_format':'#,##0.0;-#,##0.0;""'})
 		relativeAmountFormat=makeFormat({'num_format':'+#,##0.0;-#,##0.0;""'})
 		headerFormat=self.wb.add_format({'bold':True,'text_wrap':True})
-		codeHeaderFormat=self.wb.add_format({'bold':True,'font_size':10,'text_wrap':True})
+		codeHeaderFormat=self.wb.add_format({'bold':True,'font_size':9,'text_wrap':True})
 		captionFormat=self.wb.add_format({'bold':True,'font_size':13})
 		class XlsxLayout(Layout):
 			def __init__(self):
