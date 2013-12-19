@@ -102,11 +102,11 @@ class Lines:
 	def listStaticHeaders(self):
 		heads={
 			'name':'Наименование',
-			'departmentCode':'Код ведомства',
-			'superSectionCode':'Код надраздела',
-			'sectionCode':'Код раздела',
-			'categoryCode':'Код целевой статьи',
-			'typeCode':'Код вида расходов',
+			'departmentCode':'Ведомство',
+			'superSectionCode':'Надраздел',
+			'sectionCode':'Раздел',
+			'categoryCode':'Целевая статья',
+			'typeCode':'Вид расходов',
 		}
 		return [heads[k] for k in self.listEntries()]
 	def listStaticStyles(self):
@@ -253,18 +253,28 @@ class AmendmentCols(Lines):
 		]
 	def getItemValues(self,item,level):
 		if level==0:
-			return (str(item['year'])+' г.','Закон (тыс. руб.)')
+			return (str(item['year'])+' г.','Закон (тыс. руб.)')
 		elif level==1:
+			# if item['amendmentFlag']:
+				# if item['governorFlag']:
+					# return (str(item['year'])+' г.','Поправка Губернатора — док. '+str(item['documentNumber'])+ ' (тыс. руб.)')
+				# else:
+					# if item['documentNumber']==3850: # FIXME hack
+						# return (str(item['year'])+' г.','Прочие поправки — док. '+str(item['documentNumber'])+ ' (тыс. руб.)')
+					# else:
+						# return (str(item['year'])+' г.','Поправка БФК — док. '+str(item['documentNumber'])+ ' (тыс. руб.)')
+			# else:
+				# return (str(item['year'])+' г.','Проект закона — док. '+str(item['documentNumber'])+ ' (тыс. руб.)')
 			if item['amendmentFlag']:
 				if item['governorFlag']:
-					return (str(item['year'])+' г.','Поправка Губернатора — док. '+str(item['documentNumber'])+ ' (тыс. руб.)')
+					return (str(item['year'])+' г.','Поправка Губернатора (тыс. руб.)')
 				else:
 					if item['documentNumber']==3850: # FIXME hack
-						return (str(item['year'])+' г.','Прочие поправки — док. '+str(item['documentNumber'])+ ' (тыс. руб.)')
+						return (str(item['year'])+' г.','Прочие поправки (тыс. руб.)')
 					else:
-						return (str(item['year'])+' г.','Поправка БФК — док. '+str(item['documentNumber'])+ ' (тыс. руб.)')
+						return (str(item['year'])+' г.','Поправка БФК (тыс. руб.)')
 			else:
-				return (str(item['year'])+' г.','Проект закона — док. '+str(item['documentNumber'])+ ' (тыс. руб.)')
+				return (str(item['year'])+' г.','Проект закона (тыс. руб.)')
 		raise ValueError()
 	def listQuerySelects(self):
 		return 'year','documentNumber','amendmentFlag','governorFlag'

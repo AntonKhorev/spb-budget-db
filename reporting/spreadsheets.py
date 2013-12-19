@@ -40,6 +40,8 @@ class XlsxSpreadsheet(Spreadsheet):
 		codeFormat=makeFormat({'align':'center'})
 		absoluteAmountFormat=makeFormat({'num_format':'#,##0.0;-#,##0.0;""'})
 		relativeAmountFormat=makeFormat({'num_format':'+#,##0.0;-#,##0.0;""'})
+		headerFormat=self.wb.add_format({'bold':True,'text_wrap':True})
+		codeHeaderFormat=self.wb.add_format({'bold':True,'font_size':10,'text_wrap':True})
 		class XlsxLayout(Layout):
 			def __init__(self):
 				r0=nCaptionLines+nColEntries
@@ -50,18 +52,16 @@ class XlsxSpreadsheet(Spreadsheet):
 			def setColWidthAndLevel(self,c,width,level):
 				ws.set_column(c,c,width=width,options={'level':level})
 			def write(self,r,c,value,format=None):
-				if format:
-					ws.write(r,c,value,format)
-				else:
-					ws.write(r,c,value)
-			def writeRange(self,r1,c1,r2,c2,value):
+				ws.write(r,c,value,format)
+			def writeRange(self,r1,c1,r2,c2,value,format=None):
 				if c1!=c2 or r1!=r2:
-					ws.merge_range(r1,c1,r2,c2,value)
+					ws.merge_range(r1,c1,r2,c2,value,format)
 				else:
-					ws.write(r1,c1,value)
+					ws.write(r1,c1,value,format)
 			# candidates for superclass
 			def writeStaticHeaders(self,staticHeaders):
-				def width(style):
+				def width(c):
+					style=staticColStyles[c]
 					if 'name' in style:
 						return 100
 					elif 'department' in style:
@@ -74,14 +74,22 @@ class XlsxSpreadsheet(Spreadsheet):
 						return 4
 					# elif 'amount' in style:
 						# return 12 # set in writeColHeaders
+				def format(c):
+					style=staticColStyles[c]
+					if 'code' in style:
+						return codeHeaderFormat
+					else:
+						return headerFormat
 				r0=nCaptionLines
 				c0=0
 				r1=r0+nColEntries-1
-				for c,(value,style) in enumerate(zip(staticHeaders,staticColStyles)):
-					w=width(style)
+				for c,value in enumerate(staticHeaders):
+					w=width(c)
 					if w:
 						self.setColWidth(c,w)
-					self.writeRange(r0,c0+c,r1,c0+c,value)
+					self.writeRange(r0,c0+c,r1,c0+c,value,format(c))
+				for r in range(nColEntries):
+					ws.set_row(r0+r,60//nColEntries)
 			def writeRowHeaders(self,rowHeaders):
 				def format(c):
 					if 'code' in staticColStyles[c]:
@@ -105,7 +113,7 @@ class XlsxSpreadsheet(Spreadsheet):
 						self.setColWidthAndLevel(c0+c,12,level) # FIXME 12 = width for amount
 					for r,value in enumerate(values):
 						if values[:r+1]!=oldValues[:r+1] and oldValues[r]!=None:
-							self.writeRange(r0+r,c0+c-nRepeats[r],r0+r,c0+c-1,oldValues[r])
+							self.writeRange(r0+r,c0+c-nRepeats[r],r0+r,c0+c-1,oldValues[r],headerFormat)
 							nRepeats[r]=1
 						else:
 							nRepeats[r]+=1
