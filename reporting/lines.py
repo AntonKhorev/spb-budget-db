@@ -252,29 +252,23 @@ class AmendmentCols(Lines):
 			('year','documentNumber'),
 		]
 	def getItemValues(self,item,level):
+		if item['year']>2014: # FIXME hack
+			yearValue=str(item['year'])+' г. (план)'
+		else:
+			yearValue=str(item['year'])+' г.'
 		if level==0:
-			return (str(item['year'])+' г.','Закон (тыс. руб.)')
+			return (yearValue,'Закон')
 		elif level==1:
-			# if item['amendmentFlag']:
-				# if item['governorFlag']:
-					# return (str(item['year'])+' г.','Поправка Губернатора — док. '+str(item['documentNumber'])+ ' (тыс. руб.)')
-				# else:
-					# if item['documentNumber']==3850: # FIXME hack
-						# return (str(item['year'])+' г.','Прочие поправки — док. '+str(item['documentNumber'])+ ' (тыс. руб.)')
-					# else:
-						# return (str(item['year'])+' г.','Поправка БФК — док. '+str(item['documentNumber'])+ ' (тыс. руб.)')
-			# else:
-				# return (str(item['year'])+' г.','Проект закона — док. '+str(item['documentNumber'])+ ' (тыс. руб.)')
 			if item['amendmentFlag']:
 				if item['governorFlag']:
-					return (str(item['year'])+' г.','Поправка Губернатора (тыс. руб.)')
+					return (yearValue,'Поправка Губернатора')
 				else:
 					if item['documentNumber']==3850: # FIXME hack
-						return (str(item['year'])+' г.','Прочие поправки (тыс. руб.)')
+						return (yearValue,'Прочие поправки')
 					else:
-						return (str(item['year'])+' г.','Поправка БФК (тыс. руб.)')
+						return (yearValue,'Поправка БФК')
 			else:
-				return (str(item['year'])+' г.','Проект закона (тыс. руб.)')
+				return (yearValue,'Проект закона')
 		raise ValueError()
 	def listQuerySelects(self):
 		return 'year','documentNumber','amendmentFlag','governorFlag'

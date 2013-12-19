@@ -121,6 +121,7 @@ class XlsxSpreadsheet(Spreadsheet):
 						else:
 							nRepeats[r]+=1
 					oldValues=values
+				self.writeRange(0,nRowEntries,0,nRowEntries+c-1,"(тыс. руб.)")
 			def getAmountFormat(self,c):
 				if 'relative' in amountColStyles[c]:
 					return relativeAmountFormat
