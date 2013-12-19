@@ -12,14 +12,16 @@ with reporting.dbs.Sqlite('db/pr-bd-2014-16.sql') as db:
 	reporting.reports.Report(
 		db,
 		reporting.lines.DepartmentRows(),
-		reporting.lines.AmendmentCols()
+		reporting.lines.AmendmentCols(),
+		"Ведомственная структура расходов бюджета Санкт-Петербурга"
 	).save(
 		reporting.spreadsheets.XlsxSpreadsheet('out2/dept.xlsx')
 	)
 	reporting.reports.Report(
 		db,
 		reporting.lines.SectionRows(),
-		reporting.lines.AmendmentCols()
+		reporting.lines.AmendmentCols(),
+		"Функциональная структура расходов бюджета Санкт-Петербурга"
 	).save(
 		reporting.spreadsheets.XlsxSpreadsheet('out2/sect.xlsx')
 	)

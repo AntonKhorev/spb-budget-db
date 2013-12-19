@@ -42,6 +42,7 @@ class XlsxSpreadsheet(Spreadsheet):
 		relativeAmountFormat=makeFormat({'num_format':'+#,##0.0;-#,##0.0;""'})
 		headerFormat=self.wb.add_format({'bold':True,'text_wrap':True})
 		codeHeaderFormat=self.wb.add_format({'bold':True,'font_size':10,'text_wrap':True})
+		captionFormat=self.wb.add_format({'bold':True,'font_size':13})
 		class XlsxLayout(Layout):
 			def __init__(self):
 				r0=nCaptionLines+nColEntries
@@ -59,6 +60,8 @@ class XlsxSpreadsheet(Spreadsheet):
 				else:
 					ws.write(r1,c1,value,format)
 			# candidates for superclass
+			def writeCaption(self,caption):
+				self.writeRange(0,0,0,nRowEntries-1,caption,captionFormat)
 			def writeStaticHeaders(self,staticHeaders):
 				def width(c):
 					style=staticColStyles[c]

@@ -1,8 +1,9 @@
 from decimal import Decimal
 
 class Report:
-	def __init__(self,sqlConn,rows,cols):
+	def __init__(self,sqlConn,rows,cols,caption):
 		# TODO specify filter
+		self.caption=caption
 		self.rows=rows
 		self.cols=cols
 		self.rowsData=self.rows.getData(sqlConn)
@@ -17,6 +18,7 @@ class Report:
 			1,len(self.rows.listEntries()),len(self.cols.listEntries()),len(self.rows.listLevelOrders()),
 			self.rows.listStaticStyles(),self.colsData.listAmountStyles()
 		)
+		layout.writeCaption(self.caption)
 		layout.writeStaticHeaders(self.rows.listStaticHeaders())
 		layout.writeRowHeaders(self.rowsData.listLines())
 		layout.writeColHeaders(self.colsData.listLines())
