@@ -15,7 +15,7 @@ class Layout:
 class Spreadsheet:
 	def __init__(self,filename):
 		self.filename=filename
-	def makeLayout(self,nCaptionLines,rowEntries,colEntries):
+	def makeLayout(self,nCaptionLines,rowEntries,colEntries,staticColStyles,amountColStyles):
 		# mainly, number of entries is needed
 		# but names can be used, for example, in html col classes for styling
 		# should return Layout object
@@ -29,10 +29,13 @@ class XlsxSpreadsheet(Spreadsheet):
 		import xlsxwriter
 		self.wb=xlsxwriter.Workbook(self.filename)
 		self.ws=self.wb.add_worksheet('expenditures')
-	def makeLayout(self,nCaptionLines,rowEntries,colEntries):
+	def makeLayout(self,nCaptionLines,rowEntries,colEntries,staticColStyles,amountColStyles):
 		ws=self.ws
 		amountStyle=self.wb.add_format({'num_format':'#,##0.0;-#,##0.0;""'})
 		class XlsxLayout(Layout):
+			def __init__(self):
+				r0=nCaptionLines+len(colEntries)
+				ws.freeze_panes(r0,0)
 			def write(self,r,c,value):
 				ws.write(r,c,value)
 			def writeRange(self,r1,c1,r2,c2,value):

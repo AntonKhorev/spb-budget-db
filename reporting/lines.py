@@ -63,7 +63,20 @@ class LinesData:
 			yield line,l1,l2,lChildren,isLowestLevel
 		for line in self.lineTreeRoots:
 			yield from rec(line)
-
+	def listAmountStyles(self):
+		first1=True
+		for level,_ in self.lineList:
+			if level==0:
+				yield {'amount','absolute'}
+				first1=True
+			elif level==1:
+				if first1:
+					yield {'amount','absolute'}
+				else:
+					yield {'amount','relative'}
+				first1=False
+			else:
+				yield {'amount','relative'}
 class Lines:
 	BEFORE=1
 	AFTER=2
@@ -94,6 +107,16 @@ class Lines:
 			'typeCode':'Код вида расходов',
 		}
 		return [heads[k] for k in self.listEntries()]
+	def listStaticStyles(self):
+		styles={
+			'name':{'text','name'},
+			'departmentCode':{'code','department'},
+			'superSectionCode':{'code','section'},
+			'sectionCode':{'code','section'},
+			'categoryCode':{'code','category'},
+			'typeCode':{'code','type'},
+		}
+		return [styles[k] for k in self.listEntries()]
 	def getData(self,sqlConn):
 		# TODO store/return key->line# map
 		levelOrders=self.listLevelOrders()
@@ -136,7 +159,7 @@ class DepartmentRows(Lines):
 		]
 	def listLevelOrders(self):
 		return [
-			self.AFTER,
+			self.BEFORE, # self.AFTER,
 			self.BEFORE,
 			self.BEFORE,
 			self.BEFORE,
@@ -176,7 +199,7 @@ class SectionRows(Lines):
 		]
 	def listLevelOrders(self):
 		return [
-			self.AFTER,
+			self.BEFORE, # self.AFTER,
 			self.BEFORE,
 			self.BEFORE,
 			self.BEFORE,
@@ -228,11 +251,20 @@ class AmendmentCols(Lines):
 		]
 	def getItemValues(self,item,level):
 		if level==0:
-			return (str(item['year'])+' г.','Итого (тыс. руб.)')
+			return (str(item['year'])+' г.','Закон (тыс. руб.)')
 		elif level==1:
-			return (str(item['year'])+' г.','Изменения в док. '+str(item['documentNumber'])+ ' (тыс. руб.)')
+			if item['amendmentFlag']:
+				if item['governorFlag']:
+					return (str(item['year'])+' г.','Поправка Губернатора — док. '+str(item['documentNumber'])+ ' (тыс. руб.)')
+				else:
+					if item['documentNumber']==3850: # FIXME hack
+						return (str(item['year'])+' г.','Прочие поправки — док. '+str(item['documentNumber'])+ ' (тыс. руб.)')
+					else:
+						return (str(item['year'])+' г.','Поправка БФК — док. '+str(item['documentNumber'])+ ' (тыс. руб.)')
+			else:
+				return (str(item['year'])+' г.','Проект закона — док. '+str(item['documentNumber'])+ ' (тыс. руб.)')
 		raise ValueError()
 	def listQuerySelects(self):
-		return 'year','documentNumber'
+		return 'year','documentNumber','amendmentFlag','governorFlag'
 	def listQueryOrderbys(self):
 		return 'year','documentNumber'

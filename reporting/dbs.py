@@ -4,6 +4,7 @@ class Conn:
 	# table name : join key column name -> JOIN table USING(column)
 	tables={
 		# 'items':None,
+		'documents':'documentNumber',
 		'edits':'editNumber',
 		'departments':'departmentCode',
 		'sections':'sectionCode',
@@ -12,12 +13,9 @@ class Conn:
 		'types':'typeCode',
 	}
 	entries={
-		'editNumber':'items',
-		'year':'items',
-		'departmentCode':'items',
-		'sectionCode':'items',
-		'categoryCode':'items',
-		'typeCode':'items',
+		'documentDate':'documents',
+		'governorFlag':'documents',
+		'amendmentFlag':'documents',
 		'documentNumber':'edits',
 		'paragraphNumber':'edits',
 		'departmentName':'departments',
@@ -27,6 +25,12 @@ class Conn:
 		'superSectionName':'superSections',
 		'categoryName':'categories',
 		'typeName':'types',
+		'editNumber':'items',
+		'year':'items',
+		'departmentCode':'items',
+		'sectionCode':'items',
+		'categoryCode':'items',
+		'typeCode':'items',
 	}
 	def execute(self,query):
 		raise NotImplementedError

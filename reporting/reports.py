@@ -13,7 +13,10 @@ class Report:
 		for item in sqlConn.queryAmounts(rows.getAmountsKey()+cols.getAmountsKey()):
 			self.grid[self.rowsData.getLineForAmountItem(item)][self.colsData.getLineForAmountItem(item)]=item['amount']
 	def save(self,spreadsheet):
-		layout=spreadsheet.makeLayout(1,self.rows.listEntries(),self.cols.listEntries())
+		layout=spreadsheet.makeLayout(
+			1,self.rows.listEntries(),self.cols.listEntries(),
+			self.rows.listStaticStyles(),self.colsData.listAmountStyles()
+		)
 		layout.writeStaticHeaders(self.rows.listStaticHeaders())
 		layout.writeRowHeaders(self.rowsData.listLines())
 		layout.writeColHeaders(self.colsData.listLines())
