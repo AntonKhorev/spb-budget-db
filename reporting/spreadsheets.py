@@ -28,15 +28,27 @@ class XlsxSpreadsheet(Spreadsheet):
 		self.ws=self.wb.add_worksheet('expenditures')
 	def makeLayout(self,nCaptionLines,nRowEntries,nColEntries,nRowLevels,staticColStyles,amountColStyles):
 		ws=self.ws
+		def isBold(level):
+			return level<nRowLevels//2
 		def makeFormat(props):
 			normalFormat=self.wb.add_format(props)
 			boldFormat=self.wb.add_format(dict((('bold',True),)+tuple(props.items())))
-			def isBold(level):
-				return level<nRowLevels//2
 			def format(level):
 				return boldFormat if isBold(level) else normalFormat
 			return format
+		def makeNameFormat():
+			formats=[]
+			for i in range(7): # max # of levels
+				format=self.wb.add_format()
+				if isBold(i):
+					format.set_bold()
+				format.set_indent(i)
+				formats.append(format)
+			def formatFn(level):
+				return formats[level]
+			return formatFn
 		textFormat=makeFormat({})
+		nameFormat=makeNameFormat()
 		codeFormat=makeFormat({'align':'center'})
 		absoluteAmountFormat=makeFormat({'num_format':'#,##0.0;-#,##0.0;""'})
 		relativeAmountFormat=makeFormat({'num_format':'+#,##0.0;-#,##0.0;""'})
@@ -97,6 +109,8 @@ class XlsxSpreadsheet(Spreadsheet):
 				def format(c):
 					if 'code' in staticColStyles[c]:
 						return codeFormat
+					elif 'name' in staticColStyles[c]:
+						return nameFormat
 					else:
 						return textFormat
 				r0=nCaptionLines+nColEntries
