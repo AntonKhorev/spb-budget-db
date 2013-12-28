@@ -175,7 +175,7 @@ class DepartmentRows(Lines):
 		]
 	def getItemValues(self,item,level):
 		if level==0:
-			return ('Итого',)
+			return ('Всего',)
 		elif level==1:
 			return (item['departmentName'],item['departmentCode'])
 		elif level==2:
@@ -217,7 +217,7 @@ class SectionRows(Lines):
 		]
 	def getItemValues(self,item,level):
 		if level==0:
-			return ('Итого',)
+			return ('Всего',)
 		elif level==1:
 			return (item['superSectionName'],item['superSectionCode'])
 		elif level==2:
