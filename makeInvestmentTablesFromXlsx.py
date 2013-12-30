@@ -104,6 +104,12 @@ class InvestmentTableWriter:
 			for row in self.rows:
 				writer.writerow([row.get(col) for col in cols])
 
+documentNumber=3574
+InvestmentTableWriter(
+	makeInvestmentTableReaderFromXlsxFile('fincom/2014.0.p/pr23-2014-16.xlsx'),
+	[2014,2015,2016]
+).write('tables/2014.0.p.'+str(documentNumber)+'.investment.csv')
+
 documentNumber=3850
 InvestmentTableWriter(
 	makeInvestmentTableReaderFromXlsxFile('fincom/2014.0.z/pr24_bd2014-16.xlsx'),
