@@ -60,6 +60,7 @@ class XlsxSpreadsheet(Spreadsheet):
 				r0=nCaptionLines+nColEntries
 				c0=0
 				ws.freeze_panes(r0,0)
+				ws.outline_settings(True,False,True,False)
 			def setColWidth(self,c,width):
 				ws.set_column(c,c,width)
 			def setColWidthAndLevel(self,c,width,level):
