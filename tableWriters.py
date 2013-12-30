@@ -230,8 +230,10 @@ class InvestmentTableWriter:
 			if m:
 				projectFirstYear=int(m.group(1))
 				projectLastYear=int(m.group(2))
+			elif yearRange is None or yearRange=='':
+				projectFirstYear=projectLastYear=None
 			else:
-				projectFirstYear=projectLastYear=None if yearRange is None else int(yearRange)
+				projectFirstYear=projectLastYear=int(yearRange)
 			setColValue('projectFirstYear',projectFirstYear)
 			setColValue('projectLastYear',projectLastYear)
 			if projectDurationTotal:
