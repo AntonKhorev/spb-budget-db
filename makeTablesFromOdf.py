@@ -4,7 +4,7 @@ import re
 import ezodf
 import errorFixers,tableWriters
 
-def makeTableReaderFromOdfTable(table,nAmountCols):
+def makeDepartmentTableReaderFromOdfTable(table,nAmountCols):
 	def reader():
 		found=False
 		for row in obj.rows():
@@ -34,6 +34,31 @@ def makeTableReaderFromOdfTable(table,nAmountCols):
 			raise Exception('table start not found')
 	return reader
 
+def makeInvestmentTableReaderFromOdfTable(table):
+	def reader():
+		found=False
+		rows=iter(obj.rows())
+		for row in rows:
+			if not found:
+				if row[0].value.strip()=='ВСЕГО:':
+					found=True
+				else:
+					continue
+			name=row[0].value.strip()
+			if name.startswith('ЗАКАЗЧИК:') or name.startswith('ОТРАСЛЬ:'):
+				row=next(rows)
+			def strip(v):
+				if type(v) is str:
+					return v.strip()
+				elif v is None:
+					return ''
+				else:
+					return v
+			yield [name]+[strip(row[c].value) for c in range(1,7)]
+		if not found:
+			raise Exception('table start not found')
+	return reader
+
 class TableWriteWatcher:
 	def __init__(self,years):
 		self.years=years
@@ -44,13 +69,32 @@ class TableWriteWatcher:
 		# print('writing table for amendment',self.paragraphNumber)
 		if not self.paragraphNumber:
 			raise Exception('paragraph number for table not set')
-		tableWriters.DepartmentTableWriter(
+		self.makeWriter(table,documentNumber).write(
+			'tables/2014.0.p.'+documentNumber+'.'+self.paragraphNumber+self.getTableType()+'.csv'
+		)
+		self.paragraphNumber=None
+
+class DepartmentTableWriteWatcher(TableWriteWatcher):
+	def getTableType(self):
+		return 'department'
+	def makeWriter(self,table,documentNumber):
+		return tableWriters.DepartmentTableWriter(
 			errorFixers.departmentFixer.fixTableReader(documentNumber,self.paragraphNumber,
-				makeTableReaderFromOdfTable(table,len(self.years))
+				makeDepartmentTableReaderFromOdfTable(table,len(self.years))
 			),
                         self.years
-		).write('tables/2014.0.p.'+documentNumber+'.'+self.paragraphNumber+'department.csv')
-		self.paragraphNumber=None
+		)
+
+class InvestmentTableWriteWatcher(TableWriteWatcher):
+	def getTableType(self):
+		return 'investment'
+	def makeWriter(self,table,documentNumber):
+		return tableWriters.InvestmentTableWriter(
+			errorFixers.departmentFixer.fixTableReader(documentNumber,self.paragraphNumber,
+				makeInvestmentTableReaderFromOdfTable(table)
+			),
+                        self.years
+		)
 
 pn=r'(?P<paragraphNumber>(?:\d+\.)+)'
 cc=r'(?P<categoryCode>\d{7})'
@@ -87,7 +131,10 @@ for documentNumber in ('3765','3781'):
 				if m:
 					# print('== amendment',m.group('paragraphNumber'),'for appendix',m.group('appendixNumber'),'==')
 					if m.group('appendixNumber') in ('3','4'):
-						tableWriteWatcher=TableWriteWatcher([2014] if m.group('appendixNumber')=='3' else [2015,2016])
+						tableWriteWatcher=DepartmentTableWriteWatcher([2014] if m.group('appendixNumber')=='3' else [2015,2016])
+						tableWriteWatcher.setParagraphNumber(m.group('paragraphNumber'))
+					elif m.group('appendixNumber')=='23':
+						tableWriteWatcher=InvestmentTableWriteWatcher([2014,2015,2016])
 						tableWriteWatcher.setParagraphNumber(m.group('paragraphNumber'))
 					else:
 						tableWriteWatcher=None
@@ -95,7 +142,7 @@ for documentNumber in ('3765','3781'):
 				if m:
 					# print('== amendment TBD for appendix',m.group('appendixNumber'),'==')
 					if m.group('appendixNumber') in ('3','4'):
-						tableWriteWatcher=TableWriteWatcher([2014] if m.group('appendixNumber')=='3' else [2015,2016])
+						tableWriteWatcher=DepartmentTableWriteWatcher([2014] if m.group('appendixNumber')=='3' else [2015,2016])
 					else:
 						tableWriteWatcher=None
 				m=subParagraphRe.match(line)

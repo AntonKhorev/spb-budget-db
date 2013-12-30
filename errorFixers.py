@@ -13,20 +13,20 @@ class DepartmentFixer:
 				self.allFixes[s[0]][s[1]+'.'][s[2]]=(s[3:],t[3:])
 	def fixTableReader(self,documentNumber,paragraphNumber,tableReader):
 		fixes=self.allFixes[documentNumber][paragraphNumber]
-		print('fixer for',documentNumber,paragraphNumber,'with fixes',fixes)
+		# print('fixer for',documentNumber,paragraphNumber,'with fixes',fixes)
 		def fixedReader():
 			for row in tableReader():
-				print('got',row)
+				# print('got',row)
 				number=row[0]
 				rest=row[1:]
 				if number in fixes:
 					s,t=fixes[number]
 					if s!=rest:
 						raise Exception('expected department table error not found')
-					print('fixed',documentNumber,paragraphNumber,number)
+					# print('fixed',documentNumber,paragraphNumber,number)
 					yield [number]+t
 				else:
-					print('skipped',documentNumber,paragraphNumber,number)
+					# print('skipped',documentNumber,paragraphNumber,number)
 					yield row
 		return fixedReader
 
