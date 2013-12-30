@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import decimal
 import re
 import csv
 from openpyxl import load_workbook
@@ -44,13 +45,15 @@ class InvestmentTableWriter:
 					for col in cols:
 						for row in rows:
 							row.pop(col,None)
+		def makeDecimal(v):
+			return decimal.Decimal(v).quantize(decimal.Decimal('0.0'))
 		def setColValue(k,v):
 			for row in rows:
 				row[k]=v
 		for name,districtNames,yearRange,projectDurationTotal,*amounts in tableReader():
 			def setColAmounts(k):
 				for row,v in zip(rows,amounts):
-					row[k]=v
+					row[k]=makeDecimal(v)
 			prefix='ВСЕГО:'
 			if name.startswith(prefix):
 				setLevel(0)
@@ -88,7 +91,8 @@ class InvestmentTableWriter:
 				projectFirstYear=projectLastYear=None if yearRange is None else int(yearRange)
 			setColValue('projectFirstYear',projectFirstYear)
 			setColValue('projectLastYear',projectLastYear)
-			setColValue('projectDurationTotal',projectDurationTotal)
+			if projectDurationTotal:
+				setColValue('projectDurationTotal',makeDecimal(projectDurationTotal))
 			setColAmounts('amount')
 			for row in rows:
 				self.rows.append(row.copy())
