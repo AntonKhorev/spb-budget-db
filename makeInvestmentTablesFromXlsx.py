@@ -47,47 +47,45 @@ class InvestmentTableWriter:
 			def setColAmounts(k):
 				for row,v in zip(rows,amounts):
 					row[k]=v
-			def update():
-				prefix='ВСЕГО:'
-				if name.startswith(prefix):
-					setLevel(0)
-					setColAmounts('grandTotal')
-					return
-				prefix='ЗАКАЗЧИК: '
-				if name.startswith(prefix):
-					departmentName=name[len(prefix):]
-					setLevel(1)
-					setColValue('departmentName',departmentName)
-					setColAmounts('departmentTotal')
-					return
-				prefix='ОТРАСЛЬ: '
-				if name.startswith(prefix):
-					branchName=name[len(prefix):]
-					setLevel(2)
-					setColValue('branchName',branchName)
-					setColAmounts('branchTotal')
-					return
-				prefix='БЮДЖЕТНЫЕ ИНВЕСТИЦИИ '
-				if name.startswith(prefix):
-					recipientName=name[len(prefix):] # TODO fix grammatic cases
-					setLevel(3)
-					setColValue('recipientName',recipientName)
-					setColAmounts('recipientTotal')
-					return
-				setLevel(4)
-				setColValue('projectName',name)
-				setColValue('districtNames',districtNames)
-				m=yearRangeRe.match(str(yearRange))
-				if m:
-					projectFirstYear=int(m.group(1))
-					projectLastYear=int(m.group(2))
-				else:
-					projectFirstYear=projectLastYear=None if yearRange is None else int(yearRange)
-				setColValue('projectFirstYear',projectFirstYear)
-				setColValue('projectLastYear',projectLastYear)
-				setColValue('projectDurationTotal',projectDurationTotal)
-				setColAmounts('amount')
-			update()
+			prefix='ВСЕГО:'
+			if name.startswith(prefix):
+				setLevel(0)
+				setColAmounts('grandTotal')
+				continue
+			prefix='ЗАКАЗЧИК: '
+			if name.startswith(prefix):
+				departmentName=name[len(prefix):]
+				setLevel(1)
+				setColValue('departmentName',departmentName)
+				setColAmounts('departmentTotal')
+				continue
+			prefix='ОТРАСЛЬ: '
+			if name.startswith(prefix):
+				branchName=name[len(prefix):]
+				setLevel(2)
+				setColValue('branchName',branchName)
+				setColAmounts('branchTotal')
+				continue
+			prefix='БЮДЖЕТНЫЕ ИНВЕСТИЦИИ '
+			if name.startswith(prefix):
+				recipientName=name[len(prefix):] # TODO fix grammatic cases
+				setLevel(3)
+				setColValue('recipientName',recipientName)
+				setColAmounts('recipientTotal')
+				continue
+			setLevel(4)
+			setColValue('projectName',name)
+			setColValue('districtNames',districtNames)
+			m=yearRangeRe.match(str(yearRange))
+			if m:
+				projectFirstYear=int(m.group(1))
+				projectLastYear=int(m.group(2))
+			else:
+				projectFirstYear=projectLastYear=None if yearRange is None else int(yearRange)
+			setColValue('projectFirstYear',projectFirstYear)
+			setColValue('projectLastYear',projectLastYear)
+			setColValue('projectDurationTotal',projectDurationTotal)
+			setColAmounts('amount')
 			for row in rows:
 				self.rows.append(row.copy())
 	def write(self,outputFilename):
