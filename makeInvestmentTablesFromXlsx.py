@@ -34,6 +34,10 @@ class InvestmentTableWriter:
 		]
 		yearRangeRe=re.compile(r'(\d{4})\s*-\s*(\d{4})')
 		rows=[{'year':year} for year in years]
+		def fixCase(s):
+			s=s.replace('САНКТ-ПЕТЕРБУРГСКОМУ ГОСУДАРСТВЕННОМУ УНИТАРНОМУ ПРЕДПРИЯТИЮ ','СПБ ГУП ')
+			s=s.replace('ОТКРЫТОМУ АКЦИОНЕРНОМУ ОБЩЕСТВУ ','ОАО ')
+			return s
 		def setLevel(toLevel):
 			for level,cols in enumerate(self.levelCols):
 				if toLevel<level:
@@ -68,7 +72,7 @@ class InvestmentTableWriter:
 				continue
 			prefix='БЮДЖЕТНЫЕ ИНВЕСТИЦИИ '
 			if name.startswith(prefix):
-				recipientName=name[len(prefix):] # TODO fix grammatic cases
+				recipientName=fixCase(name[len(prefix):])
 				setLevel(3)
 				setColValue('recipientName',recipientName)
 				setColAmounts('recipientTotal')
