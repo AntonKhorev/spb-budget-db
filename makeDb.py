@@ -67,14 +67,10 @@ for csvFilenamePrefix,priority in (('tables/2014.0.p.',2),('tables/2014.0.z.',1)
 			testOrder=makeTestOrder(['superSectionCode','sectionCode','categoryCode','typeCode'],[True,True,True,True])
 			for row in readCsv(csvFilename):
 				resets=testOrder(row)
-				if row['superSectionCode']:
-					superSections.add(row,priority)
-				if row['sectionCode']:
-					sections.add(row,priority)
-				if row['categoryCode']:
-					categories.add(row,priority)
-				if row['typeCode']:
-					types.add(row,priority)
+				superSections.add(row,priority)
+				sections.add(row,priority)
+				categories.add(row,priority)
+				types.add(row,priority)
 
 # read monetary data
 amendmentFlag=False
@@ -97,15 +93,12 @@ for documentNumber,paragraphs in listDocumentParagraphs('tables/2014.0.p.*.csv')
 					resets=testOrder(row)
 					if 'departmentCode' in resets:
 						departments.resetSequence()
-				if row['departmentCode']:
-					if amendmentFlag:
-						departments.resetSequence() # ignore order
-					departments.add(row,priority)
-				if row['categoryCode']:
-					categories.add(row,priority)
-				if row['typeCode']:
-					types.add(row,priority)
-					items.add(row,editNumber)
+				if amendmentFlag:
+					departments.resetSequence() # ignore order
+				departments.add(row,priority)
+				categories.add(row,priority)
+				types.add(row,priority)
+				items.add(row,editNumber)
 		elif table=='move':
 			reader=readCsv(csvFilename)
 			for s,t in zip(reader,reader):
@@ -157,14 +150,11 @@ with items.makeFixer(makeEditNumberForYear()) as fixer:
 				resets=testOrder(row)
 				if 'departmentCode' in resets:
 					departments.resetSequence()
-				if row['departmentCode']:
-					departments.add(row,priority)
-				if row['categoryCode']:
-					categories.add(row,priority)
-				if row['typeCode']:
-					types.add(row,priority)
-					fixer.fix(row)
-					# uniqueCheck(row['categoryCode'],row['sectionCode'])
+				departments.add(row,priority)
+				categories.add(row,priority)
+				types.add(row,priority)
+				fixer.fix(row)
+				# uniqueCheck(row['categoryCode'],row['sectionCode'])
 
 ### write sql ###
 

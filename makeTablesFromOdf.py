@@ -5,59 +5,55 @@ import ezodf
 import errorFixers,tableWriters
 
 def makeDepartmentTableReaderFromOdfTable(table,nAmountCols):
-	def reader():
-		found=False
-		for row in obj.rows():
-			if not found:
-				if row[0].value.strip()=='1.':
-					found=True
-				elif row[0].value.strip()=='.1.': # quirk in 3765.10.3
-					found=True
-				else:
-					continue
-			categoryCode=row[4].value.strip()
-			if categoryCode:
-				categoryCode=categoryCode.zfill(7)
-			sc1=row[2].value.strip()
-			sc2=row[3].value.strip()
-			if sc1:
-				sc1=sc1.zfill(2)
-			if sc2:
-				sc2=sc2.zfill(2)
-			sectionCode=sc1+sc2
-			name=row[1].value.strip()
-			typeCode=row[5].value.strip()
-			keys=[row[0].value.strip(),name,sectionCode,categoryCode,typeCode]
-			amounts=[row[i].value.strip() for i in range(6,6+nAmountCols)]
-			yield keys+amounts
+	found=False
+	for row in obj.rows():
 		if not found:
-			raise Exception('table start not found')
-	return reader
+			if row[0].value.strip()=='1.':
+				found=True
+			elif row[0].value.strip()=='.1.': # quirk in 3765.10.3
+				found=True
+			else:
+				continue
+		categoryCode=row[4].value.strip()
+		if categoryCode:
+			categoryCode=categoryCode.zfill(7)
+		sc1=row[2].value.strip()
+		sc2=row[3].value.strip()
+		if sc1:
+			sc1=sc1.zfill(2)
+		if sc2:
+			sc2=sc2.zfill(2)
+		sectionCode=sc1+sc2
+		name=row[1].value.strip()
+		typeCode=row[5].value.strip()
+		keys=[row[0].value.strip(),name,sectionCode,categoryCode,typeCode]
+		amounts=[row[i].value.strip() for i in range(6,6+nAmountCols)]
+		yield keys+amounts
+	if not found:
+		raise Exception('table start not found')
 
 def makeInvestmentTableReaderFromOdfTable(table):
-	def reader():
-		found=False
-		rows=iter(obj.rows())
-		for row in rows:
-			if not found:
-				if row[0].value.strip()=='ВСЕГО:':
-					found=True
-				else:
-					continue
-			name=row[0].value.strip()
-			if name.startswith('ЗАКАЗЧИК:') or name.startswith('ОТРАСЛЬ:'):
-				row=next(rows)
-			def strip(v):
-				if type(v) is str:
-					return v.strip()
-				elif v is None:
-					return ''
-				else:
-					return v
-			yield [name]+[strip(row[c].value) for c in range(1,7)]
+	found=False
+	rows=iter(obj.rows())
+	for row in rows:
 		if not found:
-			raise Exception('table start not found')
-	return reader
+			if row[0].value.strip()=='ВСЕГО:':
+				found=True
+			else:
+				continue
+		name=row[0].value.strip()
+		if name.startswith('ЗАКАЗЧИК:') or name.startswith('ОТРАСЛЬ:'):
+			row=next(rows)
+		def strip(v):
+			if type(v) is str:
+				return v.strip()
+			elif v is None:
+				return ''
+			else:
+				return v
+		yield [name]+[strip(row[c].value) for c in range(1,7)]
+	if not found:
+		raise Exception('table start not found')
 
 class TableWriteWatcher:
 	def __init__(self,years):

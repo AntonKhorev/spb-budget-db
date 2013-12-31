@@ -5,96 +5,118 @@ import re
 import csv
 
 class TableWriter:
-	def __init__(self,tableReader,years):
-		self.years=years
-		self.rows=[{}]*len(years) # reserve first rows for totals
-		self.punctWithoutSpaceRe=re.compile(r'(?<=[.,])(?=[^\W\d_])')
-		self.processTable(tableReader)
-
+	punctWithoutSpaceRe=re.compile(r'(?<=[.,])(?=[^\W\d_])')
+	def __init__(self,inputRows,years):
+		self.outputRows=outputRows=[]
+		levelCols=self.listLevelCols()
+		class CurrentRows:
+			def __init__(self):
+				self.rows=[{'year':year} for year in years]
+			def __iter__(self):
+				return iter(self.rows)
+			def setLevel(self,toLevel):
+				for level,cols in enumerate(levelCols):
+					if toLevel<=level:
+						for col in cols:
+							for row in self.rows:
+								row.pop(col,None)
+			def assignSame(self,k,v):
+				for row in self.rows:
+					row[k]=v
+			def assignDifferent(self,k,vs):
+				for row,v in zip(self.rows,vs):
+					row[k]=v
+			def store(self):
+				for row in self.rows:
+					outputRows.append(row.copy())
+		self.readRows(inputRows,CurrentRows())
+	def write(self,outputFilename):
+		cols=['year']+[col for cols in self.listLevelCols() for col in cols]
+		with open(outputFilename,'w',newline='',encoding='utf8') as file:
+			writer=csv.writer(file,quoting=csv.QUOTE_NONNUMERIC)
+			writer.writerow(cols)
+			for row in self.outputRows:
+				writer.writerow([row.get(col) for col in cols])
 	def processName(self,name):
 		name=' '.join(name.split())
 		name=self.punctWithoutSpaceRe.sub(' ',name)
 		return name
+	def processAmount(self,amount):
+		return decimal.Decimal(amount).quantize(decimal.Decimal('0.0'))
+	def processAmounts(self,amounts):
+		return [self.processAmount(amount) for amount in amounts]
+	def listLevelCols(self):
+		raise NotImplementedError
+	def readRows(self,inputRows,currentRows):
+		raise NotImplementedError
 
-	def makePrependRow(self):
-		nRow=0
-		def addRow(row):
-			nonlocal nRow
-			self.rows[nRow]=row
-			nRow+=1
-		return addRow
+class SCTTableWriter(TableWriter):
+	def readRows(self,inputRows,currentRows):
+		class GrandTotalBox:
+			def set(self,value):
+				self.value=value
+			def __str__(self):
+				return str(self.value)
+		grandTotalBoxes=[GrandTotalBox() for row in currentRows]
+		currentRows.assignDifferent('grandTotal',grandTotalBoxes)
+		def setGrandTotals(amounts):
+			for amount,box in zip(amounts,grandTotalBoxes):
+				box.set(amount)
+		self.readRowsWithGrandTotalsDeferred(inputRows,currentRows,setGrandTotals)
+	def readRowsWithGrandTotalsDeferred(self,inputRows,currentRows,setGrandTotals):
+		raise NotImplementedError
 
-	def processTable(self,tableReader):
-		raise Exception('implement this')
-
-	def getCols(self):
-		raise Exception('implement this')
-
-	def write(self,outputFilename):
-		writer=csv.writer(open(outputFilename,'w',newline='',encoding='utf8'),quoting=csv.QUOTE_NONNUMERIC)
-		cols=self.getCols()
-		writer.writerow(cols)
-		for row in self.rows:
-			writer.writerow([row.get(col) for col in cols])
-
-class DepartmentTableWriter(TableWriter):
-	def processTable(self,tableReader):
+class DepartmentTableWriter(SCTTableWriter):
+	def listLevelCols(self):
+		return [
+			['grandTotal'],
+			['departmentName','departmentCode','departmentTotal'],
+			['sectionCode','categoryName','categoryCode','categoryTotal'],
+			['typeName','typeCode','amount'],
+		]
+	def readRowsWithGrandTotalsDeferred(self,inputRows,currentRows,setGrandTotals):
 		departmentNameRe=re.compile(r'(?P<departmentName>.*?)\s*\((?P<departmentCode>...)\)')
-		for number,name,sectionCode,categoryCode,typeCode,*amounts in tableReader():
-			amounts=[decimal.Decimal(amount) for amount in amounts]
+		for number,name,sectionCode,categoryCode,typeCode,*amounts in inputRows:
+			amounts=self.processAmounts(amounts)
 			name=self.processName(name)
 			sectionCode=sectionCode[:2]+sectionCode[-2:]
 			typeCode=str(typeCode)
-			amountCol=None
-			row={}
-			addRow=self.rows.append
 			if not number:
-				addRow=self.makePrependRow()
-				amountCol='yAmount'
+				setGrandTotals(amounts)
+				break
 			elif not sectionCode:
 				m=departmentNameRe.match(name)
-				row['departmentName']=departmentName=m.group('departmentName')
-				row['departmentCode']=departmentCode=m.group('departmentCode')
-				amountCol='ydAmount'
+				currentRows.setLevel(1)
+				currentRows.assignSame('departmentName',m.group('departmentName'))
+				currentRows.assignSame('departmentCode',m.group('departmentCode'))
+				currentRows.assignDifferent('departmentTotal',amounts)
 			elif not typeCode:
-				row['departmentName']=departmentName
-				row['departmentCode']=departmentCode
-				row['sectionCode']=sectionCode
-				row['categoryName']=categoryName=name
-				row['categoryCode']=categoryCode
-				amountCol='ydssccAmount'
+				currentRows.setLevel(2)
+				currentRows.assignSame('sectionCode',sectionCode)
+				currentRows.assignSame('categoryName',name)
+				currentRows.assignSame('categoryCode',categoryCode)
+				currentRows.assignDifferent('categoryTotal',amounts)
 			else:
-				row['departmentName']=departmentName
-				row['departmentCode']=departmentCode
-				row['sectionCode']=sectionCode
-				row['categoryName']=categoryName
-				row['categoryCode']=categoryCode
-				row['typeName']=typeName=name
-				row['typeCode']=typeCode
-				amountCol='ydsscctAmount'
-			for year,amount in zip(self.years,amounts):
-				r=row.copy()
-				r['year']=year
-				r[amountCol]=amount
-				addRow(r)
-			if not number:
-				break
+				currentRows.setLevel(3)
+				currentRows.assignSame('typeName',name)
+				currentRows.assignSame('typeCode',typeCode)
+				currentRows.assignDifferent('amount',amounts)
+				currentRows.store()
 		else:
 			raise Exception('no total line found')
 
-	def getCols(self):
+class SectionTableWriter(SCTTableWriter):
+	def listLevelCols(self):
 		return [
-			'year',
-			'departmentName','departmentCode',
-			'sectionCode','categoryName','categoryCode',
-			'typeName','typeCode',
-			'yAmount','ydAmount','ydssccAmount','ydsscctAmount',
+			['grandTotal'],
+			['superSectionName','superSectionCode','superSectionTotal'],
+			['sectionName','sectionCode','sectionTotal'],
+			['categoryName','categoryCode','categoryTotal'],
+			['typeName','typeCode','amount'],
 		]
-
-class SectionTableWriter(TableWriter):
-	def processTable(self,tableReader):
-		for number,name,sectionCode,categoryCode,typeCode,*amounts in tableReader():
-			amounts=[decimal.Decimal(amount) for amount in amounts]
+	def readRowsWithGrandTotalsDeferred(self,inputRows,currentRows,setGrandTotals):
+		for number,name,sectionCode,categoryCode,typeCode,*amounts in inputRows:
+			amounts=self.processAmounts(amounts)
 			name=self.processName(name)
 			# sectionCode=sectionCode[:2]+sectionCode[-2:]
 			if sectionCode[:2]!='  ':
@@ -105,127 +127,80 @@ class SectionTableWriter(TableWriter):
 				sectionCode=''
 			#
 			typeCode=str(typeCode)
-			amountCol=None
-			row={}
-			addRow=self.rows.append
 			if not number:
-				addRow=self.makePrependRow()
-				amountCol='yAmount'
-			elif not sectionCode:
-				row['superSectionName']=superSectionName=name
-				row['superSectionCode']=superSectionCode
-				amountCol='ysAmount'
-			elif not categoryCode:
-				row['superSectionName']=superSectionName
-				row['superSectionCode']=superSectionCode
-				row['sectionName']=sectionName=name
-				row['sectionCode']=sectionCode
-				amountCol='yssAmount'
-			elif not typeCode:
-				row['superSectionName']=superSectionName
-				row['superSectionCode']=superSectionCode
-				row['sectionName']=sectionName
-				row['sectionCode']=sectionCode
-				row['categoryName']=categoryName=name
-				row['categoryCode']=categoryCode
-				amountCol='yssccAmount'
-			else:
-				row['superSectionName']=superSectionName
-				row['superSectionCode']=superSectionCode
-				row['sectionName']=sectionName
-				row['sectionCode']=sectionCode
-				row['categoryName']=categoryName
-				row['categoryCode']=categoryCode
-				row['typeName']=typeName=name
-				row['typeCode']=typeCode
-				amountCol='ysscctAmount'
-			for year,amount in zip(self.years,amounts):
-				r=row.copy()
-				r['year']=year
-				r[amountCol]=amount
-				addRow(r)
-			if not number:
+				setGrandTotals(amounts)
 				break
+			elif not sectionCode:
+				currentRows.setLevel(1)
+				currentRows.assignSame('superSectionName',name)
+				currentRows.assignSame('superSectionCode',superSectionCode)
+				currentRows.assignDifferent('superSectionTotal',amounts)
+			elif not categoryCode:
+				currentRows.setLevel(2)
+				currentRows.assignSame('sectionName',name)
+				currentRows.assignSame('sectionCode',sectionCode)
+				currentRows.assignDifferent('sectionTotal',amounts)
+			elif not typeCode:
+				currentRows.setLevel(3)
+				currentRows.assignSame('categoryName',name)
+				currentRows.assignSame('categoryCode',categoryCode)
+				currentRows.assignDifferent('categoryTotal',amounts)
+			else:
+				currentRows.setLevel(4)
+				currentRows.assignSame('typeName',name)
+				currentRows.assignSame('typeCode',typeCode)
+				currentRows.assignDifferent('amount',amounts)
+				currentRows.store()
 		else:
 			raise Exception('no total line found')
 
-	def getCols(self):
+class InvestmentTableWriter(TableWriter):
+	def listLevelCols(self):
 		return [
-			'year',
-			'superSectionName','superSectionCode',
-			'sectionName','sectionCode',
-			'categoryName','categoryCode',
-			'typeName','typeCode',
-			'yAmount','ysAmount','yssAmount','yssccAmount','ysscctAmount',
-		]
-
-def writeMoveTable(outputFilename,rows):
-	with open(outputFilename,'w',newline='',encoding='utf8') as file:
-		writer=csv.writer(file,quoting=csv.QUOTE_NONNUMERIC)
-		writer.writerow(['year','departmentName','sectionCode','categoryCode','typeCode'])
-		for row in rows:
-			writer.writerow(row)
-
-class InvestmentTableWriter:
-	def __init__(self,tableReader,years):
-		self.rows=[]
-		self.levelCols=[
 			['grandTotal'],
 			['departmentName','departmentTotal'],
 			['branchName','branchTotal'],
 			['recipientName','recipientTotal'],
 			['projectName','districtNames','projectFirstYear','projectLastYear','projectDurationTotal','amount'],
 		]
+	def readRows(self,inputRows,currentRows):
 		yearRangeRe=re.compile(r'(\d{4})\s*-\s*(\d{4})')
-		rows=[{'year':year} for year in years]
 		def fixCase(s):
 			s=s.replace('САНКТ-ПЕТЕРБУРГСКОМУ ГОСУДАРСТВЕННОМУ УНИТАРНОМУ ПРЕДПРИЯТИЮ ','СПБ ГУП ')
 			s=s.replace('ОТКРЫТОМУ АКЦИОНЕРНОМУ ОБЩЕСТВУ ','ОАО ')
 			return s
-		def setLevel(toLevel):
-			for level,cols in enumerate(self.levelCols):
-				if toLevel<level:
-					for col in cols:
-						for row in rows:
-							row.pop(col,None)
-		def makeDecimal(v):
-			return decimal.Decimal(v).quantize(decimal.Decimal('0.0'))
-		def setColValue(k,v):
-			for row in rows:
-				row[k]=v
-		for name,districtNames,yearRange,projectDurationTotal,*amounts in tableReader():
-			def setColAmounts(k):
-				for row,v in zip(rows,amounts):
-					row[k]=makeDecimal(v)
+		for name,districtNames,yearRange,projectDurationTotal,*amounts in inputRows:
+			amounts=self.processAmounts(amounts)
+			# name=self.processName(name)
 			prefix='ВСЕГО:'
 			if name.startswith(prefix):
-				setLevel(0)
-				setColAmounts('grandTotal')
+				currentRows.setLevel(0)
+				currentRows.assignDifferent('grandTotal',amounts)
 				continue
 			prefix='ЗАКАЗЧИК: '
 			if name.startswith(prefix):
 				departmentName=name[len(prefix):]
-				setLevel(1)
-				setColValue('departmentName',departmentName)
-				setColAmounts('departmentTotal')
+				currentRows.setLevel(1)
+				currentRows.assignSame('departmentName',departmentName)
+				currentRows.assignDifferent('departmentTotal',amounts)
 				continue
 			prefix='ОТРАСЛЬ: '
 			if name.startswith(prefix):
 				branchName=name[len(prefix):]
-				setLevel(2)
-				setColValue('branchName',branchName)
-				setColAmounts('branchTotal')
+				currentRows.setLevel(2)
+				currentRows.assignSame('branchName',branchName)
+				currentRows.assignDifferent('branchTotal',amounts)
 				continue
 			prefix='БЮДЖЕТНЫЕ ИНВЕСТИЦИИ '
 			if name.startswith(prefix):
 				recipientName=fixCase(name[len(prefix):])
-				setLevel(3)
-				setColValue('recipientName',recipientName)
-				setColAmounts('recipientTotal')
+				currentRows.setLevel(3)
+				currentRows.assignSame('recipientName',recipientName)
+				currentRows.assignDifferent('recipientTotal',amounts)
 				continue
-			setLevel(4)
-			setColValue('projectName',name)
-			setColValue('districtNames',districtNames)
+			currentRows.setLevel(4)
+			currentRows.assignSame('projectName',name)
+			currentRows.assignSame('districtNames',districtNames)
 			m=yearRangeRe.match(str(yearRange))
 			if m:
 				projectFirstYear=int(m.group(1))
@@ -234,17 +209,16 @@ class InvestmentTableWriter:
 				projectFirstYear=projectLastYear=None
 			else:
 				projectFirstYear=projectLastYear=int(yearRange)
-			setColValue('projectFirstYear',projectFirstYear)
-			setColValue('projectLastYear',projectLastYear)
+			currentRows.assignSame('projectFirstYear',projectFirstYear)
+			currentRows.assignSame('projectLastYear',projectLastYear)
 			if projectDurationTotal:
-				setColValue('projectDurationTotal',makeDecimal(projectDurationTotal))
-			setColAmounts('amount')
-			for row in rows:
-				self.rows.append(row.copy())
-	def write(self,outputFilename):
-		cols=['year']+[col for cols in self.levelCols for col in cols]
-		with open(outputFilename,'w',newline='',encoding='utf8') as file:
-			writer=csv.writer(file,quoting=csv.QUOTE_NONNUMERIC)
-			writer.writerow(cols)
-			for row in self.rows:
-				writer.writerow([row.get(col) for col in cols])
+				currentRows.assignSame('projectDurationTotal',self.processAmount(projectDurationTotal))
+			currentRows.assignDifferent('amount',amounts)
+			currentRows.store()
+
+def writeMoveTable(outputFilename,rows):
+	with open(outputFilename,'w',newline='',encoding='utf8') as file:
+		writer=csv.writer(file,quoting=csv.QUOTE_NONNUMERIC)
+		writer.writerow(['year','departmentName','sectionCode','categoryCode','typeCode'])
+		for row in rows:
+			writer.writerow(row)

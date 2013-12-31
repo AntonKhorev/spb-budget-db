@@ -4,23 +4,21 @@ from openpyxl import load_workbook
 import tableWriters
 
 def makeTableReaderFromXlsxFile(inputFilename,nAmountCols):
-	def makeAmount(amount):
+	def makeAmount(amount): # TODO delete?
 		if type(amount) is int:
 			return str(amount)+'.0'
 		else:
 			return str(amount)
-	def reader():
-		wb=load_workbook(inputFilename)
-		ws=wb.get_active_sheet()
-		maxRow=ws.get_highest_row()
-		for nRow in range(maxRow):
-			if ws.cell(row=nRow,column=0).value==1:
-				break
-		else:
-			raise Exception('table start not found')
-		for nRow in range(nRow,maxRow):
-			yield [ws.cell(row=nRow,column=c).value for c in range(5)]+[makeAmount(ws.cell(row=nRow,column=c).value) for c in range(5,5+nAmountCols)]
-	return reader
+	wb=load_workbook(inputFilename)
+	ws=wb.get_active_sheet()
+	maxRow=ws.get_highest_row()
+	for nRow in range(maxRow):
+		if ws.cell(row=nRow,column=0).value==1:
+			break
+	else:
+		raise Exception('table start not found')
+	for nRow in range(nRow,maxRow):
+		yield [ws.cell(row=nRow,column=c).value for c in range(5)]+[makeAmount(ws.cell(row=nRow,column=c).value) for c in range(5,5+nAmountCols)]
 
 # project
 documentNumber=3574

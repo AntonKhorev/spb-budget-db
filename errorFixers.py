@@ -10,8 +10,8 @@ class DepartmentFixer: # also InvestmentFixer
 			next(reader) # skip header
 			for s,t in zip(reader,reader):
 				self.allFixes[s[0]][s[1]+'.'][tuple(s[2:])]=t[2:]
-	def fixTableReader(self,documentNumber,paragraphNumber,tableReader):
+	def fixTableReader(self,documentNumber,paragraphNumber,inputRows):
 		fixes=self.allFixes[documentNumber][paragraphNumber]
-		return lambda: (fixes.get(tuple(row),row) for row in tableReader())
+		return (fixes.get(tuple(row),row) for row in inputRows)
 
 departmentFixer=DepartmentFixer('2014.0.p.errors.csv')

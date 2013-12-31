@@ -106,7 +106,7 @@ class ItemList:
 	def rowKey(self,row):
 		return tuple(row[k] for k in self.keyCols)
 	def rowValue(self,row):
-		return decimal.Decimal(row['ydsscctAmount'])
+		return decimal.Decimal(row['amount'])
 	def keySum(self,k):
 		return sum(self.items[k].values())
 	def rowSum(self,row):
