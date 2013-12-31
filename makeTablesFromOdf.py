@@ -15,8 +15,6 @@ def makeDepartmentTableReaderFromOdfTable(table,nAmountCols):
 			else:
 				continue
 		categoryCode=row[4].value.strip()
-		if categoryCode:
-			categoryCode=categoryCode.zfill(7)
 		sc1=row[2].value.strip()
 		sc2=row[3].value.strip()
 		if sc1:
