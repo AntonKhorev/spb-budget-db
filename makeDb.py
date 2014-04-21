@@ -7,7 +7,7 @@ import dataLists
 import decimal
 
 def listDocumentParagraphs(csvFilenameGlob):
-	r=re.compile(r'^.+[/\\]\d+\.\d\.[pz]\.(?P<number>\d[0-9.]+)\.(?P<table>[a-z]+)\.csv$')
+	r=re.compile(r'^.+[/\\]\d+\.\d\.[pz]\.(?P<number>\d[0-9.]+)\.(?P<table>[a-z]+)\.(?P<action>[a-z0-9(),])\.csv$')
 	def parse(csvFilename):
 		m=r.match(csvFilename)
 		if not m: raise Exception('invalid filename '+str(csvFilename))
@@ -62,7 +62,7 @@ def readCsv(csvFilename):
 
 # scan section codes
 for csvFilenamePrefix,priority in (('tables/2014.0.p.',2),('tables/2014.0.z.',1)):
-	for documentNumber,paragraphs in listDocumentParagraphs(csvFilenamePrefix+'*.section.csv'):
+	for documentNumber,paragraphs in listDocumentParagraphs(csvFilenamePrefix+'*.section.*.csv'):
 		for documentNumber,paragraphNumber,table,csvFilename in paragraphs:
 			testOrder=makeTestOrder(['superSectionCode','sectionCode','categoryCode','typeCode'],[True,True,True,True])
 			for row in readCsv(csvFilename):
