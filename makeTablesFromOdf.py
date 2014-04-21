@@ -64,7 +64,7 @@ class TableWriteWatcher:
 		if not self.paragraphNumber:
 			raise Exception('paragraph number for table not set')
 		self.makeWriter(table,documentNumber).write(
-			'tables/2014.0.p.'+documentNumber+'.'+self.paragraphNumber+self.getTableType()+'.csv'
+			'tables/2014.0.p.'+documentNumber+'.'+self.paragraphNumber+self.getTableType()+'.diff.csv'
 		)
 		self.paragraphNumber=None
 
@@ -146,7 +146,7 @@ for documentNumber in ('3765','3781'):
 						tableWriteWatcher.setParagraphNumber(m.group('paragraphNumber'))
 				# print('line:',line)
 				def getMoveFilename(m):
-					return 'tables/2014.0.p.'+documentNumber+'.'+m.group('paragraphNumber')+'move.csv'
+					return 'tables/2014.0.p.'+documentNumber+'.'+m.group('paragraphNumber')+'department.move.csv'
 				def listDepartmentMoves(m,s,t,deptGroupName='departmentNames'):
 					def processName(d):
 						return d.replace('Администрации','Администрация')
