@@ -1,21 +1,11 @@
 #!/usr/bin/env python3
 
 import itertools
-import re,glob
+import glob
 import csv
-import dataLists
 import decimal
 
-def listDocumentParagraphs(csvFilenameGlob):
-	r=re.compile(r'^.+[/\\]\d+\.\d\.[pz]\.(?P<number>\d[0-9.]+)\.(?P<table>[a-z]+)\.(?P<action>[a-z0-9(),])\.csv$')
-	def parse(csvFilename):
-		m=r.match(csvFilename)
-		if not m: raise Exception('invalid filename '+str(csvFilename))
-		sortKey=tuple(int(n) for n in m.group('number').split('.'))
-		return sortKey,m.group('table'),csvFilename
-	return itertools.groupby(((numbers[0],'.'.join(str(n) for n in numbers[1:]),table,csvFilename) for numbers,table,csvFilename in sorted(
-		parse(csvFilename) for csvFilename in glob.glob(csvFilenameGlob)
-	)), lambda t:t[0])
+import fileLists,dataLists
 
 documents=[
 	{'documentNumber':3574,'documentDate':'2013-10-07','governorFlag':True,'amendmentFlag':False},
@@ -61,53 +51,23 @@ def readCsv(csvFilename):
 			yield row
 
 # scan section codes
-for csvFilenamePrefix,priority in (('tables/2014.0.p.',2),('tables/2014.0.z.',1)):
-	for documentNumber,paragraphs in listDocumentParagraphs(csvFilenamePrefix+'*.section.*.csv'):
-		for documentNumber,paragraphNumber,table,csvFilename in paragraphs:
-			testOrder=makeTestOrder(['superSectionCode','sectionCode','categoryCode','typeCode'],[True,True,True,True])
-			for row in readCsv(csvFilename):
-				resets=testOrder(row)
-				superSections.add(row,priority)
-				sections.add(row,priority)
-				categories.add(row,priority)
-				types.add(row,priority)
+for tableFile in fileLists.listTableFiles(glob.glob('tables/*.csv')):
+	if tableFile.table!='section':
+		continue
+	if tableFile.stage=='2014.0.z':
+		priority=1
+	else:
+		priority=2
+	testOrder=makeTestOrder(['superSectionCode','sectionCode','categoryCode','typeCode'],[True,True,True,True])
+	for row in readCsv(tableFile.filename):
+		resets=testOrder(row)
+		superSections.add(row,priority)
+		sections.add(row,priority)
+		categories.add(row,priority)
+		types.add(row,priority)
 
 # read monetary data
-amendmentFlag=False
 editNumber=0
-for documentNumber,paragraphs in listDocumentParagraphs('tables/2014.0.p.*.csv'):
-	priority=2 if documentNumber==3574 else 3
-	for documentNumber,paragraphNumber,table,csvFilename in paragraphs:
-		if table not in ('department','move'): continue
-		editNumber+=1
-		edits.append({
-			'editNumber':editNumber,
-			'documentNumber':documentNumber,
-			'paragraphNumber':paragraphNumber,
-		})
-		if table=='department':
-			if not amendmentFlag:
-				testOrder=makeTestOrder(['departmentCode','sectionCode','categoryCode','typeCode'],[False,True,True,True])
-			for row in readCsv(csvFilename):
-				if not amendmentFlag:
-					resets=testOrder(row)
-					if 'departmentCode' in resets:
-						departments.resetSequence()
-				if amendmentFlag:
-					departments.resetSequence() # ignore order
-				departments.add(row,priority)
-				categories.add(row,priority)
-				types.add(row,priority)
-				items.add(row,editNumber)
-		elif table=='move':
-			reader=readCsv(csvFilename)
-			for s,t in zip(reader,reader):
-				s['departmentCode']=departments.getCodeForName(s['departmentName'])
-				del s['departmentName']
-				t['departmentCode']=departments.getCodeForName(t['departmentName'])
-				del t['departmentName']
-				items.move(s,t,editNumber)
-	amendmentFlag=True
 
 # def makeUniqueCheck():
 	# kv={}
@@ -116,45 +76,52 @@ for documentNumber,paragraphs in listDocumentParagraphs('tables/2014.0.p.*.csv')
 			# print('@',k,':',kv[k],'vs',v)
 		# kv[k]=v
 	# return uniqueCheck
-
-# compare with the law
 # uniqueCheck=makeUniqueCheck()
-def makeEditNumberForYear():
-	global editNumber
+
+for tableFile in fileLists.listTableFiles(glob.glob('tables/*.csv')):
+	if tableFile.table!='department':
+		continue
+	if tableFile.stage=='2014.0.z':
+		priority=1
+	elif tableFile.documentNumber==3574:
+		priority=2
+	else:
+		priority=3
 	editNumber+=1
 	edits.append({
 		'editNumber':editNumber,
-		'documentNumber':3850,
-		'paragraphNumber':'3',
+		'documentNumber':tableFile.documentNumber,
+		'paragraphNumber':tableFile.paragraphNumber,
 	})
-	editNumber2014=editNumber
-	editNumber+=1
-	edits.append({
-		'editNumber':editNumber,
-		'documentNumber':3850,
-		'paragraphNumber':'4',
-	})
-	editNumber2015_2016=editNumber
-	def editNumberForYear(year):
-		if year==2014:
-			return editNumber2014
-		elif year==2015 or year==2016:
-			return editNumber2015_2016
-	return editNumberForYear
-with items.makeFixer(makeEditNumberForYear()) as fixer:
-	priority=1
-	for documentNumber,paragraphs in listDocumentParagraphs('tables/2014.0.z.*.department.csv'):
-		for documentNumber,paragraphNumber,table,csvFilename in paragraphs:
+	if type(tableFile.action) is fileLists.SetAction:
+		with items.makeSetContext(editNumber,tableFile.action.years) as setContext:
 			testOrder=makeTestOrder(['departmentCode','sectionCode','categoryCode','typeCode'],[False,True,True,True])
-			for row in readCsv(csvFilename):
+			for row in readCsv(tableFile.filename):
 				resets=testOrder(row)
 				if 'departmentCode' in resets:
 					departments.resetSequence()
 				departments.add(row,priority)
 				categories.add(row,priority)
 				types.add(row,priority)
-				fixer.fix(row)
+				setContext.set(row)
 				# uniqueCheck(row['categoryCode'],row['sectionCode'])
+	elif type(tableFile.action) is fileLists.DiffAction:
+		for row in readCsv(tableFile.filename):
+			departments.resetSequence() # ignore order
+			departments.add(row,priority)
+			categories.add(row,priority)
+			types.add(row,priority)
+			items.add(row,editNumber)
+	elif type(tableFile.action) is fileLists.MoveAction:
+		reader=readCsv(tableFile.filename)
+		for s,t in zip(reader,reader):
+			s['departmentCode']=departments.getCodeForName(s['departmentName'])
+			del s['departmentName']
+			t['departmentCode']=departments.getCodeForName(t['departmentName'])
+			del t['departmentName']
+			items.move(s,t,editNumber)
+	else:
+		raise Exception('unknown action '+str(tableFile.action))
 
 ### write sql ###
 

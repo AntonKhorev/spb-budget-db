@@ -113,24 +113,27 @@ class ItemList:
 		return self.keySum(self.rowKey(row))
 	def add(self,row,editNumber):
 		self.items[self.rowKey(row)][editNumber]+=self.rowValue(row)
-	def makeFixer(self,editNumberForYear):
-		class Fixer:
+	def makeSetContext(self,editNumber,years):
+		class SetContext:
 			def __init__(self,itemList):
 				self.itemList=itemList
 			def __enter__(self):
 				self.editNumber=None
 				self.residuals=collections.defaultdict(decimal.Decimal)
 				for k in self.itemList.items:
-					self.residuals[k]=self.itemList.keySum(k)
+					if k[0] in years:
+						self.residuals[k]=self.itemList.keySum(k)
 				return self
-			def fix(self,row):
+			def set(self,row):
 				k=self.itemList.rowKey(row)
-				self.itemList.items[k][editNumberForYear(k[0])]+=self.itemList.rowValue(row)-self.residuals[k]
+				if k[0] not in years:
+					raise Exception('year '+str(k[0])+' in SetContext for years '+str(years))
+				self.itemList.items[k][editNumber]+=self.itemList.rowValue(row)-self.residuals[k]
 				del self.residuals[k]
 			def __exit__(self,exc_type,exc_value,traceback):
 				for k,v in self.residuals.items():
-					self.itemList.items[k][editNumberForYear(k[0])]-=v
-		return Fixer(self)
+					self.itemList.items[k][editNumber]-=v
+		return SetContext(self)
 	def move(self,s,t,editNumber):
 		ks=self.rowKey(s)
 		kt=self.rowKey(t)
