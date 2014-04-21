@@ -8,11 +8,11 @@ import decimal
 import fileLists,dataLists
 
 documents=[
-	{'documentNumber':3574,'documentDate':'2013-10-07','governorFlag':True,'amendmentFlag':False},
-	{'documentNumber':3765,'documentDate':'2013-11-01','governorFlag':True,'amendmentFlag':True},
-	{'documentNumber':3781,'documentDate':'2013-11-08','governorFlag':False,'amendmentFlag':True},
-	{'documentNumber':3850,'documentDate':'2013-11-15','governorFlag':False,'amendmentFlag':True},
-	{'documentNumber':4597,'documentDate':'2014-04-11','governorFlag':True,'amendmentFlag':False},
+	{'documentNumber':3574,'documentDate':'2013-10-07','stageNumber':0,'governorFlag':True,'amendmentFlag':False},
+	{'documentNumber':3765,'documentDate':'2013-11-01','stageNumber':0,'governorFlag':True,'amendmentFlag':True},
+	{'documentNumber':3781,'documentDate':'2013-11-08','stageNumber':0,'governorFlag':False,'amendmentFlag':True},
+	{'documentNumber':3850,'documentDate':'2013-11-15','stageNumber':0,'governorFlag':False,'amendmentFlag':True},
+	{'documentNumber':4597,'documentDate':'2014-04-11','stageNumber':1,'governorFlag':True,'amendmentFlag':False},
 ]
 edits=[]
 departments=dataLists.DepartmentList()
@@ -152,11 +152,12 @@ sql.write("""
 CREATE TABLE documents(
 	documentNumber INT PRIMARY KEY,
 	documentDate TEXT,
+	stageNumber INT,
 	governorFlag INT(1),
 	amendmentFlag INT(1)
 );
 """);
-writeTable('documents',documents,('documentNumber','documentDate','governorFlag','amendmentFlag'))
+writeTable('documents',documents,('documentNumber','documentDate','stageNumber','governorFlag','amendmentFlag'))
 
 sql.write("""
 CREATE TABLE edits(

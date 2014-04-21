@@ -257,7 +257,7 @@ class AmendmentCols(Lines):
 		else:
 			yearValue=str(item['year'])+' г.'
 		if level==0:
-			return (yearValue,'Закон')
+			return (yearValue,'Текущий итог')
 		elif level==1:
 			if item['amendmentFlag']:
 				if item['governorFlag']:
@@ -268,9 +268,12 @@ class AmendmentCols(Lines):
 					else:
 						return (yearValue,'Поправка БФК')
 			else:
-				return (yearValue,'Проект закона')
+				if item['stageNumber']==0:
+					return (yearValue,'Проект закона')
+				else:
+					return (yearValue,'Проект '+str(item['stageNumber'])+'-х изменений')
 		raise ValueError()
 	def listQuerySelects(self):
-		return 'year','documentNumber','amendmentFlag','governorFlag'
+		return 'year','documentNumber','stageNumber','amendmentFlag','governorFlag'
 	def listQueryOrderbys(self):
 		return 'year','documentNumber'

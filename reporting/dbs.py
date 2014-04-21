@@ -14,6 +14,7 @@ class Conn:
 	}
 	entries={
 		'documentDate':'documents',
+		'stageNumber':'documents',
 		'governorFlag':'documents',
 		'amendmentFlag':'documents',
 		'documentNumber':'edits',
