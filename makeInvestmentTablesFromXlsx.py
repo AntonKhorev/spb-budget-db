@@ -23,10 +23,10 @@ documentNumber=3574
 tableWriters.InvestmentTableWriter(
 	makeInvestmentTableReaderFromXlsxFile('fincom/2014.0.p/pr23-2014-16.xlsx'),
 	[2014,2015,2016]
-).write('tables/2014.0.p.'+str(documentNumber)+'.23.investment.csv')
+).write('tables/2014.0.p.'+str(documentNumber)+'.23.investment.set(2014,2015,2016).csv')
 
 documentNumber=3850
 tableWriters.InvestmentTableWriter(
 	makeInvestmentTableReaderFromXlsxFile('fincom/2014.0.z/pr24_bd2014-16.xlsx'),
 	[2014,2015,2016]
-).write('tables/2014.0.z.'+str(documentNumber)+'.24.investment.csv')
+).write('tables/2014.0.z.'+str(documentNumber)+'.24.investment.set(2014,2015,2016).csv')
