@@ -3,15 +3,15 @@ import re
 class AbstractAction:
 	pass
 
+class SetAction(AbstractAction):
+	def __init__(self,years):
+		self.years=set(years)
+
 class DiffAction(AbstractAction):
 	pass
 
 class MoveAction(AbstractAction):
 	pass
-
-class SetAction(AbstractAction):
-	def __init__(self,years):
-		self.years=set(years)
 
 class TableFile:
 	def __init__(self,filename,stage,documentNumber,paragraphNumber,table,action):
@@ -23,8 +23,9 @@ class TableFile:
 		self.action=action
 
 # sort by document and paragraph number
+# use with filenames=glob.glob('dir/*.csv')
 def listTableFiles(filenames):
-	r=re.compile(r'^(?:.+[/\\])?(?P<stage>\d+\.\d\.[pz])\.(?P<documentNumber>\d+)\.(?P<paragraphNumber>\d[0-9.]+)\.(?P<table>[a-z]+)\.(?P<action>[a-z0-9(),]+)\.csv$')
+	r=re.compile(r'^(?:.+[/\\])?(?P<stage>\d+\.\d\.[pz])\.(?P<documentNumber>\d+)\.(?P<paragraphNumber>\d+(?:\.\d+)*)\.(?P<table>[a-z]+)\.(?P<action>[a-z0-9(),]+)\.csv$')
 	tableFiles=[]
 	for filename in filenames:
 		m=r.match(filename)

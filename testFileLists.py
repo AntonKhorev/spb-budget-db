@@ -16,6 +16,11 @@ class TestFileLists(unittest.TestCase):
 		self.assertEqual(t.paragraphNumber,'1.1')
 		self.assertEqual(t.table,'department')
 		self.assertIsInstance(t.action,fileLists.DiffAction)
+	def testOneEntryWithDirectory(self):
+		l=fileLists.listTableFiles([
+			'tables\\2014.0.p.3574.3.department.set(2014).csv'
+		])
+		self.assertEqual(len(l),1)
 	def testSort(self):
 		l=fileLists.listTableFiles([
 			'2014.0.p.3765.7.1.department.diff.csv',
