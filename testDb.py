@@ -4,9 +4,16 @@ import sqlite3
 
 with sqlite3.connect(':memory:') as conn:
 	conn.execute('pragma foreign_keys=ON')
-	conn.executescript(
-		open('db/pr-bd-2014-16.sql',encoding='utf8').read()
-	)
+
+	# conn.executescript(
+		# open('db/pr-bd-2014-16.sql',encoding='utf8').read()
+	# )
+
+	# load command by command
+	for command in open('db/pr-bd-2014-16.sql',encoding='utf8').read().split(';\n'):
+		print('>',command)
+		conn.execute(command)
+
 	# for row in conn.execute("SELECT departmentCode, departmentName FROM departments ORDER BY departmentOrder"):
 		# print(row)
 	# for row in conn.execute("SELECT * FROM categories ORDER BY categoryCode"):
