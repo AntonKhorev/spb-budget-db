@@ -57,3 +57,17 @@ tableWriters.SectionTableWriter(
 	makeTableReaderFromXlsxFile('fincom/2014.0.z/pr06_bd2014-16.xlsx',2),
 	[2015,2016]
 ).write('tables/2014.0.z.'+str(documentNumber)+'.6.section.set(2015,2016).csv')
+
+# correction project
+# wasn't published in xlsx format
+
+# correction law
+documentNumber=4752
+tableWriters.DepartmentTableWriter(
+	makeTableReaderFromXlsxFile('fincom/2014.1.z/pr02_bd2014-16_1izm.xlsx',1),
+	[2014]
+).write('tables/2014.1.z.'+str(documentNumber)+'.3.department.set(2014).csv')
+tableWriters.DepartmentTableWriter(
+	makeTableReaderFromXlsxFile('fincom/2014.1.z/pr17_bd2014-16_1izm.xlsx',2),
+	[2015,2016]
+).write('tables/2014.1.z.'+str(documentNumber)+'.4.department.diff.csv')

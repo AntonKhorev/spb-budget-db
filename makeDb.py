@@ -7,12 +7,14 @@ import decimal
 
 import fileLists,dataLists
 
+# TODO make csv table, add (name) priority column, add whatever needed to eliminate col naming hacks in reporting/lines.py
 documents=[
 	{'documentNumber':3574,'documentDate':'2013-10-07','stageNumber':0,'governorFlag':True,'amendmentFlag':False},
 	{'documentNumber':3765,'documentDate':'2013-11-01','stageNumber':0,'governorFlag':True,'amendmentFlag':True},
 	{'documentNumber':3781,'documentDate':'2013-11-08','stageNumber':0,'governorFlag':False,'amendmentFlag':True},
 	{'documentNumber':3850,'documentDate':'2013-11-15','stageNumber':0,'governorFlag':False,'amendmentFlag':True},
 	{'documentNumber':4597,'documentDate':'2014-04-11','stageNumber':1,'governorFlag':True,'amendmentFlag':False},
+	{'documentNumber':4752,'documentDate':'2014-05-16','stageNumber':1,'governorFlag':False,'amendmentFlag':True},
 ]
 edits=[]
 departments=dataLists.DepartmentList()
@@ -82,12 +84,14 @@ editNumber=0
 for tableFile in fileLists.listTableFiles(glob.glob('tables/*.csv')):
 	if tableFile.table!='department':
 		continue
-	if tableFile.stage=='2014.0.z':
+	if tableFile.stage=='2014.1.z':
 		priority=1
-	elif tableFile.documentNumber==3574:
+	elif tableFile.stage=='2014.0.z':
 		priority=2
-	else:
+	elif tableFile.documentNumber==3574:
 		priority=3
+	else:
+		priority=4
 	editNumber+=1
 	edits.append({
 		'editNumber':editNumber,

@@ -257,7 +257,7 @@ class AmendmentCols(Lines):
 		else:
 			yearValue=str(item['year'])+' г.'
 		if level==0:
-			return (yearValue,'Текущий итог')
+			return (yearValue,'Текущий закон')
 		elif level==1:
 			if item['amendmentFlag']:
 				if item['governorFlag']:
@@ -265,6 +265,8 @@ class AmendmentCols(Lines):
 				else:
 					if item['documentNumber']==3850: # FIXME hack
 						return (yearValue,'Прочие поправки')
+					elif item['documentNumber']==4752: # FIXME hack
+						return (yearValue,'Поправки в ЗАКСе')
 					else:
 						return (yearValue,'Поправка БФК')
 			else:
