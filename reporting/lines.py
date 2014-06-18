@@ -266,7 +266,7 @@ class AmendmentCols(Lines):
 					if item['documentNumber']==3850: # FIXME hack
 						return (yearValue,'Прочие поправки')
 					elif item['documentNumber']==4752: # FIXME hack
-						return (yearValue,'Поправки в ЗАКСе')
+						return (yearValue,'Поправки 1-х изменений')
 					else:
 						return (yearValue,'Поправка БФК')
 			else:
