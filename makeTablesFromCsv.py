@@ -20,8 +20,8 @@ documentNumber=4597
 tableWriters.DepartmentTableWriter(
 	makeTableReaderFromCsvFile('fincom/2014.1.p/2014.1.p-2014(3).csv',1),
 	[2014]
-).write('tables/2014.1.p.'+str(documentNumber)+'.3.department.set(2014).csv')
+).write('tables/2014.1.p.'+str(documentNumber)+'.2.department.set(2014).csv')
 tableWriters.DepartmentTableWriter(
 	makeTableReaderFromCsvFile('fincom/2014.1.p/2014.1.p-2015,2016(3).csv',2),
 	[2015,2016]
-).write('tables/2014.1.p.'+str(documentNumber)+'.4.department.diff.csv')
+).write('tables/2014.1.p.'+str(documentNumber)+'.14.department.diff.csv')
