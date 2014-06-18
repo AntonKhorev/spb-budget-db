@@ -57,10 +57,12 @@ def readCsv(csvFilename):
 for tableFile in fileLists.listTableFiles(glob.glob('tables/*.csv')):
 	if tableFile.table!='section':
 		continue
-	if tableFile.stage=='2014.0.z':
+	if tableFile.stage=='2014.1.z':
 		priority=1
-	else:
+	elif tableFile.stage=='2014.0.z':
 		priority=2
+	else:
+		priority=3
 	testOrder=makeTestOrder(['superSectionCode','sectionCode','categoryCode','typeCode'],[True,True,True,True])
 	for row in readCsv(tableFile.filename):
 		resets=testOrder(row)
