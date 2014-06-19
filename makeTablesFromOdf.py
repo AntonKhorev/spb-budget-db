@@ -106,7 +106,11 @@ moveCategoryRe=re.compile(r'\s*'+pn+r' Изложить наименование
 moveCategoryTypeRe=re.compile(r'\s*'+pn+r' Изложить наименование целевой статьи (?P<categoryCode1>\d{7}) ".*?" '+dnms+r' в следующей редакции: ".*?" с изменением кода целевой статьи на (?P<categoryCode2>\d{7}) и с изменением(?: кода)? вида расходов (?P<typeCode1>\d{3}) ".*?" на (?P<typeCode2>\d{3}) ".*?" по (?P<departmentNamesForType>.*?)\.')
 moveTypeRe=re.compile(r'\s*'+pn+r' Код вида расходов (?P<typeCode1>\d{3}) ".*?" в целевой статье '+cc+r' ".*?" '+dnms+r' изменить на (?P<typeCode2>\d{3}) ".*?"')
 
-for documentNumber in ('3765','3781'):
+for documentNumber,appendixNumberDepartmentY1,appendixNumberDepartmentY23,appendixNumberInvestment in ((
+	('3765','3','4','23'),
+	('3781','3','4','23'),
+	('4706','2','14','11'),
+)):
 	filename='assembly/'+documentNumber+'.odt'
 	doc=ezodf.opendoc(filename)
 	tableWriteWatcher=None
@@ -124,10 +128,10 @@ for documentNumber in ('3765','3781'):
 				m=amendParagraphAppendixRe.match(line)
 				if m:
 					# print('== amendment',m.group('paragraphNumber'),'for appendix',m.group('appendixNumber'),'==')
-					if m.group('appendixNumber') in ('3','4'):
-						tableWriteWatcher=DepartmentTableWriteWatcher([2014] if m.group('appendixNumber')=='3' else [2015,2016])
+					if m.group('appendixNumber') in (appendixNumberDepartmentY1,appendixNumberDepartmentY23):
+						tableWriteWatcher=DepartmentTableWriteWatcher([2014] if m.group('appendixNumber')==appendixNumberDepartmentY1 else [2015,2016])
 						tableWriteWatcher.setParagraphNumber(m.group('paragraphNumber'))
-					elif m.group('appendixNumber')=='23':
+					elif m.group('appendixNumber')==appendixNumberInvestment:
 						tableWriteWatcher=InvestmentTableWriteWatcher([2014,2015,2016])
 						tableWriteWatcher.setParagraphNumber(m.group('paragraphNumber'))
 					else:
@@ -135,8 +139,8 @@ for documentNumber in ('3765','3781'):
 				m=amendAppendixRe.match(line)
 				if m:
 					# print('== amendment TBD for appendix',m.group('appendixNumber'),'==')
-					if m.group('appendixNumber') in ('3','4'):
-						tableWriteWatcher=DepartmentTableWriteWatcher([2014] if m.group('appendixNumber')=='3' else [2015,2016])
+					if m.group('appendixNumber') in (appendixNumberDepartmentY1,appendixNumberDepartmentY23):
+						tableWriteWatcher=DepartmentTableWriteWatcher([2014] if m.group('appendixNumber')==appendixNumberDepartmentY1 else [2015,2016])
 					else:
 						tableWriteWatcher=None
 				m=subParagraphRe.match(line)
