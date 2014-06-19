@@ -42,6 +42,7 @@ class TableWriter:
 		name=self.punctWithoutSpaceRe.sub(' ',name)
 		return name
 	def processAmount(self,amount):
+		amount=amount.replace(',','.')
 		return decimal.Decimal(amount).quantize(decimal.Decimal('0.0'))
 	def processAmounts(self,amounts):
 		return [self.processAmount(amount) for amount in amounts]
