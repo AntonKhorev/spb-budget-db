@@ -51,7 +51,19 @@ class XlsxSpreadsheet(Spreadsheet):
 		nameFormat=makeNameFormat()
 		codeFormat=makeFormat({'align':'center'})
 		absoluteAmountFormat=makeFormat({'num_format':'#,##0.0;-#,##0.0;""'})
-		relativeAmountFormat=makeFormat({'num_format':'+#,##0.0;-#,##0.0;""'})
+
+		# COLORx won't work
+		# COLOR4 = dark green in LibreOffice, light green (bad) in Excel Viewer
+		# COLOR6 = dark red in LibreOffice, yellow (very bad) in Excel Viewer
+		# relativeAmountFormat=makeFormat({'num_format':'[COLOR4]+#,##0.0;[COLOR6]-#,##0.0;""'})
+		# relativeAmountFormat=makeFormat({'num_format':'[COLOR58]+#,##0.0;[COLOR30]-#,##0.0;""'}) # doesn't work in Excel Viewer at all
+		# relativeAmountFormat=makeFormat({'num_format':'+#,##0.0;-#,##0.0;""'})
+		relativeAmountFormat=makeFormat({'num_format':'+#,##0.0;[RED]-#,##0.0;""','font_color':'#004400'})
+
+		# conditional format
+		# positiveRelativeAmountFormat=self.wb.add_format({'font_color':'#004400'})
+		# negativeRelativeAmountFormat=self.wb.add_format({'font_color':'#440000'})
+
 		headerFormat=self.wb.add_format({'bold':True,'text_wrap':True})
 		codeHeaderFormat=self.wb.add_format({'bold':True,'font_size':9,'text_wrap':True})
 		captionFormat=self.wb.add_format({'bold':True,'font_size':13})
@@ -61,6 +73,19 @@ class XlsxSpreadsheet(Spreadsheet):
 				c0=0
 				ws.freeze_panes(r0,0)
 				ws.outline_settings(True,False,True,False)
+				# conditional format - too slow, buggy in LibreOffice
+				# ws.conditional_format('K4:K17',{
+					# 'type':'cell',
+					# 'criteria':'>',
+					# 'value':0,
+					# 'format':positiveRelativeAmountFormat,
+				# })
+				# ws.conditional_format('K4:K17',{
+					# 'type':'cell',
+					# 'criteria':'<',
+					# 'value':0,
+					# 'format':negativeRelativeAmountFormat,
+				# })
 			def setColWidth(self,c,width):
 				ws.set_column(c,c,width)
 			def setColWidthAndLevel(self,c,width,level):
