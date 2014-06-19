@@ -50,7 +50,7 @@ class XlsxSpreadsheet(Spreadsheet):
 		textFormat=makeFormat({})
 		nameFormat=makeNameFormat()
 		codeFormat=makeFormat({'align':'center'})
-		absoluteAmountFormat=makeFormat({'num_format':'#,##0.0;−#,##0.0;""'})
+		absoluteAmountFormat=makeFormat({'num_format':'[>=0.05]#,##0.0;[<=-0.05]−#,##0.0;;@'})
 
 		# COLORx won't work
 		# COLOR4 = dark green in LibreOffice, light green (bad) in Excel Viewer
@@ -58,7 +58,7 @@ class XlsxSpreadsheet(Spreadsheet):
 		# relativeAmountFormat=makeFormat({'num_format':'[COLOR4]+#,##0.0;[COLOR6]−#,##0.0;""'})
 		# relativeAmountFormat=makeFormat({'num_format':'[COLOR58]+#,##0.0;[COLOR30]−#,##0.0;""'}) # doesn't work in Excel Viewer at all
 		# relativeAmountFormat=makeFormat({'num_format':'+#,##0.0;−#,##0.0;""'})
-		relativeAmountFormat=makeFormat({'num_format':'+#,##0.0;[RED]−#,##0.0;""','font_color':'#004400'})
+		relativeAmountFormat=makeFormat({'num_format':'[>=0.05]+#,##0.0;[RED][<=-0.05]−#,##0.0;;[BLACK]@','font_color':'#004400'})
 
 		# conditional format
 		# positiveRelativeAmountFormat=self.wb.add_format({'font_color':'#004400'})
