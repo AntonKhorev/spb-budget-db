@@ -59,12 +59,12 @@ class TableWriteWatcher:
 		self.paragraphNumber=None
 	def setParagraphNumber(self,paragraphNumber):
 		self.paragraphNumber=paragraphNumber
-	def write(self,table,documentNumber):
+	def write(self,table,stageNumber,documentNumber):
 		# print('writing table for amendment',self.paragraphNumber)
 		if not self.paragraphNumber:
 			raise Exception('paragraph number for table not set')
 		self.makeWriter(table,documentNumber).write(
-			'tables/2014.0.p.'+documentNumber+'.'+self.paragraphNumber+self.getTableType()+'.diff.csv'
+			'tables/2014.'+stageNumber+'.p.'+documentNumber+'.'+self.paragraphNumber+self.getTableType()+'.diff.csv'
 		)
 		self.paragraphNumber=None
 
@@ -106,10 +106,10 @@ moveCategoryRe=re.compile(r'\s*'+pn+r' Изложить наименование
 moveCategoryTypeRe=re.compile(r'\s*'+pn+r' Изложить наименование целевой статьи (?P<categoryCode1>\d{7}) ".*?" '+dnms+r' в следующей редакции: ".*?" с изменением кода целевой статьи на (?P<categoryCode2>\d{7}) и с изменением(?: кода)? вида расходов (?P<typeCode1>\d{3}) ".*?" на (?P<typeCode2>\d{3}) ".*?" по (?P<departmentNamesForType>.*?)\.')
 moveTypeRe=re.compile(r'\s*'+pn+r' Код вида расходов (?P<typeCode1>\d{3}) ".*?" в целевой статье '+cc+r' ".*?" '+dnms+r' изменить на (?P<typeCode2>\d{3}) ".*?"')
 
-for documentNumber,appendixNumberDepartmentY1,appendixNumberDepartmentY23,appendixNumberInvestment in ((
-	('3765','3','4','23'),
-	('3781','3','4','23'),
-	('4706','2','14','11'),
+for stageNumber,documentNumber,appendixNumberDepartmentY1,appendixNumberDepartmentY23,appendixNumberInvestment in ((
+	('0','3765','3','4','23'),
+	('0','3781','3','4','23'),
+	('1','4706','2','14','11'),
 )):
 	filename='assembly/'+documentNumber+'.odt'
 	doc=ezodf.opendoc(filename)
@@ -197,4 +197,4 @@ for documentNumber,appendixNumberDepartmentY1,appendixNumberDepartmentY23,append
 		elif type(obj) is ezodf.table.Table:
 			# print('table',obj.nrows(),'x',obj.ncols())
 			if tableWriteWatcher:
-				tableWriteWatcher.write(obj,documentNumber)
+				tableWriteWatcher.write(obj,stageNumber,documentNumber)

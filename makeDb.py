@@ -14,6 +14,7 @@ documents=[
 	{'documentNumber':3781,'documentDate':'2013-11-08','stageNumber':0,'governorFlag':False,'amendmentFlag':True},
 	{'documentNumber':3850,'documentDate':'2013-11-15','stageNumber':0,'governorFlag':False,'amendmentFlag':True},
 	{'documentNumber':4597,'documentDate':'2014-04-11','stageNumber':1,'governorFlag':True,'amendmentFlag':False},
+	{'documentNumber':4706,'documentDate':'2014-05-07','stageNumber':1,'governorFlag':True,'amendmentFlag':True},
 	{'documentNumber':4752,'documentDate':'2014-05-16','stageNumber':1,'governorFlag':False,'amendmentFlag':True},
 ]
 edits=[]
