@@ -131,11 +131,19 @@ for stageNumber,documentNumber,appendixNumberDepartmentY1,appendixNumberDepartme
 					if m.group('appendixNumber') in (appendixNumberDepartmentY1,appendixNumberDepartmentY23):
 						tableWriteWatcher=DepartmentTableWriteWatcher([2014] if m.group('appendixNumber')==appendixNumberDepartmentY1 else [2015,2016])
 						tableWriteWatcher.setParagraphNumber(m.group('paragraphNumber'))
-					elif m.group('appendixNumber')==appendixNumberInvestment:
-						tableWriteWatcher=InvestmentTableWriteWatcher([2014,2015,2016])
-						tableWriteWatcher.setParagraphNumber(m.group('paragraphNumber'))
+					# elif m.group('appendixNumber')==appendixNumberInvestment:
+						# commented out for now b/c:
+						# 	4706 has table formatting nonsense
+						#	these tables are not used in any way
+						# tableWriteWatcher=InvestmentTableWriteWatcher([2014,2015,2016])
+						# tableWriteWatcher.setParagraphNumber(m.group('paragraphNumber'))
 					else:
 						tableWriteWatcher=None
+					# skip Y23 in stage 1 for now {
+					if stageNumber=='1' and m.group('appendixNumber')==appendixNumberDepartmentY23:
+						print('skipping Y23')
+						tableWriteWatcher=None
+					# }
 				m=amendAppendixRe.match(line)
 				if m:
 					# print('== amendment TBD for appendix',m.group('appendixNumber'),'==')
@@ -143,6 +151,11 @@ for stageNumber,documentNumber,appendixNumberDepartmentY1,appendixNumberDepartme
 						tableWriteWatcher=DepartmentTableWriteWatcher([2014] if m.group('appendixNumber')==appendixNumberDepartmentY1 else [2015,2016])
 					else:
 						tableWriteWatcher=None
+					# skip Y23 in stage 1 for now {
+					if stageNumber=='1' and m.group('appendixNumber')==appendixNumberDepartmentY23:
+						print('skipping Y23')
+						tableWriteWatcher=None
+					# }
 				m=subParagraphRe.match(line)
 				if m:
 					# print('=== amendment',m.group('paragraphNumber'),'===')
