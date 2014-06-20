@@ -88,6 +88,9 @@ class Lines:
 		# order for final level should be BEFORE
 		raise NotImplementedError
 	def listLevelKeys(self):
+		# list of
+		# 	lists of names of db-columns for each level
+		# each level has to form globally unique key
 		raise NotImplementedError
 	def getItemValues(self,item,level):
 		raise NotImplementedError
@@ -121,30 +124,40 @@ class Lines:
 		return [styles[k] for k in self.listEntries()]
 	def getData(self,sqlConn):
 		# TODO store/return key->line# map
+		# TODO build tree in this fn instead of data.computeTree()
 		levelOrders=self.listLevelOrders()
 		data=LinesData(levelOrders,self.getAmountsKey())
 		noneKeys=[None for _ in levelOrders]
 		oldItem=None
 		oldLevelKeys=noneKeys
+		nLevels=len(levelOrders)
 		for item in itertools.chain(
 			sqlConn.queryHeaders(
 				self.listQuerySelects(),
 				self.listQueryOrderbys()
 			),
-			(None,)
+			(None,) # sentinel to cause data.addLine() calls in pop phase
 		):
 			if item is None:
 				levelKeys=noneKeys
 			else:
 				levelKeys=self.listItemLevelKeys(item)
-			reset=False
-			for level,levelKey in enumerate(levelKeys):
-				if reset or levelKey!=oldLevelKeys[level]:
-					reset=True
-					if levelOrders[level]==self.BEFORE and item is not None:
-						data.addLine(level,levelKey,self.getItemValues(item,level))
-					elif levelOrders[level]==self.AFTER and oldItem is not None:
-						data.addLine(level,oldLevelKeys[level],self.getItemValues(oldItem,level))
+
+			# drill-down phase
+			for diffLevel in range(nLevels):
+				if levelKeys[diffLevel]!=oldLevelKeys[diffLevel]:
+					break
+			else:
+				raise Exception('Duplicate key')
+			# pop phase
+			for level in range(nLevels-1,diffLevel-1,-1):
+				if levelOrders[level]==self.AFTER and oldItem is not None:
+					data.addLine(level,oldLevelKeys[level],self.getItemValues(oldItem,level))
+			# push phase
+			for level in range(diffLevel,nLevels):
+				if levelOrders[level]==self.BEFORE and item is not None:
+					data.addLine(level,levelKeys[level],self.getItemValues(item,level))
+
 			oldItem=item
 			oldLevelKeys=levelKeys
 		data.computeTree()
@@ -239,17 +252,20 @@ class AmendmentCols(Lines):
 	def listEntries(self):
 		return [
 			'year',
+			'stageNumber',
 			'documentNumber',
 		]
 	def listLevelOrders(self):
 		return [
+			self.AFTER,
 			self.AFTER,
 			self.BEFORE,
 		]
 	def listLevelKeys(self):
 		return [
 			('year',),
-			('year','documentNumber'),
+			('year','stageNumber'),
+			('year','stageNumber','documentNumber'),
 		]
 	def getItemValues(self,item,level):
 		if item['year']>2014: # FIXME hack
@@ -257,25 +273,26 @@ class AmendmentCols(Lines):
 		else:
 			yearValue=str(item['year'])+' г.'
 		if level==0:
-			return (yearValue,'Текущий закон')
-		elif level==1:
+			return (yearValue,'Бюджет','Итого')
+		if item['stageNumber']==0:
+			stageValue='Первоначальный вариант'
+		else:
+			stageValue=str(item['stageNumber'])+'-я корректировка'
+		if level==1:
+			return (yearValue,stageValue,'Итого')
+		if level==2:
 			if item['amendmentFlag']:
 				if item['governorFlag']:
-					return (yearValue,'Поправка Губернатора')
+					return (yearValue,stageValue,'Губернатор')
 				else:
-					if item['documentNumber']==3850: # FIXME hack
-						return (yearValue,'Прочие поправки')
-					elif item['documentNumber']==4752: # FIXME hack
-						return (yearValue,'Поправки 1-х изменений')
+					if item['documentNumber']==3850 or item['documentNumber']==4752: # FIXME hack
+						return (yearValue,stageValue,'Прочее')
 					else:
-						return (yearValue,'Поправка БФК')
+						return (yearValue,stageValue,'БФК')
 			else:
-				if item['stageNumber']==0:
-					return (yearValue,'Проект закона')
-				else:
-					return (yearValue,'Проект '+str(item['stageNumber'])+'-х изменений')
+				return (yearValue,stageValue,'Проект')
 		raise ValueError()
 	def listQuerySelects(self):
-		return 'year','documentNumber','stageNumber','amendmentFlag','governorFlag'
+		return 'year','stageNumber','documentNumber','amendmentFlag','governorFlag'
 	def listQueryOrderbys(self):
-		return 'year','documentNumber'
+		return 'year','stageNumber','documentNumber'
