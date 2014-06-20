@@ -280,11 +280,11 @@ class AmendmentCols(Lines):
 		else:
 			yearValue=str(item['year'])+' г.'
 		if level==0:
-			return (yearValue,'Итоговый бюджет','')
+			return (yearValue,'Бюджет + изменения','')
 		if item['stageNumber']==0:
-			stageValue='Первоначальный вариант'
+			stageValue='Первоначальный бюджет'
 		else:
-			stageValue=str(item['stageNumber'])+'-я корректировка'
+			stageValue=str(item['stageNumber'])+'-е изменения'
 		if level==1:
 			return (yearValue,stageValue,'Итого')
 		if level==2:
