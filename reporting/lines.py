@@ -64,18 +64,25 @@ class LinesData:
 		for line in self.lineTreeRoots:
 			yield from rec(line,0)
 	def listAmountStyles(self):
+		# for amount columns - related only to class AmendmentCols
 		styles=[]
-		first1=True
+		first1=first2=True
 		for level,_ in self.lineList:
 			if level==0:
 				styles.append({'amount','absolute'})
-				first1=True
+				first1=first2=True
 			elif level==1:
 				if first1:
 					styles.append({'amount','absolute'})
 				else:
 					styles.append({'amount','relative'})
 				first1=False
+			elif level==2:
+				if first1 and first2:
+					styles.append({'amount','absolute'})
+				else:
+					styles.append({'amount','relative'})
+				first2=False
 			else:
 				styles.append({'amount','relative'})
 		return styles
