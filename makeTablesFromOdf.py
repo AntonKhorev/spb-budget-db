@@ -102,6 +102,8 @@ subParagraphRe=re.compile(r'\s+(?P<paragraphNumber>(?:\d+\.){2,})')
 # regexes for move:
 moveDepartmentRe=re.compile(r'\s*'+pn+r' Главного распорядителя "(?P<departmentName1>.*?)" в целевой статье '+cc+r' ".*?" изменить на "(?P<departmentName2>.*?)"')
 moveSectionRe=re.compile(r'\s*'+pn+r' Подраздел (?P<sectionCode1>\d{4}) ".*?" в целевой статье '+cc+r' ".*?" '+dnms+r' изменить на (?P<sectionCode2>\d{4}) ".*?"')
+# don't do category name-only changes
+moveCategoryCodeOnlyRe=re.compile(r'\s*'+pn+r' Код целевой статьи (?P<categoryCode1>\d{7}) ".*?" '+dnms+r' изменить на (?P<categoryCode2>\d{7})')
 moveCategoryRe=re.compile(r'\s*'+pn+r' Изложить наименование целевой статьи (?P<categoryCode1>\d{7}) ".*?" '+dnms+r' в следующей редакции: ".*?" с изменением кода целевой статьи на (?P<categoryCode2>\d{7})')
 moveCategoryTypeRe=re.compile(r'\s*'+pn+r' Изложить наименование целевой статьи (?P<categoryCode1>\d{7}) ".*?" '+dnms+r' в следующей редакции: ".*?" с изменением кода целевой статьи на (?P<categoryCode2>\d{7}) и с изменением(?: кода)? вида расходов (?P<typeCode1>\d{3}) ".*?" на (?P<typeCode2>\d{3}) ".*?" по (?P<departmentNamesForType>.*?)\.')
 moveTypeRe=re.compile(r'\s*'+pn+r' Код вида расходов (?P<typeCode1>\d{3}) ".*?" в целевой статье '+cc+r' ".*?" '+dnms+r' изменить на (?P<typeCode2>\d{3}) ".*?"')
@@ -164,7 +166,7 @@ for stageNumber,documentNumber,appendixNumberDepartmentY1,appendixNumberDepartme
 						tableWriteWatcher.setParagraphNumber(m.group('paragraphNumber'))
 				# print('line:',line)
 				def getMoveFilename(m):
-					return 'tables/2014.0.p.'+documentNumber+'.'+m.group('paragraphNumber')+'department.move.csv'
+					return 'tables/2014.'+stageNumber+'.p.'+documentNumber+'.'+m.group('paragraphNumber')+'department.move.csv'
 				def listDepartmentMoves(m,s,t,deptGroupName='departmentNames'):
 					def processName(d):
 						return d.replace('Администрации','Администрация')
@@ -202,6 +204,11 @@ for stageNumber,documentNumber,appendixNumberDepartmentY1,appendixNumberDepartme
 							('*',m.group('categoryCode1'),'*'),
 							('*',m.group('categoryCode2'),'*')
 						))
+				m=moveCategoryCodeOnlyRe.match(line)
+				if m: writeMove(m,listDepartmentMoves(m,
+					('*',m.group('categoryCode1'),'*'),
+					('*',m.group('categoryCode2'),'*')
+				))
 				m=moveTypeRe.match(line)
 				if m: writeMove(m,listDepartmentMoves(m,
 					('*',m.group('categoryCode'),m.group('typeCode1')),
