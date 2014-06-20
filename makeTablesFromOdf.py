@@ -110,6 +110,7 @@ for stageNumber,documentNumber,appendixNumberDepartmentY1,appendixNumberDepartme
 	('0','3765','3','4','23'),
 	('0','3781','3','4','23'),
 	('1','4706','2','14','11'),
+	('1','4712','2','14','11'),
 )):
 	filename='assembly/'+documentNumber+'.odt'
 	doc=ezodf.opendoc(filename)
