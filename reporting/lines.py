@@ -280,7 +280,7 @@ class AmendmentCols(Lines):
 		else:
 			yearValue=str(item['year'])+' г.'
 		if level==0:
-			return (yearValue,'Бюджет','Итого')
+			return (yearValue,'Итоговый бюджет','')
 		if item['stageNumber']==0:
 			stageValue='Первоначальный вариант'
 		else:
@@ -290,12 +290,12 @@ class AmendmentCols(Lines):
 		if level==2:
 			if item['amendmentFlag']:
 				if item['governorFlag']:
-					return (yearValue,stageValue,'Губернатор')
+					return (yearValue,stageValue,'+Губернатор')
 				else:
 					if item['documentNumber']==3850 or item['documentNumber']==4752: # FIXME hack
-						return (yearValue,stageValue,'Прочее')
+						return (yearValue,stageValue,'+прочее')
 					else:
-						return (yearValue,stageValue,'БФК')
+						return (yearValue,stageValue,'+БФК')
 			else:
 				return (yearValue,stageValue,'Проект')
 		raise ValueError()
