@@ -7,16 +7,28 @@ import decimal
 
 import fileLists,dataLists
 
-# TODO make csv table, add (name) priority column, add whatever needed to eliminate col naming hacks in reporting/lines.py
+# law + corrections url: http://www.assembly.spb.ru/ndoc/doc/0/537944376
+
+# TODO make csv tables, add (name) priority column
+stages=[
+	{'stageNumber':0,'stageAssemblyUrl':'http://www.assembly.spb.ru/ndoc/doc/0/777307431'},
+	{'stageNumber':1,'stageAssemblyUrl':'http://www.assembly.spb.ru/ndoc/doc/0/777310165'},
+]
+authors=[
+	{'authorId':1,'authorShortName':'Губернатор','authorLongName':'Губернатор Санкт-Петербурга'},
+	{'authorId':2,'authorShortName':'БФК','authorLongName':'Бюджетно-финансовый комитет'},
+]
+# documentAssemblyUrl is specified only if it contains data tables
+# if authorId is None: can't be sure about document number, date etc, the changes may have been intruduced silently anywhere between the last amendment and the final law
 documents=[
-	{'documentNumber':3574,'documentDate':'2013-10-07','stageNumber':0,'governorFlag':True,'amendmentFlag':False},
-	{'documentNumber':3765,'documentDate':'2013-11-01','stageNumber':0,'governorFlag':True,'amendmentFlag':True},
-	{'documentNumber':3781,'documentDate':'2013-11-08','stageNumber':0,'governorFlag':False,'amendmentFlag':True},
-	{'documentNumber':3850,'documentDate':'2013-11-15','stageNumber':0,'governorFlag':False,'amendmentFlag':True},
-	{'documentNumber':4597,'documentDate':'2014-04-11','stageNumber':1,'governorFlag':True,'amendmentFlag':False},
-	{'documentNumber':4706,'documentDate':'2014-05-07','stageNumber':1,'governorFlag':True,'amendmentFlag':True},
-	{'documentNumber':4712,'documentDate':'2014-05-12','stageNumber':1,'governorFlag':False,'amendmentFlag':True},
-	{'documentNumber':4752,'documentDate':'2014-05-16','stageNumber':1,'governorFlag':False,'amendmentFlag':True},
+	{'documentNumber':3574,'documentDate':'2013-10-07','stageNumber':0,'amendmentFlag':False,'authorId':1,'documentAssemblyUrl':None},
+	{'documentNumber':3765,'documentDate':'2013-11-01','stageNumber':0,'amendmentFlag':True ,'authorId':1,'documentAssemblyUrl':'http://www.assembly.spb.ru/ndoc/doc/0/777307853'},
+	{'documentNumber':3781,'documentDate':'2013-11-08','stageNumber':0,'amendmentFlag':True ,'authorId':2,'documentAssemblyUrl':'http://www.assembly.spb.ru/ndoc/doc/0/777308103'},
+	{'documentNumber':3850,'documentDate':'2013-11-15','stageNumber':0,'amendmentFlag':True ,'authorId':None,'documentAssemblyUrl':None},
+	{'documentNumber':4597,'documentDate':'2014-04-11','stageNumber':1,'amendmentFlag':False,'authorId':1,'documentAssemblyUrl':None},
+	{'documentNumber':4706,'documentDate':'2014-05-07','stageNumber':1,'amendmentFlag':True ,'authorId':1,'documentAssemblyUrl':'http://www.assembly.spb.ru/ndoc/doc/0/777310517'},
+	{'documentNumber':4712,'documentDate':'2014-05-12','stageNumber':1,'amendmentFlag':True ,'authorId':2,'documentAssemblyUrl':'http://www.assembly.spb.ru/ndoc/doc/0/777310519'},
+	{'documentNumber':4752,'documentDate':'2014-05-16','stageNumber':1,'amendmentFlag':True ,'authorId':None,'documentAssemblyUrl':None},
 ]
 edits=[]
 departments=dataLists.DepartmentList()
@@ -135,7 +147,7 @@ for tableFile in fileLists.listTableFiles(glob.glob('tables/*.csv')):
 ### write sql ###
 
 sql=open('db/pr-bd-2014-16.sql','w',encoding='utf8')
-sql.write("-- проект бюджета Санкт-Петербурга на 2014-2016 гг.\n")
+sql.write("-- бюджет Санкт-Петербурга на 2014-2016 гг.\n")
 
 def putValue(v):
 	if type(v) is str:
@@ -157,15 +169,35 @@ def writeTable(name,rows,cols):
 		sql.write("INSERT INTO "+name+"("+','.join(cols)+") VALUES ("+putRowValues(row,cols)+");\n")
 
 sql.write("""
+CREATE TABLE stages(
+	stageNumber INT PRIMARY KEY,
+	stageAssemblyUrl TEXT
+);
+""");
+writeTable('stages',stages,('stageNumber','stageAssemblyUrl'))
+
+sql.write("""
+CREATE TABLE authors(
+	authorId INT PRIMARY KEY,
+	authorShortName TEXT,
+	authorLongName TEXT
+);
+""");
+writeTable('authors',authors,('authorId','authorShortName','authorLongName'))
+
+sql.write("""
 CREATE TABLE documents(
 	documentNumber INT PRIMARY KEY,
 	documentDate TEXT,
 	stageNumber INT,
-	governorFlag INT(1),
-	amendmentFlag INT(1)
+	amendmentFlag INT(1),
+	authorId INT,
+	documentAssemblyUrl TEXT,
+	FOREIGN KEY (stageNumber) REFERENCES stages(stageNumber),
+	FOREIGN KEY (authorId) REFERENCES authors(authorId)
 );
 """);
-writeTable('documents',documents,('documentNumber','documentDate','stageNumber','governorFlag','amendmentFlag'))
+writeTable('documents',documents,('documentNumber','documentDate','stageNumber','amendmentFlag','authorId','documentAssemblyUrl'))
 
 sql.write("""
 CREATE TABLE edits(
