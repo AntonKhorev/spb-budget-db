@@ -4,8 +4,10 @@ class Conn:
 	# table name : join key column name -> JOIN table USING(column)
 	tables={
 		# 'items':None,
-		'documents':'documentNumber',
 		'edits':'editNumber',
+		'documents':'documentNumber',
+		'authors':'authorId',
+		'stages':'stageNumber',
 		'departments':'departmentCode',
 		'sections':'sectionCode',
 		'superSections':'superSectionCode',
@@ -13,10 +15,15 @@ class Conn:
 		'types':'typeCode',
 	}
 	entries={
+		# column name : table to join starting from items
+		'stageAssemblyUrl':'stages',
+		'authorShortName':'authors',
+		'authorLongName':'authors',
 		'documentDate':'documents',
 		'stageNumber':'documents',
-		'governorFlag':'documents',
 		'amendmentFlag':'documents',
+		'authorId':'documents',
+		'documentAssemblyUrl':'documents',
 		'documentNumber':'edits',
 		'paragraphNumber':'edits',
 		'departmentName':'departments',
@@ -48,7 +55,7 @@ class Conn:
 			joinKey=self.tables[table]
 			rec(joinKey)
 			froms.add(table)
-			q+='JOIN '+table+' USING('+joinKey+')\n'
+			q+='LEFT JOIN '+table+' USING('+joinKey+')\n' # need LEFT JOIN for queries with author names
 		for key in keys:
 			rec(key)
 		return q

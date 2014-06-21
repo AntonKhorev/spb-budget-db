@@ -287,19 +287,16 @@ class AmendmentCols(Lines):
 			stageValue=str(item['stageNumber'])+'-е изменения'
 		if level==1:
 			return (yearValue,stageValue,'Итого')
+		if not item['amendmentFlag']:
+			documentValue='Проект'
+		elif not item['authorShortName']:
+			documentValue='+прочее'
+		else:
+			documentValue='+'+item['authorShortName']
 		if level==2:
-			if item['amendmentFlag']:
-				if item['governorFlag']:
-					return (yearValue,stageValue,'+Губернатор')
-				else:
-					if item['documentNumber']==3850 or item['documentNumber']==4752: # FIXME hack
-						return (yearValue,stageValue,'+прочее')
-					else:
-						return (yearValue,stageValue,'+БФК')
-			else:
-				return (yearValue,stageValue,'Проект')
+			return (yearValue,stageValue,documentValue)
 		raise ValueError()
 	def listQuerySelects(self):
-		return 'year','stageNumber','documentNumber','amendmentFlag','governorFlag'
+		return 'year','stageNumber','documentNumber','amendmentFlag','authorShortName'
 	def listQueryOrderbys(self):
 		return 'year','stageNumber','documentNumber'

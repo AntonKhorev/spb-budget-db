@@ -20,11 +20,18 @@ with sqlite3.connect(':memory:') as conn:
 		# print(row)
 	# for row in conn.execute("SELECT * FROM types ORDER BY typeCode"):
 		# print(row)
+	# for row in conn.execute("""
+		# SELECT year,departmentCode,departmentName,SUM(amount)
+		# FROM items
+		# JOIN departments USING(departmentCode)
+		# GROUP BY year,departmentCode,departmentName
+		# ORDER BY departmentCode,departmentName,year
+	# """):
+		# print(row)
 	for row in conn.execute("""
-		SELECT year,departmentCode,departmentName,SUM(amount)
-		FROM items
-		JOIN departments USING(departmentCode)
-		GROUP BY year,departmentCode,departmentName
-		ORDER BY departmentCode,departmentName,year
+		SELECT documentNumber,authorLongName
+		FROM documents
+		LEFT JOIN authors USING(authorId)
+		ORDER BY documentNumber
 	"""):
 		print(row)
