@@ -310,7 +310,7 @@ class AmendmentCols(Lines):
 			stageValue='Первоначально утвержденный бюджет'
 		else:
 			stageValue=str(item['stageNumber'])+'-я корректировка бюджета'
-		stageValue+='\nСсылка рассмотрение в ЗакСе: '+item['stageAssemblyUrl']
+		stageValue+='\nСсылка на рассмотрение в ЗакСе: '+item['stageAssemblyUrl']
 		if level==1:
 			return (yearValue,stageValue,None)
 		if not item['amendmentFlag']:

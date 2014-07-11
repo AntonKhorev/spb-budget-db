@@ -98,9 +98,13 @@ class XlsxSpreadsheet(Spreadsheet):
 				else:
 					ws.write(r1,c1,value,format)
 			def writeComment(self,r,c,comment):
-				nLines=comment.count('\n')+1
+				nLines=0
+				maxLen=0
+				for line in comment.split('\n'):
+					nLines+=1
+					maxLen=max((maxLen,len(line)))
 				ws.write_comment(r,c,comment,{
-					'width':400,
+					'width':6*maxLen,
 					'height':15*nLines,
 				})
 			# candidates for superclass
