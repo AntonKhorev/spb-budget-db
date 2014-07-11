@@ -317,9 +317,9 @@ class AmendmentCols(Lines):
 			documentValue='Проект закона'
 		else:
 			documentValue='Поправка к проекту закона'
-		documentValue+='\n№ '+str(item['documentNumber'])+' от '+item['documentDate']
 		if item['authorLongName']:
 			documentValue+='\nАвтор: '+item['authorLongName']
+		documentValue+='\nДокумент в ЗакСе: № '+str(item['documentNumber'])+' от '+item['documentDate']
 		if item['documentAssemblyUrl']:
 			documentValue+='\nСсылка на документ в ЗакСе: '+item['documentAssemblyUrl']
 		if level==2:
