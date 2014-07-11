@@ -97,6 +97,8 @@ class XlsxSpreadsheet(Spreadsheet):
 					ws.merge_range(r1,c1,r2,c2,value,format)
 				else:
 					ws.write(r1,c1,value,format)
+			def writeComment(self,r,c,comment):
+				ws.write_comment(r,c,comment)
 			# candidates for superclass
 			def writeCaption(self,caption):
 				self.writeRange(0,0,0,nRowEntries-1,caption,captionFormat)
@@ -141,7 +143,7 @@ class XlsxSpreadsheet(Spreadsheet):
 						return textFormat
 				r0=nCaptionLines+nColEntries
 				c0=0
-				for r,(level,values) in enumerate(rowHeaders):
+				for r,(level,values,comments) in enumerate(rowHeaders):
 					ws.set_row(r0+r,options={'level':level})
 					for c,value in enumerate(values):
 						self.write(r0+r,c0+c,value,format(c)(level))
@@ -150,17 +152,21 @@ class XlsxSpreadsheet(Spreadsheet):
 				c0=nRowEntries
 				noneValues=(None,)*nColEntries
 				oldValues=noneValues
+				oldComments=noneValues
 				nRepeats=[0]*nColEntries
-				for c,(level,values) in enumerate(itertools.chain(colHeaders,((-1,noneValues),))):
+				for c,(level,values,comments) in enumerate(itertools.chain(colHeaders,((-1,noneValues,noneValues),))):
 					if level>=0:
 						self.setColWidthAndLevel(c0+c,12,level) # FIXME 12 = width for amount
 					for r,value in enumerate(values):
 						if values[:r+1]!=oldValues[:r+1] and oldValues[r]!=None:
 							self.writeRange(r0+r,c0+c-nRepeats[r],r0+r,c0+c-1,oldValues[r],headerFormat)
+							if oldComments and oldComments[r] is not None:
+								self.writeComment(r0+r,c0+c-nRepeats[r],oldComments[r])
 							nRepeats[r]=1
 						else:
 							nRepeats[r]+=1
 					oldValues=values
+					oldComments=comments
 				self.writeRange(0,nRowEntries,0,nRowEntries+c-1,"(тыс. руб.)")
 			def getAmountFormat(self,c):
 				if 'relative' in amountColStyles[c]:

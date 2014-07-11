@@ -4,13 +4,13 @@ class LinesData:
 	def __init__(self,levelOrders,amountsKey):
 		self.levelOrders=levelOrders
 		self.amountsKey=amountsKey
-		self.lineList=[] # [(level,values),...]
+		self.lineList=[] # [(level,values,comments),...]
 		self.amountMap={} # {amountsKey:lineNumber,...}
-	def addLine(self,level,key,values):
+	def addLine(self,level,key,values,comments):
 		amountsLevel=len(self.levelOrders)-1
 		if level==amountsLevel:
 			self.amountMap[key]=len(self.lineList)
-		self.lineList.append((level,values))
+		self.lineList.append((level,values,comments))
 	def computeTree(self):
 		self.lineTreeNodes=[None for _ in self.lineList]
 		self.lineTreeRoots=[]
@@ -49,7 +49,7 @@ class LinesData:
 		return self.lineList
 	def listBaseIndices(self):
 		amountsLevel=len(self.levelOrders)-1
-		return (l for l,(level,_) in enumerate(self.lineList) if level==amountsLevel)
+		return (l for l,(level,*_) in enumerate(self.lineList) if level==amountsLevel)
 	def getLineForAmountItem(self,item):
 		return self.amountMap[tuple(item[k] for k in self.amountsKey)]
 	def walkSums(self):
@@ -67,7 +67,7 @@ class LinesData:
 		# for amount columns - related only to class AmendmentCols
 		styles=[]
 		first1=first2=True
-		for level,_ in self.lineList:
+		for level,*_ in self.lineList:
 			if level==0:
 				styles.append({'amount','absolute'})
 				first1=first2=True
@@ -101,6 +101,8 @@ class Lines:
 		raise NotImplementedError
 	def getItemValues(self,item,level):
 		raise NotImplementedError
+	def getItemComments(self,item,level):
+		return None
 	def listQuerySelects(self):
 		raise NotImplementedError
 	def listQueryOrderbys(self):
@@ -159,11 +161,15 @@ class Lines:
 			# pop phase
 			for level in range(nLevels-1,diffLevel-1,-1):
 				if levelOrders[level]==self.AFTER and oldItem is not None:
-					data.addLine(level,oldLevelKeys[level],self.getItemValues(oldItem,level))
+					values=self.getItemValues(oldItem,level)
+					comments=self.getItemComments(oldItem,level)
+					data.addLine(level,oldLevelKeys[level],values,comments)
 			# push phase
 			for level in range(diffLevel,nLevels):
 				if levelOrders[level]==self.BEFORE and item is not None:
-					data.addLine(level,levelKeys[level],self.getItemValues(item,level))
+					values=self.getItemValues(item,level)
+					comments=self.getItemComments(item,level)
+					data.addLine(level,levelKeys[level],values,comments)
 
 			oldItem=item
 			oldLevelKeys=levelKeys
@@ -296,7 +302,30 @@ class AmendmentCols(Lines):
 		if level==2:
 			return (yearValue,stageValue,documentValue)
 		raise ValueError()
+	def getItemComments(self,item,level):
+		yearValue='Бюджет Санкт-Петербурга на '+str(item['year'])+' год'
+		if level==0:
+			return (yearValue,None,None)
+		if item['stageNumber']==0:
+			stageValue='Первоначально утвержденный бюджет'
+		else:
+			stageValue=str(item['stageNumber'])+'-я корректировка бюджета'
+		stageValue+='\nСсылка рассмотрение в ЗакСе: '+item['stageAssemblyUrl']
+		if level==1:
+			return (yearValue,stageValue,None)
+		if not item['amendmentFlag']:
+			documentValue='Проект закона'
+		else:
+			documentValue='Поправка к проекту закона'
+		documentValue+='\n№ '+str(item['documentNumber'])+' от '+item['documentDate']
+		if item['authorLongName']:
+			documentValue+='\nАвтор: '+item['authorLongName']
+		if item['documentAssemblyUrl']:
+			documentValue+='\nСсылка на документ в ЗакСе: '+item['documentAssemblyUrl']
+		if level==2:
+			return (yearValue,stageValue,documentValue)
+		raise ValueError()
 	def listQuerySelects(self):
-		return 'year','stageNumber','documentNumber','amendmentFlag','authorShortName'
+		return 'year','stageNumber','stageAssemblyUrl','documentNumber','documentDate','documentAssemblyUrl','amendmentFlag','authorShortName','authorLongName'
 	def listQueryOrderbys(self):
 		return 'year','stageNumber','documentNumber'
