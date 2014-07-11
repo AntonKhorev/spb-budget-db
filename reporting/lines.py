@@ -304,29 +304,32 @@ class AmendmentCols(Lines):
 			return (yearValue,stageValue,documentValue)
 		raise ValueError()
 	def getItemComments(self,item,level):
-		yearValue='Бюджет Санкт-Петербурга на '+str(item['year'])+' год'
-		stageValue='Бюджет с учётом корректировок'
+		yearComment='Бюджет Санкт-Петербурга на '+str(item['year'])+' год'
+		stageComment='Бюджет с учётом корректировок'
 		if level==0:
-			return (yearValue,stageValue,None)
+			return (yearComment,stageComment,None)
 		if item['stageNumber']==0:
-			stageValue='Первоначально утвержденный бюджет'
+			stageComment='Первоначально утверждённый бюджет'
 		else:
-			stageValue=str(item['stageNumber'])+'-я корректировка бюджета'
-		stageValue+='\nСсылка на рассмотрение в ЗакСе: '+item['stageAssemblyUrl']
+			stageComment=str(item['stageNumber'])+'-я корректировка бюджета'
+		stageComment+='\nСсылка на рассмотрение в ЗакСе: '+item['stageAssemblyUrl']
+		documentComment='Проект закона с внесёнными поправками'
 		if level==1:
-			return (yearValue,stageValue,None)
+			return (yearComment,stageComment,documentComment)
 		if not item['amendmentFlag']:
-			documentValue='Проект закона'
+			documentComment='Проект закона'
+		elif item['authorLongName']:
+			documentComment='Поправка к проекту закона'
 		else:
-			documentValue='Поправка к проекту закона'
+			documentComment='Изменения, не входящие в перечисленные поправки'
 		if item['authorLongName']:
-			documentValue+='\nАвтор: '+item['authorLongName']
+			documentComment+='\nАвтор: '+item['authorLongName']
 		datetime.datetime.strptime(item['documentDate'],'%Y-%m-%d').strftime('%d.%m.%Y')
-		documentValue+='\nДокумент в ЗакСе: № '+str(item['documentNumber'])+' от '+datetime.datetime.strptime(item['documentDate'],'%Y-%m-%d').strftime('%d.%m.%Y')
+		documentComment+='\nДокумент в ЗакСе: № '+str(item['documentNumber'])+' от '+datetime.datetime.strptime(item['documentDate'],'%Y-%m-%d').strftime('%d.%m.%Y')
 		if item['documentAssemblyUrl']:
-			documentValue+='\nСсылка на документ в ЗакСе: '+item['documentAssemblyUrl']
+			documentComment+='\nСсылка на документ в ЗакСе: '+item['documentAssemblyUrl']
 		if level==2:
-			return (yearValue,stageValue,documentValue)
+			return (yearComment,stageComment,documentComment)
 		raise ValueError()
 	def listQuerySelects(self):
 		return 'year','stageNumber','stageAssemblyUrl','documentNumber','documentDate','documentAssemblyUrl','amendmentFlag','authorShortName','authorLongName'
