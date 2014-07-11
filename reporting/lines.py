@@ -1,4 +1,4 @@
-import itertools
+import itertools,datetime
 
 class LinesData:
 	def __init__(self,levelOrders,amountsKey):
@@ -319,7 +319,8 @@ class AmendmentCols(Lines):
 			documentValue='Поправка к проекту закона'
 		if item['authorLongName']:
 			documentValue+='\nАвтор: '+item['authorLongName']
-		documentValue+='\nДокумент в ЗакСе: № '+str(item['documentNumber'])+' от '+item['documentDate']
+		datetime.datetime.strptime(item['documentDate'],'%Y-%m-%d').strftime('%d.%m.%Y')
+		documentValue+='\nДокумент в ЗакСе: № '+str(item['documentNumber'])+' от '+datetime.datetime.strptime(item['documentDate'],'%Y-%m-%d').strftime('%d.%m.%Y')
 		if item['documentAssemblyUrl']:
 			documentValue+='\nСсылка на документ в ЗакСе: '+item['documentAssemblyUrl']
 		if level==2:
