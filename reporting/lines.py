@@ -285,8 +285,9 @@ class AmendmentCols(Lines):
 			yearValue=str(item['year'])+' г. (план)'
 		else:
 			yearValue=str(item['year'])+' г.'
+		stageValue='Бюджет + изменения'
 		if level==0:
-			return (yearValue,'Бюджет + изменения','')
+			return (yearValue,stageValue,'')
 		if item['stageNumber']==0:
 			stageValue='Первоначальный бюджет'
 		else:
@@ -304,8 +305,9 @@ class AmendmentCols(Lines):
 		raise ValueError()
 	def getItemComments(self,item,level):
 		yearValue='Бюджет Санкт-Петербурга на '+str(item['year'])+' год'
+		stageValue='Бюджет с учётом корректировок'
 		if level==0:
-			return (yearValue,None,None)
+			return (yearValue,stageValue,None)
 		if item['stageNumber']==0:
 			stageValue='Первоначально утвержденный бюджет'
 		else:
