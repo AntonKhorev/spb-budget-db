@@ -98,7 +98,11 @@ class XlsxSpreadsheet(Spreadsheet):
 				else:
 					ws.write(r1,c1,value,format)
 			def writeComment(self,r,c,comment):
-				ws.write_comment(r,c,comment)
+				nLines=comment.count('\n')+1
+				ws.write_comment(r,c,comment,{
+					'width':400,
+					'height':15*nLines,
+				})
 			# candidates for superclass
 			def writeCaption(self,caption):
 				self.writeRange(0,0,0,nRowEntries-1,caption,captionFormat)
