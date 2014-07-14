@@ -63,21 +63,20 @@ tableWriters.SectionTableWriter(
 
 # correction law
 documentNumber=4752
+diffsetDocumentNumber=3850
 tableWriters.DepartmentTableWriter(
 	makeTableReaderFromXlsxFile('fincom/2014.1.z/pr02_bd2014-16_1izm.xlsx',1),
 	[2014]
 ).write('tables/2014.1.z.'+str(documentNumber)+'.2.department.set(2014).csv')
-# this is not a diff table - this is a 'diffset'
-# tableWriters.DepartmentTableWriter(
-	# makeTableReaderFromXlsxFile('fincom/2014.1.z/pr17_bd2014-16_1izm.xlsx',2),
-	# [2015,2016]
-# ).write('tables/2014.1.z.'+str(documentNumber)+'.17.department.diff.csv')
+tableWriters.DepartmentTableWriter(
+	makeTableReaderFromXlsxFile('fincom/2014.1.z/pr17_bd2014-16_1izm.xlsx',2),
+	[2015,2016]
+).write('tables/2014.1.z.'+str(documentNumber)+'.17.department.diffset('+str(diffsetDocumentNumber)+',2015,2016).csv')
 tableWriters.SectionTableWriter(
 	makeTableReaderFromXlsxFile('fincom/2014.1.z/pr03_bd2014-16_1izm.xlsx',1),
 	[2014]
 ).write('tables/2014.1.z.'+str(documentNumber)+'.3.section.set(2014).csv')
-# this is not a diff table - this is a 'diffset'
-# tableWriters.SectionTableWriter(
-	# makeTableReaderFromXlsxFile('fincom/2014.1.z/pr18_bd2014-16_1izm.xlsx',2),
-	# [2015,2016]
-# ).write('tables/2014.1.z.'+str(documentNumber)+'.18.section.diff.csv')
+tableWriters.SectionTableWriter(
+	makeTableReaderFromXlsxFile('fincom/2014.1.z/pr18_bd2014-16_1izm.xlsx',2),
+	[2015,2016]
+).write('tables/2014.1.z.'+str(documentNumber)+'.18.section.diffset('+str(diffsetDocumentNumber)+',2015,2016).csv')
