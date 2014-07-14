@@ -63,8 +63,12 @@ class TableWriteWatcher:
 		# print('writing table for amendment',self.paragraphNumber)
 		if not self.paragraphNumber:
 			raise Exception('paragraph number for table not set')
+		if stageNumber!='0' and len(self.years)>1:
+			opType='diffset'
+		else:
+			opType='diff'
 		self.makeWriter(table,documentNumber).write(
-			'tables/2014.'+stageNumber+'.p.'+documentNumber+'.'+self.paragraphNumber+self.getTableType()+'.diff.csv'
+			'tables/2014.'+stageNumber+'.p.'+documentNumber+'.'+self.paragraphNumber+self.getTableType()+'.'+opType+'.csv'
 		)
 		self.paragraphNumber=None
 
@@ -142,11 +146,6 @@ for stageNumber,documentNumber,appendixNumberDepartmentY1,appendixNumberDepartme
 						# tableWriteWatcher.setParagraphNumber(m.group('paragraphNumber'))
 					else:
 						tableWriteWatcher=None
-					# skip Y23 in stage 1 for now {
-					if stageNumber=='1' and m.group('appendixNumber')==appendixNumberDepartmentY23:
-						print('skipping Y23')
-						tableWriteWatcher=None
-					# }
 				m=amendAppendixRe.match(line)
 				if m:
 					# print('== amendment TBD for appendix',m.group('appendixNumber'),'==')
@@ -154,11 +153,6 @@ for stageNumber,documentNumber,appendixNumberDepartmentY1,appendixNumberDepartme
 						tableWriteWatcher=DepartmentTableWriteWatcher([2014] if m.group('appendixNumber')==appendixNumberDepartmentY1 else [2015,2016])
 					else:
 						tableWriteWatcher=None
-					# skip Y23 in stage 1 for now {
-					if stageNumber=='1' and m.group('appendixNumber')==appendixNumberDepartmentY23:
-						print('skipping Y23')
-						tableWriteWatcher=None
-					# }
 				m=subParagraphRe.match(line)
 				if m:
 					# print('=== amendment',m.group('paragraphNumber'),'===')

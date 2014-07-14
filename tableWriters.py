@@ -42,8 +42,11 @@ class TableWriter:
 		name=self.punctWithoutSpaceRe.sub(' ',name)
 		return name
 	def processAmount(self,amount):
-		amount=amount.replace(',','.')
-		return decimal.Decimal(amount).quantize(decimal.Decimal('0.0'))
+		try:
+			amount2=amount.replace(',','.')
+			return decimal.Decimal(amount2).quantize(decimal.Decimal('0.0'))
+		except decimal.InvalidOperation:
+			raise Exception('invalid amount ('+str(amount)+')')
 	def processAmounts(self,amounts):
 		return [self.processAmount(amount) for amount in amounts]
 	def listLevelCols(self):
