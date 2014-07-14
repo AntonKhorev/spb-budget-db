@@ -119,7 +119,7 @@ for tableFile in fileLists.listTableFiles(glob.glob('tables/*.csv')):
 		'paragraphNumber':tableFile.paragraphNumber,
 	})
 	if type(tableFile.action) is fileLists.SetAction:
-		with items.makeSetContext(editNumber,tableFile.action.years) as setContext:
+		with items.makeSetContext(editNumber,tableFile.action.years) as ctx:
 			testOrder=makeTestOrder(['departmentCode','sectionCode','categoryCode','typeCode'],[False,True,True,True])
 			for row in readCsv(tableFile.filename):
 				resets=testOrder(row)
@@ -128,7 +128,20 @@ for tableFile in fileLists.listTableFiles(glob.glob('tables/*.csv')):
 				departments.add(row,priority)
 				categories.add(row,priority)
 				types.add(row,priority)
-				setContext.set(row)
+				ctx.set(row)
+				# uniqueCheck(row['categoryCode'],row['sectionCode'])
+	elif type(tableFile.action) is fileLists.DiffsetAction:
+		diffsetStartEditNumber=next(edit for edit in edits if edit['documentNumber']>tableFile.action.documentNumber)['editNumber']
+		with items.makeDiffsetContext(editNumber,diffsetStartEditNumber,tableFile.action.years) as ctx:
+			testOrder=makeTestOrder(['departmentCode','sectionCode','categoryCode','typeCode'],[False,True,True,True])
+			for row in readCsv(tableFile.filename):
+				resets=testOrder(row)
+				if 'departmentCode' in resets:
+					departments.resetSequence()
+				departments.add(row,priority)
+				categories.add(row,priority)
+				types.add(row,priority)
+				ctx.set(row)
 				# uniqueCheck(row['categoryCode'],row['sectionCode'])
 	elif type(tableFile.action) is fileLists.DiffAction:
 		for row in readCsv(tableFile.filename):

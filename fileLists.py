@@ -10,7 +10,7 @@ class SetAction(AbstractAction):
 class DiffAction(AbstractAction):
 	pass
 
-class DiffSetAction(AbstractAction):
+class DiffsetAction(AbstractAction):
 	def __init__(self,documentNumber,years):
 		self.documentNumber=documentNumber
 		self.years=set(years)
@@ -45,7 +45,7 @@ def listTableFiles(filenames):
 			action=SetAction(args)
 		elif actText.startswith('diffset('):
 			args=[int(arg) for arg in actText[8:-1].split(',')]
-			action=DiffSetAction(args[0],args[1:])
+			action=DiffsetAction(args[0],args[1:])
 		else:
 			raise Exception('invalid action '+actText)
 		tableFile=TableFile(filename,m.group('stage'),int(m.group('documentNumber')),m.group('paragraphNumber'),m.group('table'),action)

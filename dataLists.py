@@ -118,7 +118,7 @@ class ItemList:
 			def __init__(self,itemList):
 				self.itemList=itemList
 			def __enter__(self):
-				self.editNumber=None
+				# self.editNumber=None
 				self.residuals=collections.defaultdict(decimal.Decimal)
 				for k in self.itemList.items:
 					if k[0] in years:
@@ -127,13 +127,35 @@ class ItemList:
 			def set(self,row):
 				k=self.itemList.rowKey(row)
 				if k[0] not in years:
-					raise Exception('year '+str(k[0])+' in SetContext for years '+str(years))
+					raise Exception('year '+str(k[0])+' in context for years '+str(years))
 				self.itemList.items[k][editNumber]+=self.itemList.rowValue(row)-self.residuals[k]
 				del self.residuals[k]
 			def __exit__(self,exc_type,exc_value,traceback):
 				for k,v in self.residuals.items():
 					self.itemList.items[k][editNumber]-=v
 		return SetContext(self)
+	def makeDiffsetContext(self,editNumber,startEditNumber,years):
+		# TODO remove copypaste
+		class DiffsetContext:
+			def __init__(self,itemList):
+				self.itemList=itemList
+			def __enter__(self):
+				# self.editNumber=None
+				self.residuals=collections.defaultdict(decimal.Decimal)
+				for k in self.itemList.items:
+					if k[0] in years:
+						self.residuals[k]=sum(v for n,v in self.itemList.items[k].items() if n>=startEditNumber)
+				return self
+			def set(self,row):
+				k=self.itemList.rowKey(row)
+				if k[0] not in years:
+					raise Exception('year '+str(k[0])+' in context for years '+str(years))
+				self.itemList.items[k][editNumber]+=self.itemList.rowValue(row)-self.residuals[k]
+				del self.residuals[k]
+			def __exit__(self,exc_type,exc_value,traceback):
+				for k,v in self.residuals.items():
+					self.itemList.items[k][editNumber]-=v
+		return DiffsetContext(self)
 	def move(self,s,t,editNumber):
 		ks=self.rowKey(s)
 		kt=self.rowKey(t)
