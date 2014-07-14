@@ -98,6 +98,7 @@ class TypeList(AbstractList):
 
 class ItemList:
 	keyCols=('year','departmentCode','sectionCode','categoryCode','typeCode')
+
 	def __init__(self):
 		# (year,departmentCode,sectionCode,categoryCode,typeCode) -> editNumber)-> decimal amount
 		self.items=collections.defaultdict(lambda: collections.defaultdict(decimal.Decimal))
@@ -113,49 +114,43 @@ class ItemList:
 		return self.keySum(self.rowKey(row))
 	def add(self,row,editNumber):
 		self.items[self.rowKey(row)][editNumber]+=self.rowValue(row)
+
+	class Context:
+		def __init__(self,itemList,editNumber,years):
+			self.itemList=itemList
+			self.editNumber=editNumber
+			self.years=years
+		def set(self,row):
+			k=self.itemList.rowKey(row)
+			if k[0] not in self.years:
+				raise Exception('year '+str(k[0])+' in context for years '+str(self.years))
+			self.itemList.items[k][self.editNumber]+=self.itemList.rowValue(row)-self.residuals[k]
+			del self.residuals[k]
+		def __exit__(self,exc_type,exc_value,traceback):
+			for k,v in self.residuals.items():
+				self.itemList.items[k][self.editNumber]-=v
+	class SetContext(Context):
+		def __enter__(self):
+			self.residuals=collections.defaultdict(decimal.Decimal)
+			for k in self.itemList.items:
+				if k[0] in self.years:
+					self.residuals[k]=self.itemList.keySum(k)
+			return self
+	class DiffsetContext(Context):
+		def __init__(self,itemList,editNumber,startEditNumber,years):
+			super().__init__(itemList,editNumber,years)
+			self.startEditNumber=startEditNumber
+		def __enter__(self):
+			self.residuals=collections.defaultdict(decimal.Decimal)
+			for k in self.itemList.items:
+				if k[0] in self.years:
+					self.residuals[k]=sum(v for n,v in self.itemList.items[k].items() if n>=self.startEditNumber)
+			return self
 	def makeSetContext(self,editNumber,years):
-		class SetContext:
-			def __init__(self,itemList):
-				self.itemList=itemList
-			def __enter__(self):
-				# self.editNumber=None
-				self.residuals=collections.defaultdict(decimal.Decimal)
-				for k in self.itemList.items:
-					if k[0] in years:
-						self.residuals[k]=self.itemList.keySum(k)
-				return self
-			def set(self,row):
-				k=self.itemList.rowKey(row)
-				if k[0] not in years:
-					raise Exception('year '+str(k[0])+' in context for years '+str(years))
-				self.itemList.items[k][editNumber]+=self.itemList.rowValue(row)-self.residuals[k]
-				del self.residuals[k]
-			def __exit__(self,exc_type,exc_value,traceback):
-				for k,v in self.residuals.items():
-					self.itemList.items[k][editNumber]-=v
-		return SetContext(self)
+		return self.SetContext(self,editNumber,years)
 	def makeDiffsetContext(self,editNumber,startEditNumber,years):
-		# TODO remove copypaste
-		class DiffsetContext:
-			def __init__(self,itemList):
-				self.itemList=itemList
-			def __enter__(self):
-				# self.editNumber=None
-				self.residuals=collections.defaultdict(decimal.Decimal)
-				for k in self.itemList.items:
-					if k[0] in years:
-						self.residuals[k]=sum(v for n,v in self.itemList.items[k].items() if n>=startEditNumber)
-				return self
-			def set(self,row):
-				k=self.itemList.rowKey(row)
-				if k[0] not in years:
-					raise Exception('year '+str(k[0])+' in context for years '+str(years))
-				self.itemList.items[k][editNumber]+=self.itemList.rowValue(row)-self.residuals[k]
-				del self.residuals[k]
-			def __exit__(self,exc_type,exc_value,traceback):
-				for k,v in self.residuals.items():
-					self.itemList.items[k][editNumber]-=v
-		return DiffsetContext(self)
+		return self.DiffsetContext(self,editNumber,startEditNumber,years)
+
 	def move(self,s,t,editNumber):
 		ks=self.rowKey(s)
 		kt=self.rowKey(t)
