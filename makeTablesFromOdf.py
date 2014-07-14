@@ -63,12 +63,8 @@ class TableWriteWatcher:
 		# print('writing table for amendment',self.paragraphNumber)
 		if not self.paragraphNumber:
 			raise Exception('paragraph number for table not set')
-		if stageNumber!='0' and len(self.years)>1:
-			opType='diffset'
-		else:
-			opType='diff'
 		self.makeWriter(table,documentNumber).write(
-			'tables/2014.'+stageNumber+'.p.'+documentNumber+'.'+self.paragraphNumber+self.getTableType()+'.'+opType+'.csv'
+			'tables/2014.'+stageNumber+'.p.'+documentNumber+'.'+self.paragraphNumber+self.getTableType()+'.diff.csv'
 		)
 		self.paragraphNumber=None
 
