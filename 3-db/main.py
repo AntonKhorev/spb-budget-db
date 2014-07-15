@@ -22,18 +22,18 @@ authors=[
 	{'authorId':4,'authorShortName':'Высоцкий','authorLongName':'Высоцкий Игорь Владимирович'},
 ]
 # documentAssemblyUrl is specified only if it contains data tables
-# if authorId is None: can't be sure about document number, date etc, the changes may have been intruduced silently anywhere between the last amendment and the final law
+# amendmentFlag=2: can't be sure about document number, date etc, the changes may have been intruduced silently anywhere between the last amendment and the final law
 documents=[
-	{'documentNumber':3574,'documentDate':'2013-10-07','stageNumber':0,'amendmentFlag':False,'authorId':1,'documentAssemblyUrl':None},
-	{'documentNumber':3765,'documentDate':'2013-11-01','stageNumber':0,'amendmentFlag':True ,'authorId':1,'documentAssemblyUrl':'http://www.assembly.spb.ru/ndoc/doc/0/777307853'},
-	{'documentNumber':3781,'documentDate':'2013-11-08','stageNumber':0,'amendmentFlag':True ,'authorId':2,'documentAssemblyUrl':'http://www.assembly.spb.ru/ndoc/doc/0/777308103'},
-	{'documentNumber':3850,'documentDate':'2013-11-15','stageNumber':0,'amendmentFlag':True ,'authorId':None,'documentAssemblyUrl':None},
-	{'documentNumber':4597,'documentDate':'2014-04-11','stageNumber':1,'amendmentFlag':False,'authorId':1,'documentAssemblyUrl':None},
-	{'documentNumber':4706,'documentDate':'2014-05-07','stageNumber':1,'amendmentFlag':True ,'authorId':1,'documentAssemblyUrl':'http://www.assembly.spb.ru/ndoc/doc/0/777310517'},
-	{'documentNumber':4707,'documentDate':'2014-05-07','stageNumber':1,'amendmentFlag':True	,'authorId':4,'documentAssemblyUrl':'http://www.assembly.spb.ru/ndoc/doc/0/777310511'},
-	{'documentNumber':4708,'documentDate':'2014-05-07','stageNumber':1,'amendmentFlag':True	,'authorId':3,'documentAssemblyUrl':'http://www.assembly.spb.ru/ndoc/doc/0/777310513'},
-	{'documentNumber':4712,'documentDate':'2014-05-12','stageNumber':1,'amendmentFlag':True ,'authorId':2,'documentAssemblyUrl':'http://www.assembly.spb.ru/ndoc/doc/0/777310519'},
-	{'documentNumber':4752,'documentDate':'2014-05-16','stageNumber':1,'amendmentFlag':True ,'authorId':None,'documentAssemblyUrl':None},
+	{'documentNumber':3574,'documentDate':'2013-10-07','stageNumber':0,'amendmentFlag':0,'authorId':1,'documentAssemblyUrl':None},
+	{'documentNumber':3765,'documentDate':'2013-11-01','stageNumber':0,'amendmentFlag':1,'authorId':1,'documentAssemblyUrl':'http://www.assembly.spb.ru/ndoc/doc/0/777307853'},
+	{'documentNumber':3781,'documentDate':'2013-11-08','stageNumber':0,'amendmentFlag':1,'authorId':2,'documentAssemblyUrl':'http://www.assembly.spb.ru/ndoc/doc/0/777308103'},
+	{'documentNumber':3850,'documentDate':'2013-11-15','stageNumber':0,'amendmentFlag':2,'authorId':None,'documentAssemblyUrl':None},
+	{'documentNumber':4597,'documentDate':'2014-04-11','stageNumber':1,'amendmentFlag':0,'authorId':1,'documentAssemblyUrl':None},
+	{'documentNumber':4706,'documentDate':'2014-05-07','stageNumber':1,'amendmentFlag':1,'authorId':1,'documentAssemblyUrl':'http://www.assembly.spb.ru/ndoc/doc/0/777310517'},
+	{'documentNumber':4707,'documentDate':'2014-05-07','stageNumber':1,'amendmentFlag':1,'authorId':4,'documentAssemblyUrl':'http://www.assembly.spb.ru/ndoc/doc/0/777310511'},
+	{'documentNumber':4708,'documentDate':'2014-05-07','stageNumber':1,'amendmentFlag':1,'authorId':3,'documentAssemblyUrl':'http://www.assembly.spb.ru/ndoc/doc/0/777310513'},
+	{'documentNumber':4712,'documentDate':'2014-05-12','stageNumber':1,'amendmentFlag':1,'authorId':2,'documentAssemblyUrl':'http://www.assembly.spb.ru/ndoc/doc/0/777310519'},
+	{'documentNumber':4752,'documentDate':'2014-05-16','stageNumber':1,'amendmentFlag':2,'authorId':None,'documentAssemblyUrl':None},
 ]
 edits=[]
 departments=dataLists.DepartmentList()
@@ -208,7 +208,7 @@ CREATE TABLE documents(
 	documentNumber INT PRIMARY KEY,
 	documentDate TEXT,
 	stageNumber INT,
-	amendmentFlag INT(1),
+	amendmentFlag INT,
 	authorId INT,
 	documentAssemblyUrl TEXT,
 	FOREIGN KEY (stageNumber) REFERENCES stages(stageNumber),

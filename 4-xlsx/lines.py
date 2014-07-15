@@ -294,12 +294,12 @@ class AmendmentCols(Lines):
 			stageValue=str(item['stageNumber'])+'-е изменения'
 		if level==1:
 			return (yearValue,stageValue,'Итого')
-		if not item['amendmentFlag']:
+		if item['amendmentFlag']==0:
 			documentValue='Проект'
-		elif not item['authorShortName']:
-			documentValue='+прочее'
-		else:
+		elif item['amendmentFlag']==1:
 			documentValue='+'+item['authorShortName']
+		else:
+			documentValue='+прочее'
 		if level==2:
 			return (yearValue,stageValue,documentValue)
 		raise ValueError()
@@ -316,9 +316,9 @@ class AmendmentCols(Lines):
 		documentComment='Проект закона с внесёнными поправками'
 		if level==1:
 			return (yearComment,stageComment,documentComment)
-		if not item['amendmentFlag']:
+		if item['amendmentFlag']==0:
 			documentComment='Проект закона'
-		elif item['authorLongName']:
+		elif item['amendmentFlag']==1:
 			documentComment='Поправка к проекту закона'
 		else:
 			documentComment='Изменения, не входящие в перечисленные поправки'

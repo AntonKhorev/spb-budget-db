@@ -367,7 +367,7 @@ with sqlite3.connect(':memory:') as conn:
 	)
 
 	for stageNumber in (0,1):
-		for amendmentFlag in (0,1):
+		for amendmentFlag in (0,2):
 			makeDepartmentReports(conn,stageNumber,amendmentFlag)
 			makeSectionReports(conn,stageNumber,amendmentFlag)
 
