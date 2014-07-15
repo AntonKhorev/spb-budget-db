@@ -7,7 +7,8 @@ import decimal
 
 import fileLists,dataLists
 
-# law + corrections url: http://www.assembly.spb.ru/ndoc/doc/0/537944376
+inputDirectory='../2-tables.out'
+outputFilename='../3-db.out/db.sql'
 
 # TODO make csv tables, add (name) priority column
 stages=[
@@ -72,7 +73,7 @@ def readCsv(csvFilename):
 			yield row
 
 # scan section codes
-for tableFile in fileLists.listTableFiles(glob.glob('tables/*.csv')):
+for tableFile in fileLists.listTableFiles(glob.glob(inputDirectory+'/*.csv')):
 	if tableFile.table!='section':
 		continue
 	if tableFile.stage=='2014.1.z':
@@ -101,7 +102,7 @@ editNumber=0
 	# return uniqueCheck
 # uniqueCheck=makeUniqueCheck()
 
-for tableFile in fileLists.listTableFiles(glob.glob('tables/*.csv')):
+for tableFile in fileLists.listTableFiles(glob.glob(inputDirectory+'/*.csv')):
 	if tableFile.table!='department':
 		continue
 	if tableFile.stage=='2014.1.z':
@@ -163,7 +164,7 @@ for tableFile in fileLists.listTableFiles(glob.glob('tables/*.csv')):
 
 ### write sql ###
 
-sql=open('db/pr-bd-2014-16.sql','w',encoding='utf8')
+sql=open(outputFilename,'w',encoding='utf8')
 sql.write("-- бюджет Санкт-Петербурга на 2014-2016 гг.\n")
 
 def putValue(v):

@@ -2,15 +2,17 @@
 
 import sqlite3
 
+inputFilename='../3-db.out/db.sql'
+
 with sqlite3.connect(':memory:') as conn:
 	conn.execute('pragma foreign_keys=ON')
 
 	# conn.executescript(
-		# open('db/pr-bd-2014-16.sql',encoding='utf8').read()
+		# open(inputFilename,encoding='utf8').read()
 	# )
 
 	# load command by command
-	for command in open('db/pr-bd-2014-16.sql',encoding='utf8').read().split(';\n'):
+	for command in open(inputFilename,encoding='utf8').read().split(';\n'):
 		print('>',command)
 		conn.execute(command)
 
