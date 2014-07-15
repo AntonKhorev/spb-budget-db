@@ -275,14 +275,20 @@ class LevelTable:
 				col['writer'](self.nHeaderRows+nRow,nCol,cell,style)
 		wb.close()
 
-with sqlite3.connect(':memory:') as conn:
-	conn.row_factory=sqlite3.Row
-	conn.execute('pragma foreign_keys=ON')
-	conn.executescript(
-		open(inputFilename,encoding='utf8').read()
-	)
+def getTitle(appendix1,appendix2,stageNumber,amendmentFlag):
+	title="Данные из приложений "+str(appendix1)+" и "+str(appendix2)+" к "
+	if amendmentFlag<=0:
+		title+="проекту Закона "
+	else:
+		title+="Закону "
+	title+="Санкт-Петербурга "
+	if stageNumber<=0:
+		title+="«О бюджете Санкт-Петербурга на 2014 год и на плановый период 2015 и 2016 годов»"
+	else:
+		title+="«О внесении изменений и дополнений в Закон Санкт-Петербурга „О бюджете Санкт-Петербурга на 2014 год и на плановый период 2015 и 2016 годов“»"
+	return title
 
-	# department table
+def makeDepartmentReports(conn,stageNumber,amendmentFlag):
 	table=LevelTable(
 		[
 			['departmentCode'],
@@ -299,23 +305,24 @@ with sqlite3.connect(':memory:') as conn:
 		],
 		{3:[(2014,)],4:[(2015,),(2016,)]},
 		conn.execute("""
-			SELECT departmentName,categoryName,typeName,departmentCode,sectionCode,categoryCode,typeCode,year,amount
+			SELECT departmentName,categoryName,typeName,departmentCode,sectionCode,categoryCode,typeCode,year, SUM(amount) AS amount
 			FROM items
 			JOIN departments USING(departmentCode)
 			JOIN categories USING(categoryCode)
 			JOIN types USING(typeCode)
 			JOIN edits USING(editNumber)
 			JOIN documents USING(documentNumber)
-			WHERE stageNumber=0 AND amendmentFlag=0
+			WHERE stageNumber<? OR (stageNumber<=? AND amendmentFlag<=?)
+			GROUP BY departmentName,categoryName,typeName,departmentCode,sectionCode,categoryCode,typeCode,year
 			ORDER BY departmentOrder,sectionCode,categoryCode,typeCode,year
-		""")
+		""",[stageNumber,stageNumber,amendmentFlag])
 	)
-	title="Данные из приложений 3 и 4 к проекту закона Санкт-Петербурга «О бюджете Санкт-Петербурга на 2014 год и на плановый период 2015 и 2016 годов»"
-	filebasename='2014.0.p.department'
+	title=getTitle(3,4,stageNumber,amendmentFlag)
+	filebasename='2014.'+str(stageNumber)+'.'+('p' if amendmentFlag<=0 else 'z')+'.department'
 	table.makeXls(title,outputDirectory+'/'+filebasename+'.xls')
 	table.makeXlsx(title,outputDirectory+'/'+filebasename+'.xlsx')
 
-	# section table
+def makeSectionReports(conn,stageNumber,amendmentFlag):
 	table=LevelTable(
 		[
 			['superSectionCode'],
@@ -342,15 +349,27 @@ with sqlite3.connect(':memory:') as conn:
 			JOIN types USING(typeCode)
 			JOIN edits USING(editNumber)
 			JOIN documents USING(documentNumber)
-			WHERE stageNumber=0 AND amendmentFlag=0
+			WHERE stageNumber<? OR (stageNumber<=? AND amendmentFlag<=?)
 			GROUP BY superSectionName,sectionName,categoryName,typeName,superSectionCode,sectionCode,categoryCode,typeCode,year
 			ORDER BY superSectionCode,sectionCode,categoryCode,typeCode,year
-		""")
+		""",[stageNumber,stageNumber,amendmentFlag])
 	)
-	title="Данные из приложений 5 и 6 к проекту закона Санкт-Петербурга «О бюджете Санкт-Петербурга на 2014 год и на плановый период 2015 и 2016 годов»",
-	filebasename='2014.0.p.section'
-	# table.makeXls(title,outputDirectory+'/'+filebasename+'.xls')
-	# table.makeXlsx(title,outputDirectory+'/'+filebasename+'.xlsx')
+	title=getTitle(5,6,stageNumber,amendmentFlag)
+	filebasename='2014.'+str(stageNumber)+'.'+('p' if amendmentFlag<=0 else 'z')+'.section'
+	table.makeXls(title,outputDirectory+'/'+filebasename+'.xls')
+	table.makeXlsx(title,outputDirectory+'/'+filebasename+'.xlsx')
+
+with sqlite3.connect(':memory:') as conn:
+	conn.row_factory=sqlite3.Row
+	conn.execute('pragma foreign_keys=ON')
+	conn.executescript(
+		open(inputFilename,encoding='utf8').read()
+	)
+
+	for stageNumber in (0,1):
+		for amendmentFlag in (0,1):
+			makeDepartmentReports(conn,stageNumber,amendmentFlag)
+			makeSectionReports(conn,stageNumber,amendmentFlag)
 
 	# governor/bfk amendments table
 	for documentNumber,documentName in (
@@ -370,7 +389,7 @@ with sqlite3.connect(':memory:') as conn:
 			],[
 				'year',
 			],[
-				lambda year: 'Изменеия на '+str(year)+' г. (тыс. руб.)',
+				lambda year: 'Изменения на '+str(year)+' г. (тыс. руб.)',
 			],
 			[(2014,),(2015,),(2016,)],
 			conn.execute("""
