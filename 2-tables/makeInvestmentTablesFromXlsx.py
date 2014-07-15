@@ -19,14 +19,17 @@ def makeInvestmentTableReaderFromXlsxFile(inputFilename):
 		yield [name]+[ws.cell(row=nRow,column=c).value for c in range(1,7)]
 		nRow+=1
 
+inputDirectory='../1-sources.out'
+outputDirectory='../2-tables.out'
+
 documentNumber=3574
 tableWriters.InvestmentTableWriter(
-	makeInvestmentTableReaderFromXlsxFile('fincom/2014.0.p/pr23-2014-16.xlsx'),
+	makeInvestmentTableReaderFromXlsxFile(inputDirectory+'/fincom/2014.0.p/pr23-2014-16.xlsx'),
 	[2014,2015,2016]
-).write('tables/2014.0.p.'+str(documentNumber)+'.23.investment.set(2014,2015,2016).csv')
+).write(outputDirectory+'/2014.0.p.'+str(documentNumber)+'.23.investment.set(2014,2015,2016).csv')
 
 documentNumber=3850
 tableWriters.InvestmentTableWriter(
-	makeInvestmentTableReaderFromXlsxFile('fincom/2014.0.z/pr24_bd2014-16.xlsx'),
+	makeInvestmentTableReaderFromXlsxFile(inputDirectory+'/fincom/2014.0.z/pr24_bd2014-16.xlsx'),
 	[2014,2015,2016]
-).write('tables/2014.0.z.'+str(documentNumber)+'.24.investment.set(2014,2015,2016).csv')
+).write(outputDirectory+'/2014.0.z.'+str(documentNumber)+'.24.investment.set(2014,2015,2016).csv')

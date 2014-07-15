@@ -16,12 +16,14 @@ def makeTableReaderFromCsvFile(inputFilename,nAmountCols):
 		yield makeRow(totalRow)
 
 # project of 1st correction
+inputDirectory='../1-sources.out'
+outputDirectory='../2-tables.out'
 documentNumber=4597
 tableWriters.DepartmentTableWriter(
-	makeTableReaderFromCsvFile('fincom/2014.1.p/2014.1.p-2014(3).csv',1),
+	makeTableReaderFromCsvFile(inputDirectory+'/fincom/2014.1.p/2014.1.p-2014(3).csv',1),
 	[2014]
-).write('tables/2014.1.p.'+str(documentNumber)+'.2.department.set(2014).csv')
+).write(outputDirectory+'/2014.1.p.'+str(documentNumber)+'.2.department.set(2014).csv')
 tableWriters.DepartmentTableWriter(
-	makeTableReaderFromCsvFile('fincom/2014.1.p/2014.1.p-2015,2016(3).csv',2),
+	makeTableReaderFromCsvFile(inputDirectory+'/fincom/2014.1.p/2014.1.p-2015,2016(3).csv',2),
 	[2015,2016]
-).write('tables/2014.1.p.'+str(documentNumber)+'.14.department.diff.csv')
+).write(outputDirectory+'/2014.1.p.'+str(documentNumber)+'.14.department.diff.csv')

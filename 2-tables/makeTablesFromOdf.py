@@ -4,6 +4,10 @@ import re
 import ezodf
 import errorFixers,tableWriters
 
+inputDirectory='../1-sources.out'
+outputDirectory='../2-tables.out'
+departmentFixer=errorFixers.DepartmentFixer('2014/errors.csv')
+
 def makeDepartmentTableReaderFromOdfTable(table,nAmountCols):
 	found=False
 	for row in obj.rows():
@@ -64,7 +68,7 @@ class TableWriteWatcher:
 		if not self.paragraphNumber:
 			raise Exception('paragraph number for table not set')
 		self.makeWriter(table,documentNumber).write(
-			'tables/2014.'+stageNumber+'.p.'+documentNumber+'.'+self.paragraphNumber+self.getTableType()+'.diff.csv'
+			outputDirectory+'/2014.'+stageNumber+'.p.'+documentNumber+'.'+self.paragraphNumber+self.getTableType()+'.diff.csv'
 		)
 		self.paragraphNumber=None
 
@@ -73,7 +77,7 @@ class DepartmentTableWriteWatcher(TableWriteWatcher):
 		return 'department'
 	def makeWriter(self,table,documentNumber):
 		return tableWriters.DepartmentTableWriter(
-			errorFixers.departmentFixer.fixTableReader(documentNumber,self.paragraphNumber,
+			departmentFixer.fixTableReader(documentNumber,self.paragraphNumber,
 				makeDepartmentTableReaderFromOdfTable(table,len(self.years))
 			),
                         self.years
@@ -84,7 +88,7 @@ class InvestmentTableWriteWatcher(TableWriteWatcher):
 		return 'investment'
 	def makeWriter(self,table,documentNumber):
 		return tableWriters.InvestmentTableWriter(
-			errorFixers.departmentFixer.fixTableReader(documentNumber,self.paragraphNumber,
+			departmentFixer.fixTableReader(documentNumber,self.paragraphNumber,
 				makeInvestmentTableReaderFromOdfTable(table)
 			),
                         self.years
@@ -114,7 +118,7 @@ for stageNumber,documentNumber,appendixNumberDepartmentY1,appendixNumberDepartme
 	('1','4706','2','14','11'),
 	('1','4712','2','14','11'),
 )):
-	filename='assembly/'+documentNumber+'.odt'
+	filename=inputDirectory+'/assembly/'+documentNumber+'.odt'
 	doc=ezodf.opendoc(filename)
 	tableWriteWatcher=None
 	for obj in doc.body:
@@ -156,7 +160,7 @@ for stageNumber,documentNumber,appendixNumberDepartmentY1,appendixNumberDepartme
 						tableWriteWatcher.setParagraphNumber(m.group('paragraphNumber'))
 				# print('line:',line)
 				def getMoveFilename(m):
-					return 'tables/2014.'+stageNumber+'.p.'+documentNumber+'.'+m.group('paragraphNumber')+'department.move.csv'
+					return outputDirectory+'/2014.'+stageNumber+'.p.'+documentNumber+'.'+m.group('paragraphNumber')+'department.move.csv'
 				def listDepartmentMoves(m,s,t,deptGroupName='departmentNames'):
 					def processName(d):
 						return d.replace('Администрации','Администрация')

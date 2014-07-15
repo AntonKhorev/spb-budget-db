@@ -13,5 +13,3 @@ class DepartmentFixer: # also InvestmentFixer
 	def fixTableReader(self,documentNumber,paragraphNumber,inputRows):
 		fixes=self.allFixes[documentNumber][paragraphNumber]
 		return (fixes.get(tuple(row),row) for row in inputRows)
-
-departmentFixer=DepartmentFixer('2014.0.p.errors.csv')
