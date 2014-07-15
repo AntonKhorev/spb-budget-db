@@ -8,6 +8,9 @@ import sqlite3
 import xlwt3 as xlwt
 import xlsxwriter
 
+inputFilename='../3-db.out/db.sql'
+outputDirectory='../4-xls.out'
+
 class LevelTable:
 	def __init__(self,levelColLists,levelNames,fakeYearCols,fakeYearNameFns,yearsInAppendices,rows,nHeaderRows=None):
 		if nHeaderRows is None:
@@ -276,10 +279,10 @@ with sqlite3.connect(':memory:') as conn:
 	conn.row_factory=sqlite3.Row
 	conn.execute('pragma foreign_keys=ON')
 	conn.executescript(
-		open('db/pr-bd-2014-16.sql',encoding='utf8').read()
+		open(inputFilename,encoding='utf8').read()
 	)
 
-	# dept table
+	# department table
 	table=LevelTable(
 		[
 			['departmentCode'],
@@ -303,18 +306,14 @@ with sqlite3.connect(':memory:') as conn:
 			JOIN types USING(typeCode)
 			JOIN edits USING(editNumber)
 			JOIN documents USING(documentNumber)
-			WHERE amendmentFlag=0
+			WHERE stageNumber=0 AND amendmentFlag=0
 			ORDER BY departmentOrder,sectionCode,categoryCode,typeCode,year
 		""")
 	)
-	table.makeXls(
-		"Данные из приложений 3 и 4 к Закону Санкт-Петербурга «О бюджете Санкт-Петербурга на 2014 год и на плановый период 2015 и 2016 годов»",
-		'out/pr03,04-2014-16.xls'
-	)
-	table.makeXlsx(
-		"Данные из приложений 3 и 4 к Закону Санкт-Петербурга «О бюджете Санкт-Петербурга на 2014 год и на плановый период 2015 и 2016 годов»",
-		'out/pr03,04-2014-16.xlsx'
-	)
+	title="Данные из приложений 3 и 4 к проекту закона Санкт-Петербурга «О бюджете Санкт-Петербурга на 2014 год и на плановый период 2015 и 2016 годов»"
+	filebasename='2014.0.p.department'
+	table.makeXls(title,outputDirectory+'/'+filebasename+'.xls')
+	table.makeXlsx(title,outputDirectory+'/'+filebasename+'.xlsx')
 
 	# section table
 	table=LevelTable(
@@ -343,19 +342,15 @@ with sqlite3.connect(':memory:') as conn:
 			JOIN types USING(typeCode)
 			JOIN edits USING(editNumber)
 			JOIN documents USING(documentNumber)
-			WHERE amendmentFlag=0
+			WHERE stageNumber=0 AND amendmentFlag=0
 			GROUP BY superSectionName,sectionName,categoryName,typeName,superSectionCode,sectionCode,categoryCode,typeCode,year
 			ORDER BY superSectionCode,sectionCode,categoryCode,typeCode,year
 		""")
 	)
-	table.makeXls(
-		"Данные из приложений 5 и 6 к Закону Санкт-Петербурга «О бюджете Санкт-Петербурга на 2014 год и на плановый период 2015 и 2016 годов»",
-		'out/pr05,06-2014-16.xls'
-	)
-	table.makeXlsx(
-		"Данные из приложений 5 и 6 к Закону Санкт-Петербурга «О бюджете Санкт-Петербурга на 2014 год и на плановый период 2015 и 2016 годов»",
-		'out/pr05,06-2014-16.xlsx'
-	)
+	title="Данные из приложений 5 и 6 к проекту закона Санкт-Петербурга «О бюджете Санкт-Петербурга на 2014 год и на плановый период 2015 и 2016 годов»",
+	filebasename='2014.0.p.section'
+	# table.makeXls(title,outputDirectory+'/'+filebasename+'.xls')
+	# table.makeXlsx(title,outputDirectory+'/'+filebasename+'.xlsx')
 
 	# governor/bfk amendments table
 	for documentNumber,documentName in (
@@ -390,10 +385,10 @@ with sqlite3.connect(':memory:') as conn:
 				ORDER BY departmentOrder,sectionCode,categoryCode,typeCode,year
 			""",[documentNumber])
 		)
-		table.makeXlsx(
-			documentName+" к Закону Санкт-Петербурга «О бюджете Санкт-Петербурга на 2014 год и на плановый период 2015 и 2016 годов»",
-			'out/amendment'+documentNumber+'-2014-16.xlsx'
-		)
+		# table.makeXlsx(
+			# documentName+" к Закону Санкт-Петербурга «О бюджете Санкт-Петербурга на 2014 год и на плановый период 2015 и 2016 годов»",
+			# outputDirectory+'/amendment'+documentNumber+'-2014-16.xlsx'
+		# )
 
 	# experimental project+amendments table
 	fakeYears=[]
@@ -434,10 +429,10 @@ with sqlite3.connect(':memory:') as conn:
 			ORDER BY departmentOrder,sectionCode,categoryCode,typeCode,year,documentNumber
 		""")
 	)
-	table.makeXlsx(
-		"Данные из приложений 3 и 4 с поправками - ЭКПЕРИМЕНТАЛЬНО!",
-		'out/project-amendments-2014-16.xlsx'
-	)
+	# table.makeXlsx(
+		# "Данные из приложений 3 и 4 с поправками - ЭКПЕРИМЕНТАЛЬНО!",
+		# outputDirectory+'/project-amendments-2014-16.xlsx'
+	# )
 
 	# experimental project+amendments+paragraphs table
 	fakeYears=[]
@@ -479,7 +474,7 @@ with sqlite3.connect(':memory:') as conn:
 			ORDER BY departmentOrder,sectionCode,categoryCode,typeCode,year,editNumber
 		""")
 	)
-	table.makeXlsx(
-		"Данные из приложений 3 и 4 с поправками - ЭКПЕРИМЕНТАЛЬНО!",
-		'out/project-amendments-paragraphs-2014-16.xlsx'
-	)
+	# table.makeXlsx(
+		# "Данные из приложений 3 и 4 с поправками - ЭКПЕРИМЕНТАЛЬНО!",
+		# outputDirectory+'/project-amendments-paragraphs-2014-16.xlsx'
+	# )

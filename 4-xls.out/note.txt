@@ -1,0 +1,3 @@
+Simple xls/xlsx reporter.
+Has line numbering.
+xls has no folding, xlsx has row folding.
