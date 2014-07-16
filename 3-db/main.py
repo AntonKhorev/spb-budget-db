@@ -7,38 +7,30 @@ import os
 if not os.path.exists(outputDirectory):
 	os.makedirs(outputDirectory)
 
-import itertools
 import glob
 import csv
 import decimal
 
 import fileLists,dataLists
 
-# TODO make csv tables
-stages=[
-	{'stageNumber':0,'stageAssemblyUrl':'http://www.assembly.spb.ru/ndoc/doc/0/777307431'},
-	{'stageNumber':1,'stageAssemblyUrl':'http://www.assembly.spb.ru/ndoc/doc/0/777310165'},
-]
-authors=[
-	{'authorId':1,'authorShortName':'Губернатор','authorLongName':'Губернатор Санкт-Петербурга'},
-	{'authorId':2,'authorShortName':'БФК','authorLongName':'Бюджетно-финансовый комитет'},
-	{'authorId':3,'authorShortName':'ГрадКом','authorLongName':'Комиссия по городскому хозяйству, градостроительству и земельным вопросам'},
-	{'authorId':4,'authorShortName':'Высоцкий','authorLongName':'Высоцкий Игорь Владимирович'},
-]
-# documentAssemblyUrl is specified only if it contains data tables
-# amendmentFlag=2: can't be sure about document number, date etc, the changes may have been intruduced silently anywhere between the last amendment and the final law
-documents=[
-	{'documentNumber':3574,'documentDate':'2013-10-07','stageNumber':0,'amendmentFlag':0,'authorId':1,'documentAssemblyUrl':None},
-	{'documentNumber':3765,'documentDate':'2013-11-01','stageNumber':0,'amendmentFlag':1,'authorId':1,'documentAssemblyUrl':'http://www.assembly.spb.ru/ndoc/doc/0/777307853'},
-	{'documentNumber':3781,'documentDate':'2013-11-08','stageNumber':0,'amendmentFlag':1,'authorId':2,'documentAssemblyUrl':'http://www.assembly.spb.ru/ndoc/doc/0/777308103'},
-	{'documentNumber':3850,'documentDate':'2013-11-15','stageNumber':0,'amendmentFlag':2,'authorId':None,'documentAssemblyUrl':None},
-	{'documentNumber':4597,'documentDate':'2014-04-11','stageNumber':1,'amendmentFlag':0,'authorId':1,'documentAssemblyUrl':None},
-	{'documentNumber':4706,'documentDate':'2014-05-07','stageNumber':1,'amendmentFlag':1,'authorId':1,'documentAssemblyUrl':'http://www.assembly.spb.ru/ndoc/doc/0/777310517'},
-	{'documentNumber':4707,'documentDate':'2014-05-07','stageNumber':1,'amendmentFlag':1,'authorId':4,'documentAssemblyUrl':'http://www.assembly.spb.ru/ndoc/doc/0/777310511'},
-	{'documentNumber':4708,'documentDate':'2014-05-07','stageNumber':1,'amendmentFlag':1,'authorId':3,'documentAssemblyUrl':'http://www.assembly.spb.ru/ndoc/doc/0/777310513'},
-	{'documentNumber':4712,'documentDate':'2014-05-12','stageNumber':1,'amendmentFlag':1,'authorId':2,'documentAssemblyUrl':'http://www.assembly.spb.ru/ndoc/doc/0/777310519'},
-	{'documentNumber':4752,'documentDate':'2014-05-16','stageNumber':1,'amendmentFlag':2,'authorId':None,'documentAssemblyUrl':None},
-]
+def readMetaTable(tableName,intColumns):
+	def val(k,v):
+		if v=='':
+			return None
+		elif k in intColumns:
+			return int(v)
+		else:
+			return v
+	csvFilename=inputDirectory+'/meta/'+tableName+'.csv'
+	with open(csvFilename,encoding='utf8',newline='') as csvFile:
+		return [{
+			k:val(k,v) for k,v in row.items()
+		} for row in csv.DictReader(csvFile)]
+
+stages=readMetaTable('stages',{'stageNumber'})
+authors=readMetaTable('authors',{'authorId'})
+documents=readMetaTable('documents',{'documentNumber','stageNumber','amendmentFlag','authorId'})
+
 edits=[]
 departments=dataLists.DepartmentList()
 superSections=dataLists.SuperSectionList()

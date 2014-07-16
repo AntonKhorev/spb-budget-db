@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 
 outputDirectory='../2-tables.out'
-outputContentDirectory=outputDirectory+'/content'
 import os,shutil
-if not os.path.exists(outputContentDirectory):
-	os.makedirs(outputContentDirectory)
-for filename in os.listdir('content'):
-	shutil.copy(
-		os.path.join('content',filename),
-		outputContentDirectory
-	)
+for directory in ('meta','content'):
+	outputSubDirectory=os.path.join(outputDirectory,directory)
+	if not os.path.exists(outputSubDirectory):
+		os.makedirs(outputSubDirectory)
+	for filename in os.listdir(directory):
+		shutil.copy(
+			os.path.join(directory,filename),
+			outputSubDirectory
+		)
 
 import makeTablesFromCsv
 import makeTablesFromOdf
