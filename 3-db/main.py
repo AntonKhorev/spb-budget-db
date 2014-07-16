@@ -10,7 +10,7 @@ import fileLists,dataLists
 inputDirectory='../2-tables.out'
 outputFilename='../3-db.out/db.sql'
 
-# TODO make csv tables, add (name) priority column
+# TODO make csv tables
 stages=[
 	{'stageNumber':0,'stageAssemblyUrl':'http://www.assembly.spb.ru/ndoc/doc/0/777307431'},
 	{'stageNumber':1,'stageAssemblyUrl':'http://www.assembly.spb.ru/ndoc/doc/0/777310165'},
@@ -72,16 +72,23 @@ def readCsv(csvFilename):
 				row['year']=int(row['year'])
 			yield row
 
+def getPriority(documentNumber):
+	"priority to resolve name collisions for section/category/type codes"
+	document=next(d for d in documents if d['documentNumber']==documentNumber)
+	if document['amendmentFlag']==2:
+		priority=30 # law, published by fincom
+	elif document['amendmentFlag']==0:
+		priority=20 # law project, published by fincom
+	else:
+		priority=10 # amendment, published by assembly, often contains typos
+	priority+=document['stageNumber'] # prefer latter stage
+	return priority
+
 # scan section codes
 for tableFile in fileLists.listTableFiles(glob.glob(inputDirectory+'/*.csv')):
 	if tableFile.table!='section':
 		continue
-	if tableFile.stage=='2014.1.z':
-		priority=1
-	elif tableFile.stage=='2014.0.z':
-		priority=2
-	else:
-		priority=3
+	priority=getPriority(tableFile.documentNumber)
 	testOrder=makeTestOrder(['superSectionCode','sectionCode','categoryCode','typeCode'],[True,True,True,True])
 	for row in readCsv(tableFile.filename):
 		resets=testOrder(row)
@@ -105,14 +112,7 @@ editNumber=0
 for tableFile in fileLists.listTableFiles(glob.glob(inputDirectory+'/*.csv')):
 	if tableFile.table!='department':
 		continue
-	if tableFile.stage=='2014.1.z':
-		priority=1
-	elif tableFile.stage=='2014.0.z':
-		priority=2
-	elif tableFile.documentNumber==3574:
-		priority=3
-	else:
-		priority=4
+	priority=getPriority(tableFile.documentNumber)
 	editNumber+=1
 	edits.append({
 		'editNumber':editNumber,

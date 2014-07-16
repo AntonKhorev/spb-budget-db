@@ -11,7 +11,7 @@ class AbstractList:
 		name=row[self.nameCol]
 		if code in self.names:
 			if self.names[code]!=name:
-				if priority<self.priorities[code]:
+				if priority>self.priorities[code]:
 					print('- priority = '+str(self.priorities[code])+'; '+self.codeCol+' = '+code+'; '+self.nameCol+' = '+str(self.names[code]))
 					self.names[code]=name
 					self.priorities[code]=priority
