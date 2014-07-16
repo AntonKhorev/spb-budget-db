@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
 
+inputDirectory='../2-tables.out'
+outputDirectory='../3-db.out'
+outputFilename=outputDirectory+'/db.sql'
+import os
+if not os.path.exists(outputDirectory):
+	os.makedirs(outputDirectory)
+
 import itertools
 import glob
 import csv
 import decimal
 
 import fileLists,dataLists
-
-inputDirectory='../2-tables.out'
-outputFilename='../3-db.out/db.sql'
 
 # TODO make csv tables
 stages=[

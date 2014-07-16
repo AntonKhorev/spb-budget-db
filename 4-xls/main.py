@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 
+inputFilename='../3-db.out/db.sql'
+outputDirectory='../4-xls.out'
+import os
+if not os.path.exists(outputDirectory):
+	os.makedirs(outputDirectory)
+
 from decimal import Decimal
 import collections
 import copy
@@ -7,9 +13,6 @@ import sqlite3
 
 import xlwt3 as xlwt
 import xlsxwriter
-
-inputFilename='../3-db.out/db.sql'
-outputDirectory='../4-xls.out'
 
 class LevelTable:
 	def __init__(self,levelColLists,levelNames,fakeYearCols,fakeYearNameFns,yearsInAppendices,rows,nHeaderRows=None):

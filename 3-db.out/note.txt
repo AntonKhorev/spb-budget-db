@@ -1,1 +1,0 @@
-SQL database. Currently for sqlite.

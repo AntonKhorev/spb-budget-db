@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 
-import dbs,lines,spreadsheets,reports
-
 inputFilename='../3-db.out/db.sql'
 outputDirectory='../4-xlsx.out'
+import os
+if not os.path.exists(outputDirectory):
+	os.makedirs(outputDirectory)
+
+import dbs,lines,spreadsheets,reports
 
 with dbs.Sqlite(inputFilename) as db:
 	reports.Report(
