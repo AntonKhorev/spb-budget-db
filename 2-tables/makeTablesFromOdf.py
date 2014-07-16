@@ -63,12 +63,12 @@ class TableWriteWatcher:
 		self.paragraphNumber=None
 	def setParagraphNumber(self,paragraphNumber):
 		self.paragraphNumber=paragraphNumber
-	def write(self,table,stageNumber,documentNumber):
+	def write(self,table,documentNumber):
 		# print('writing table for amendment',self.paragraphNumber)
 		if not self.paragraphNumber:
 			raise Exception('paragraph number for table not set')
 		self.makeWriter(table,documentNumber).write(
-			outputDirectory+'/2014.'+stageNumber+'.p.'+documentNumber+'.'+self.paragraphNumber+self.getTableType()+'.diff.csv'
+			outputDirectory+'/2014.'+documentNumber+'.'+self.paragraphNumber+self.getTableType()+'.diff.csv'
 		)
 		self.paragraphNumber=None
 
@@ -112,11 +112,11 @@ moveCategoryRe=re.compile(r'\s*'+pn+r' Изложить наименование
 moveCategoryTypeRe=re.compile(r'\s*'+pn+r' Изложить наименование целевой статьи (?P<categoryCode1>\d{7}) ".*?" '+dnms+r' в следующей редакции: ".*?" с изменением кода целевой статьи на (?P<categoryCode2>\d{7}) и с изменением(?: кода)? вида расходов (?P<typeCode1>\d{3}) ".*?" на (?P<typeCode2>\d{3}) ".*?" по (?P<departmentNamesForType>.*?)\.')
 moveTypeRe=re.compile(r'\s*'+pn+r' Код вида расходов (?P<typeCode1>\d{3}) ".*?" в целевой статье '+cc+r' ".*?" '+dnms+r' изменить на (?P<typeCode2>\d{3}) ".*?"')
 
-for stageNumber,documentNumber,appendixNumberDepartmentY1,appendixNumberDepartmentY23,appendixNumberInvestment in ((
-	('0','3765','3','4','23'),
-	('0','3781','3','4','23'),
-	('1','4706','2','14','11'),
-	('1','4712','2','14','11'),
+for documentNumber,appendixNumberDepartmentY1,appendixNumberDepartmentY23,appendixNumberInvestment in ((
+	('3765','3','4','23'),
+	('3781','3','4','23'),
+	('4706','2','14','11'),
+	('4712','2','14','11'),
 )):
 	filename=inputDirectory+'/assembly/'+documentNumber+'.odt'
 	doc=ezodf.opendoc(filename)
@@ -160,7 +160,7 @@ for stageNumber,documentNumber,appendixNumberDepartmentY1,appendixNumberDepartme
 						tableWriteWatcher.setParagraphNumber(m.group('paragraphNumber'))
 				# print('line:',line)
 				def getMoveFilename(m):
-					return outputDirectory+'/2014.'+stageNumber+'.p.'+documentNumber+'.'+m.group('paragraphNumber')+'department.move.csv'
+					return outputDirectory+'/2014.'+documentNumber+'.'+m.group('paragraphNumber')+'department.move.csv'
 				def listDepartmentMoves(m,s,t,deptGroupName='departmentNames'):
 					def processName(d):
 						return d.replace('Администрации','Администрация')
@@ -212,4 +212,4 @@ for stageNumber,documentNumber,appendixNumberDepartmentY1,appendixNumberDepartme
 		elif type(obj) is ezodf.table.Table:
 			# print('table',obj.nrows(),'x',obj.ncols())
 			if tableWriteWatcher:
-				tableWriteWatcher.write(obj,stageNumber,documentNumber)
+				tableWriteWatcher.write(obj,documentNumber)
