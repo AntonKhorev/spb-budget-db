@@ -317,6 +317,7 @@ def makeDepartmentReports(conn,stageNumber,amendmentFlag):
 			JOIN documents USING(documentNumber)
 			WHERE stageNumber<? OR (stageNumber<=? AND amendmentFlag<=?)
 			GROUP BY departmentName,categoryName,typeName,departmentCode,sectionCode,categoryCode,typeCode,year
+			HAVING SUM(amount)<>0
 			ORDER BY departmentOrder,sectionCode,categoryCode,typeCode,year
 		""",[stageNumber,stageNumber,amendmentFlag])
 	)
@@ -354,6 +355,7 @@ def makeSectionReports(conn,stageNumber,amendmentFlag):
 			JOIN documents USING(documentNumber)
 			WHERE stageNumber<? OR (stageNumber<=? AND amendmentFlag<=?)
 			GROUP BY superSectionName,sectionName,categoryName,typeName,superSectionCode,sectionCode,categoryCode,typeCode,year
+			HAVING SUM(amount)<>0
 			ORDER BY superSectionCode,sectionCode,categoryCode,typeCode,year
 		""",[stageNumber,stageNumber,amendmentFlag])
 	)
@@ -373,6 +375,8 @@ with sqlite3.connect(':memory:') as conn:
 		for amendmentFlag in (0,2):
 			makeDepartmentReports(conn,stageNumber,amendmentFlag)
 			makeSectionReports(conn,stageNumber,amendmentFlag)
+
+	exit() #### skip the rest ####
 
 	# governor/bfk amendments table
 	for documentNumber,documentName in (
@@ -407,10 +411,10 @@ with sqlite3.connect(':memory:') as conn:
 				ORDER BY departmentOrder,sectionCode,categoryCode,typeCode,year
 			""",[documentNumber])
 		)
-		# table.makeXlsx(
-			# documentName+" к Закону Санкт-Петербурга «О бюджете Санкт-Петербурга на 2014 год и на плановый период 2015 и 2016 годов»",
-			# outputDirectory+'/amendment'+documentNumber+'-2014-16.xlsx'
-		# )
+		table.makeXlsx(
+			documentName+" к Закону Санкт-Петербурга «О бюджете Санкт-Петербурга на 2014 год и на плановый период 2015 и 2016 годов»",
+			outputDirectory+'/amendment'+documentNumber+'-2014-16.xlsx'
+		)
 
 	# experimental project+amendments table
 	fakeYears=[]
@@ -451,10 +455,10 @@ with sqlite3.connect(':memory:') as conn:
 			ORDER BY departmentOrder,sectionCode,categoryCode,typeCode,year,documentNumber
 		""")
 	)
-	# table.makeXlsx(
-		# "Данные из приложений 3 и 4 с поправками - ЭКПЕРИМЕНТАЛЬНО!",
-		# outputDirectory+'/project-amendments-2014-16.xlsx'
-	# )
+	table.makeXlsx(
+		"Данные из приложений 3 и 4 с поправками - ЭКПЕРИМЕНТАЛЬНО!",
+		outputDirectory+'/project-amendments-2014-16.xlsx'
+	)
 
 	# experimental project+amendments+paragraphs table
 	fakeYears=[]
@@ -496,7 +500,7 @@ with sqlite3.connect(':memory:') as conn:
 			ORDER BY departmentOrder,sectionCode,categoryCode,typeCode,year,editNumber
 		""")
 	)
-	# table.makeXlsx(
-		# "Данные из приложений 3 и 4 с поправками - ЭКПЕРИМЕНТАЛЬНО!",
-		# outputDirectory+'/project-amendments-paragraphs-2014-16.xlsx'
-	# )
+	table.makeXlsx(
+		"Данные из приложений 3 и 4 с поправками - ЭКПЕРИМЕНТАЛЬНО!",
+		outputDirectory+'/project-amendments-paragraphs-2014-16.xlsx'
+	)
