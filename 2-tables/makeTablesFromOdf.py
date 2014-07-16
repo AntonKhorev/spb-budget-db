@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 
+inputDirectory='../1-sources.out'
+outputDirectory='../2-tables.out'
+outputContentDirectory=outputDirectory+'/content'
+
 import re
 import ezodf
 import errorFixers,tableWriters
 
-inputDirectory='../1-sources.out'
-outputDirectory='../2-tables.out'
-departmentFixer=errorFixers.DepartmentFixer('2014/errors.csv')
+departmentFixer=errorFixers.DepartmentFixer('errors/2014.csv')
 
 def makeDepartmentTableReaderFromOdfTable(table,nAmountCols):
 	found=False
@@ -68,7 +70,7 @@ class TableWriteWatcher:
 		if not self.paragraphNumber:
 			raise Exception('paragraph number for table not set')
 		self.makeWriter(table,documentNumber).write(
-			outputDirectory+'/2014.'+documentNumber+'.'+self.paragraphNumber+self.getTableType()+'.diff.csv'
+			outputContentDirectory+'/2014.'+documentNumber+'.'+self.paragraphNumber+self.getTableType()+'.diff.csv'
 		)
 		self.paragraphNumber=None
 
@@ -160,7 +162,7 @@ for documentNumber,appendixNumberDepartmentY1,appendixNumberDepartmentY23,append
 						tableWriteWatcher.setParagraphNumber(m.group('paragraphNumber'))
 				# print('line:',line)
 				def getMoveFilename(m):
-					return outputDirectory+'/2014.'+documentNumber+'.'+m.group('paragraphNumber')+'department.move.csv'
+					return outputContentDirectory+'/2014.'+documentNumber+'.'+m.group('paragraphNumber')+'department.move.csv'
 				def listDepartmentMoves(m,s,t,deptGroupName='departmentNames'):
 					def processName(d):
 						return d.replace('Администрации','Администрация')

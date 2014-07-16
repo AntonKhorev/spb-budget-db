@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+inputDirectory='../1-sources.out'
+inputFincomDirectory=inputDirectory+'/fincom'
+outputDirectory='../2-tables.out'
+outputContentDirectory=outputDirectory+'/content'
+
 from openpyxl import load_workbook
 import tableWriters
 
@@ -20,66 +25,25 @@ def makeTableReaderFromXlsxFile(inputFilename,nAmountCols):
 	for nRow in range(nRow,maxRow):
 		yield [ws.cell(row=nRow,column=c).value for c in range(5)]+[makeAmount(ws.cell(row=nRow,column=c).value) for c in range(5,5+nAmountCols)]
 
-inputDirectory='../1-sources.out'
-outputDirectory='../2-tables.out'
-
-# project
-documentNumber=3574
-tableWriters.DepartmentTableWriter(
-	makeTableReaderFromXlsxFile(inputDirectory+'/fincom/2014.0.p/pr03-2014-16.xlsx',1),
-	[2014]
-).write(outputDirectory+'/2014.'+str(documentNumber)+'.3.department.set(2014).csv')
-tableWriters.DepartmentTableWriter(
-	makeTableReaderFromXlsxFile(inputDirectory+'/fincom/2014.0.p/pr04-2014-16.xlsx',2),
-	[2015,2016]
-).write(outputDirectory+'/2014.'+str(documentNumber)+'.4.department.set(2015,2016).csv')
-tableWriters.SectionTableWriter(
-	makeTableReaderFromXlsxFile(inputDirectory+'/fincom/2014.0.p/pr05-2014-16.xlsx',1),
-	[2014]
-).write(outputDirectory+'/2014.'+str(documentNumber)+'.5.section.set(2014).csv')
-tableWriters.SectionTableWriter(
-	makeTableReaderFromXlsxFile(inputDirectory+'/fincom/2014.0.p/pr06-2014-16.xlsx',2),
-	[2015,2016]
-).write(outputDirectory+'/2014.'+str(documentNumber)+'.6.section.set(2015,2016).csv')
-
-# law
-documentNumber=3850
-tableWriters.DepartmentTableWriter(
-	makeTableReaderFromXlsxFile(inputDirectory+'/fincom/2014.0.z/pr03_bd2014-16.xlsx',1),
-	[2014]
-).write(outputDirectory+'/2014.'+str(documentNumber)+'.3.department.set(2014).csv')
-tableWriters.DepartmentTableWriter(
-	makeTableReaderFromXlsxFile(inputDirectory+'/fincom/2014.0.z/pr04_bd2014-16.xlsx',2),
-	[2015,2016]
-).write(outputDirectory+'/2014.'+str(documentNumber)+'.4.department.set(2015,2016).csv')
-tableWriters.SectionTableWriter(
-	makeTableReaderFromXlsxFile(inputDirectory+'/fincom/2014.0.z/pr05_bd2014-16.xlsx',1),
-	[2014]
-).write(outputDirectory+'/2014.'+str(documentNumber)+'.5.section.set(2014).csv')
-tableWriters.SectionTableWriter(
-	makeTableReaderFromXlsxFile(inputDirectory+'/fincom/2014.0.z/pr06_bd2014-16.xlsx',2),
-	[2015,2016]
-).write(outputDirectory+'/2014.'+str(documentNumber)+'.6.section.set(2015,2016).csv')
-
-# correction project
-# wasn't published in xlsx format
-
-# correction law
-documentNumber=4752
-diffsetDocumentNumber=3850
-tableWriters.DepartmentTableWriter(
-	makeTableReaderFromXlsxFile(inputDirectory+'/fincom/2014.1.z/pr02_bd2014-16_1izm.xlsx',1),
-	[2014]
-).write(outputDirectory+'/2014.'+str(documentNumber)+'.2.department.set(2014).csv')
-tableWriters.DepartmentTableWriter(
-	makeTableReaderFromXlsxFile(inputDirectory+'/fincom/2014.1.z/pr17_bd2014-16_1izm.xlsx',2),
-	[2015,2016]
-).write(outputDirectory+'/2014.'+str(documentNumber)+'.17.department.diffset('+str(diffsetDocumentNumber)+',2015,2016).csv')
-tableWriters.SectionTableWriter(
-	makeTableReaderFromXlsxFile(inputDirectory+'/fincom/2014.1.z/pr03_bd2014-16_1izm.xlsx',1),
-	[2014]
-).write(outputDirectory+'/2014.'+str(documentNumber)+'.3.section.set(2014).csv')
-tableWriters.SectionTableWriter(
-	makeTableReaderFromXlsxFile(inputDirectory+'/fincom/2014.1.z/pr18_bd2014-16_1izm.xlsx',2),
-	[2015,2016]
-).write(outputDirectory+'/2014.'+str(documentNumber)+'.18.section.diffset('+str(diffsetDocumentNumber)+',2015,2016).csv')
+dw=tableWriters.DepartmentTableWriter
+sw=tableWriters.SectionTableWriter
+y1=[2014]
+y2=[2015,2016]
+for writer,years,inputFilename,outputFilename in (
+	(dw,y1,'2014.0.p/pr03-2014-16.xlsx','2014.3574.3.department.set(2014).csv'),
+	(dw,y2,'2014.0.p/pr04-2014-16.xlsx','2014.3574.4.department.set(2015,2016).csv'),
+	(sw,y1,'2014.0.p/pr05-2014-16.xlsx','2014.3574.5.section.set(2014).csv'),
+	(sw,y2,'2014.0.p/pr06-2014-16.xlsx','2014.3574.6.section.set(2015,2016).csv'),
+	(dw,y1,'2014.0.z/pr03_bd2014-16.xlsx','2014.3850.3.department.set(2014).csv'),
+	(dw,y2,'2014.0.z/pr04_bd2014-16.xlsx','2014.3850.4.department.set(2015,2016).csv'),
+	(sw,y1,'2014.0.z/pr05_bd2014-16.xlsx','2014.3850.5.section.set(2014).csv'),
+	(sw,y2,'2014.0.z/pr06_bd2014-16.xlsx','2014.3850.6.section.set(2015,2016).csv'),
+	(dw,y1,'2014.1.z/pr02_bd2014-16_1izm.xlsx','2014.4752.2.department.set(2014).csv'),
+	(dw,y2,'2014.1.z/pr17_bd2014-16_1izm.xlsx','2014.4752.17.department.diffset(3850,2015,2016).csv'),
+	(sw,y1,'2014.1.z/pr03_bd2014-16_1izm.xlsx','2014.4752.3.section.set(2014).csv'),
+	(sw,y2,'2014.1.z/pr18_bd2014-16_1izm.xlsx','2014.4752.18.section.diffset(3850,2015,2016).csv'),
+):
+	writer(
+		makeTableReaderFromXlsxFile(inputFincomDirectory+'/'+inputFilename,len(years)),
+		years
+	).write(outputContentDirectory+'/'+outputFilename)

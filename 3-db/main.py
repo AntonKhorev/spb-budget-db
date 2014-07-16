@@ -89,7 +89,7 @@ def getPriority(documentNumber):
 	return priority
 
 # scan section codes
-for tableFile in fileLists.listTableFiles(glob.glob(inputDirectory+'/*.csv')):
+for tableFile in fileLists.listTableFiles(glob.glob(inputDirectory+'/content/*.csv')):
 	if tableFile.table!='section':
 		continue
 	priority=getPriority(tableFile.documentNumber)
@@ -113,7 +113,7 @@ editNumber=0
 	# return uniqueCheck
 # uniqueCheck=makeUniqueCheck()
 
-for tableFile in fileLists.listTableFiles(glob.glob(inputDirectory+'/*.csv')):
+for tableFile in fileLists.listTableFiles(glob.glob(inputDirectory+'/content/*.csv')):
 	if tableFile.table!='department':
 		continue
 	priority=getPriority(tableFile.documentNumber)

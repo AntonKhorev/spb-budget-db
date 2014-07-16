@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 
 outputDirectory='../2-tables.out'
-import os
-if not os.path.exists(outputDirectory):
-	os.makedirs(outputDirectory)
+outputContentDirectory=outputDirectory+'/content'
+import os,shutil
+if not os.path.exists(outputContentDirectory):
+	os.makedirs(outputContentDirectory)
+for filename in os.listdir('content'):
+	shutil.copy(
+		os.path.join('content',filename),
+		outputContentDirectory
+	)
 
-import makeTablesByHand
 import makeTablesFromCsv
 import makeTablesFromOdf
 import makeTablesFromXlsx
