@@ -168,7 +168,7 @@ class LevelTable:
 				else:
 					writeCellText(nRow,nCol,col['text'],col['headerStyle'])
 
-	def makeXls(self,tableTitle,outputFilename):
+	def makeXls(self,tableTitle,outputFilename,tableSubtitle=None):
 		nLevels=len(self.levelColLists)
 		wb=xlwt.Workbook()
 		ws=wb.add_sheet('expenditures')
@@ -201,6 +201,9 @@ class LevelTable:
 		ws.row(0).height=400
 		ws.merge(0,0,0,len(columns)-1)
 		ws.write(0,0,tableTitle,styleTableTitle)
+		if tableSubtitle:
+			ws.merge(1,1,0,len(columns)-1)
+			ws.write(1,0,tableSubtitle)
 		for i in range(self.nHeaderRows-len(self.fakeYearNameFns),self.nHeaderRows):
 			ws.row(i).height=1200//len(self.fakeYearNameFns)
 		def setCellWidth(nCol,width):
@@ -221,7 +224,7 @@ class LevelTable:
 					ws.write(self.nHeaderRows+nRow,nCol,cell,style)
 		wb.save(outputFilename)
 
-	def makeXlsx(self,tableTitle,outputFilename):
+	def makeXlsx(self,tableTitle,outputFilename,tableSubtitle=None):
 		nLevels=len(self.levelColLists)
 		wb=xlsxwriter.Workbook(outputFilename)
 		ws=wb.add_worksheet('expenditures')
@@ -259,6 +262,8 @@ class LevelTable:
 		ws.freeze_panes(self.nHeaderRows,0)
 		ws.set_row(0,22)
 		ws.merge_range(0,0,0,len(columns)-1,tableTitle,styleTableTitle)
+		if tableSubtitle:
+			ws.merge_range(1,0,1,len(columns)-1,tableSubtitle)
 		for i in range(self.nHeaderRows-len(self.fakeYearNameFns),self.nHeaderRows):
 			ws.set_row(i,60//len(self.fakeYearNameFns))
 		self.makeSheetHeader(
@@ -277,6 +282,20 @@ class LevelTable:
 					continue
 				col['writer'](self.nHeaderRows+nRow,nCol,cell,style)
 		wb.close()
+
+def getSubTitle(stageNumber,amendmentFlag):
+	title="из "
+	if amendmentFlag<=0:
+		title+="проекта Закона "
+
+	else:
+		title+="Закона "
+	title+="Санкт-Петербурга "
+	if stageNumber<=0:
+		title+="«О бюджете Санкт-Петербурга на 2014 год и на плановый период 2015 и 2016 годов»"
+	else:
+		title+="«О внесении изменений и дополнений в Закон Санкт-Петербурга „О бюджете Санкт-Петербурга на 2014 год и на плановый период 2015 и 2016 годов“»"
+	return title
 
 def makeDepartmentReports(conn,stageNumber,amendmentFlag,appendix1,appendix23):
 	if appendix1 is not None and appendix23 is not None:
@@ -310,12 +329,13 @@ def makeDepartmentReports(conn,stageNumber,amendmentFlag,appendix1,appendix23):
 			GROUP BY departmentName,categoryName,typeName,departmentCode,sectionCode,categoryCode,typeCode,year
 			HAVING SUM(amount)<>0
 			ORDER BY departmentOrder,sectionCode,categoryCode,typeCode,year
-		""",[stageNumber,stageNumber,amendmentFlag])
+		""",[stageNumber,stageNumber,amendmentFlag]),
+		3
 	)
 	title='Ведомственная структура расходов бюджета Санкт-Петербурга'
 	filebasename='2014.'+str(stageNumber)+'.'+('p' if amendmentFlag<=0 else 'z')+'.department'
-	table.makeXls(title,outputDirectory+'/'+filebasename+'.xls')
-	table.makeXlsx(title,outputDirectory+'/'+filebasename+'.xlsx')
+	table.makeXls(title,outputDirectory+'/'+filebasename+'.xls',tableSubtitle=getSubTitle(stageNumber,amendmentFlag))
+	table.makeXlsx(title,outputDirectory+'/'+filebasename+'.xlsx',tableSubtitle=getSubTitle(stageNumber,amendmentFlag))
 
 def makeSectionReports(conn,stageNumber,amendmentFlag,appendix1,appendix23):
 	if appendix1 is not None and appendix23 is not None:
@@ -352,12 +372,13 @@ def makeSectionReports(conn,stageNumber,amendmentFlag,appendix1,appendix23):
 			GROUP BY superSectionName,sectionName,categoryName,typeName,superSectionCode,sectionCode,categoryCode,typeCode,year
 			HAVING SUM(amount)<>0
 			ORDER BY superSectionCode,sectionCode,categoryCode,typeCode,year
-		""",[stageNumber,stageNumber,amendmentFlag])
+		""",[stageNumber,stageNumber,amendmentFlag]),
+		3
 	)
 	title='Распределение бюджетных ассигнований бюджета Санкт-Петербурга'
 	filebasename='2014.'+str(stageNumber)+'.'+('p' if amendmentFlag<=0 else 'z')+'.section'
-	table.makeXls(title,outputDirectory+'/'+filebasename+'.xls')
-	table.makeXlsx(title,outputDirectory+'/'+filebasename+'.xlsx')
+	table.makeXls(title,outputDirectory+'/'+filebasename+'.xls',tableSubtitle=getSubTitle(stageNumber,amendmentFlag))
+	table.makeXlsx(title,outputDirectory+'/'+filebasename+'.xlsx',tableSubtitle=getSubTitle(stageNumber,amendmentFlag))
 
 with sqlite3.connect(':memory:') as conn:
 	conn.row_factory=sqlite3.Row
