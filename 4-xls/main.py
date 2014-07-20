@@ -278,20 +278,11 @@ class LevelTable:
 				col['writer'](self.nHeaderRows+nRow,nCol,cell,style)
 		wb.close()
 
-def getTitle(appendix1,appendix2,stageNumber,amendmentFlag):
-	title="Данные из приложений "+str(appendix1)+" и "+str(appendix2)+" к "
-	if amendmentFlag<=0:
-		title+="проекту Закона "
+def makeDepartmentReports(conn,stageNumber,amendmentFlag,appendix1,appendix23):
+	if appendix1 is not None and appendix23 is not None:
+		years={appendix1:[(2014,)],appendix23:[(2015,),(2016,)]}
 	else:
-		title+="Закону "
-	title+="Санкт-Петербурга "
-	if stageNumber<=0:
-		title+="«О бюджете Санкт-Петербурга на 2014 год и на плановый период 2015 и 2016 годов»"
-	else:
-		title+="«О внесении изменений и дополнений в Закон Санкт-Петербурга „О бюджете Санкт-Петербурга на 2014 год и на плановый период 2015 и 2016 годов“»"
-	return title
-
-def makeDepartmentReports(conn,stageNumber,amendmentFlag):
+		years=[(2014,),(2015,),(2016,)]
 	table=LevelTable(
 		[
 			['departmentCode'],
@@ -306,7 +297,7 @@ def makeDepartmentReports(conn,stageNumber,amendmentFlag):
 		],[
 			lambda year: 'Сумма на '+str(year)+' г. (тыс. руб.)',
 		],
-		{3:[(2014,)],4:[(2015,),(2016,)]},
+		years,
 		conn.execute("""
 			SELECT departmentName,categoryName,typeName,departmentCode,sectionCode,categoryCode,typeCode,year, SUM(amount) AS amount
 			FROM items
@@ -321,12 +312,16 @@ def makeDepartmentReports(conn,stageNumber,amendmentFlag):
 			ORDER BY departmentOrder,sectionCode,categoryCode,typeCode,year
 		""",[stageNumber,stageNumber,amendmentFlag])
 	)
-	title=getTitle(3,4,stageNumber,amendmentFlag)
+	title='Ведомственная структура расходов бюджета Санкт-Петербурга'
 	filebasename='2014.'+str(stageNumber)+'.'+('p' if amendmentFlag<=0 else 'z')+'.department'
 	table.makeXls(title,outputDirectory+'/'+filebasename+'.xls')
 	table.makeXlsx(title,outputDirectory+'/'+filebasename+'.xlsx')
 
-def makeSectionReports(conn,stageNumber,amendmentFlag):
+def makeSectionReports(conn,stageNumber,amendmentFlag,appendix1,appendix23):
+	if appendix1 is not None and appendix23 is not None:
+		years={appendix1:[(2014,)],appendix23:[(2015,),(2016,)]}
+	else:
+		years=[(2014,),(2015,),(2016,)]
 	table=LevelTable(
 		[
 			['superSectionCode'],
@@ -343,7 +338,7 @@ def makeSectionReports(conn,stageNumber,amendmentFlag):
 		],[
 			lambda year: 'Сумма на '+str(year)+' г. (тыс. руб.)',
 		],
-		{5:[(2014,)],6:[(2015,),(2016,)]},
+		years,
 		conn.execute("""
 			SELECT superSectionName,sectionName,categoryName,typeName,superSectionCode,sectionCode,categoryCode,typeCode,year, SUM(amount) AS amount
 			FROM items
@@ -359,7 +354,7 @@ def makeSectionReports(conn,stageNumber,amendmentFlag):
 			ORDER BY superSectionCode,sectionCode,categoryCode,typeCode,year
 		""",[stageNumber,stageNumber,amendmentFlag])
 	)
-	title=getTitle(5,6,stageNumber,amendmentFlag)
+	title='Распределение бюджетных ассигнований бюджета Санкт-Петербурга'
 	filebasename='2014.'+str(stageNumber)+'.'+('p' if amendmentFlag<=0 else 'z')+'.section'
 	table.makeXls(title,outputDirectory+'/'+filebasename+'.xls')
 	table.makeXlsx(title,outputDirectory+'/'+filebasename+'.xlsx')
@@ -371,10 +366,14 @@ with sqlite3.connect(':memory:') as conn:
 		open(inputFilename,encoding='utf8').read()
 	)
 
-	for stageNumber in (0,1):
-		for amendmentFlag in (0,2):
-			makeDepartmentReports(conn,stageNumber,amendmentFlag)
-			makeSectionReports(conn,stageNumber,amendmentFlag)
+	for stageNumber,amendmentFlag,departmentAppendix1,departmentAppendix23,sectionAppendix1,sectionAppendix23 in (
+		(0,0,3,4,5,6),
+		(0,2,3,4,5,6),
+		(1,0,2,None,3,None),
+		(1,2,2,None,3,None),
+	):
+		makeDepartmentReports(conn,stageNumber,amendmentFlag,departmentAppendix1,departmentAppendix23)
+		makeSectionReports(conn,stageNumber,amendmentFlag,sectionAppendix1,sectionAppendix23)
 
 	exit() #### skip the rest ####
 
