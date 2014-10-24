@@ -4,12 +4,12 @@ import csv
 
 class TableWriter:
 	punctWithoutSpaceRe=re.compile(r'(?<=[.,])(?=[^\W\d_])')
-	def __init__(self,inputRows,years):
+	def __init__(self,inputRows,fiscalYears):
 		self.outputRows=outputRows=[]
 		levelCols=self.listLevelCols()
 		class CurrentRows:
 			def __init__(self):
-				self.rows=[{'year':year} for year in years]
+				self.rows=[{'fiscalYear':fiscalYear} for fiscalYear in fiscalYears]
 			def __iter__(self):
 				return iter(self.rows)
 			def setLevel(self,toLevel):
@@ -29,7 +29,7 @@ class TableWriter:
 					outputRows.append(row.copy())
 		self.readRows(inputRows,CurrentRows())
 	def write(self,outputFilename):
-		cols=['year']+[col for cols in self.listLevelCols() for col in cols]
+		cols=['fiscalYear']+[col for cols in self.listLevelCols() for col in cols]
 		with open(outputFilename,'w',newline='',encoding='utf8') as file:
 			writer=csv.writer(file,quoting=csv.QUOTE_NONNUMERIC)
 			writer.writerow(cols)
@@ -166,12 +166,12 @@ class InvestmentTableWriter(TableWriter):
 			['projectName','districtNames','projectFirstYear','projectLastYear','projectDurationTotal','amount'],
 		]
 	def readRows(self,inputRows,currentRows):
-		yearRangeRe=re.compile(r'(\d{4})\s*-\s*(\d{4})')
+		fiscalYearRangeRe=re.compile(r'(\d{4})\s*-\s*(\d{4})')
 		def fixCase(s):
 			s=s.replace('САНКТ-ПЕТЕРБУРГСКОМУ ГОСУДАРСТВЕННОМУ УНИТАРНОМУ ПРЕДПРИЯТИЮ ','СПБ ГУП ')
 			s=s.replace('ОТКРЫТОМУ АКЦИОНЕРНОМУ ОБЩЕСТВУ ','ОАО ')
 			return s
-		for name,districtNames,yearRange,projectDurationTotal,*amounts in inputRows:
+		for name,districtNames,fiscalYearRange,projectDurationTotal,*amounts in inputRows:
 			amounts=self.processAmounts(amounts)
 			# name=self.processName(name)
 			prefix='ВСЕГО:'
@@ -203,14 +203,14 @@ class InvestmentTableWriter(TableWriter):
 			currentRows.setLevel(4)
 			currentRows.assignSame('projectName',name)
 			currentRows.assignSame('districtNames',districtNames)
-			m=yearRangeRe.match(str(yearRange))
+			m=fiscalYearRangeRe.match(str(fiscalYearRange))
 			if m:
 				projectFirstYear=int(m.group(1))
 				projectLastYear=int(m.group(2))
-			elif yearRange is None or yearRange=='':
+			elif fiscalYearRange is None or fiscalYearRange=='':
 				projectFirstYear=projectLastYear=None
 			else:
-				projectFirstYear=projectLastYear=int(yearRange)
+				projectFirstYear=projectLastYear=int(fiscalYearRange)
 			currentRows.assignSame('projectFirstYear',projectFirstYear)
 			currentRows.assignSame('projectLastYear',projectLastYear)
 			if projectDurationTotal:
@@ -221,6 +221,6 @@ class InvestmentTableWriter(TableWriter):
 def writeMoveTable(outputFilename,rows):
 	with open(outputFilename,'w',newline='',encoding='utf8') as file:
 		writer=csv.writer(file,quoting=csv.QUOTE_NONNUMERIC)
-		writer.writerow(['year','departmentName','sectionCode','categoryCode','typeCode'])
+		writer.writerow(['fiscalYear','departmentName','sectionCode','categoryCode','typeCode'])
 		for row in rows:
 			writer.writerow(row)

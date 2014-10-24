@@ -1,3 +1,4 @@
-stageNumber,stageAssemblyUrl
-0,http://www.assembly.spb.ru/ndoc/doc/0/777307431
-1,http://www.assembly.spb.ru/ndoc/doc/0/777310165
+stageYear,stageNumber,stageAssemblyUrl
+2014,0,http://www.assembly.spb.ru/ndoc/doc/0/777307431
+2014,1,http://www.assembly.spb.ru/ndoc/doc/0/777310165
+2015,0,http://www.assembly.spb.ru/ndoc/doc/0/777312036

@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# TODO adapt for different stage/fiscal years
+
 inputDirectory='../1-sources.out'
 outputDirectory='../2-tables.out'
 outputContentDirectory=outputDirectory+'/content'

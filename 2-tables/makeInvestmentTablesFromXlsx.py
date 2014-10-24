@@ -34,3 +34,5 @@ tableWriters.InvestmentTableWriter(
 	makeInvestmentTableReaderFromXlsxFile(inputDirectory+'/fincom/2014.0.z/pr24_bd2014-16.xlsx'),
 	[2014,2015,2016]
 ).write(outputContentDirectory+'/2014.'+str(documentNumber)+'.24.investment.set(2014,2015,2016).csv')
+
+# TODO 2015
