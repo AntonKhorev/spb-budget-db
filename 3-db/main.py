@@ -7,11 +7,8 @@ import os
 if not os.path.exists(outputDirectory):
 	os.makedirs(outputDirectory)
 
-import glob
-import csv
-import decimal
-
-import fileLists,dataLists
+import csv,decimal
+import dataSets
 
 def readMetaTable(tableName,intColumns):
 	def val(k,v):
@@ -31,133 +28,22 @@ stages=readMetaTable('stages',{'stageYear','stageNumber'})
 authors=readMetaTable('authors',{'authorId'})
 documents=readMetaTable('documents',{'documentNumber','stageYear','stageNumber','amendmentFlag','authorId'})
 
-edits=[]
-departments=dataLists.DepartmentList()
-superSections=dataLists.SuperSectionList()
-sections=dataLists.SectionList()
-categories=dataLists.CategoryList()
-types=dataLists.TypeList()
-items=dataLists.ItemList()
-
-def makeTestOrder(cols,stricts):
-	prevs=[None]*len(cols)
-	def testOrder(row):
-		resets=set()
-		resetFlag=False
-		for col,strict,prev in zip(cols,stricts,prevs):
-			if resetFlag:
-				resets.add(col)
-				continue
-			if not prev:
-				resetFlag=True
-				resets.add(col)
-				continue
-			if strict and row[col]<prev:
-				raise Exception('invalid order for '+col)
-			if row[col]!=prev:
-				resetFlag=True
-		for i,col in enumerate(cols):
-			prevs[i]=row[col]
-		return resets
-	return testOrder
-
-def readCsv(csvFilename):
-	with open(csvFilename,encoding='utf8',newline='') as csvFile:
-		for row in csv.DictReader(csvFile):
-			if 'fiscalYear' in row:
-				row['fiscalYear']=int(row['fiscalYear'])
-			yield row
-
-def getPriority(documentNumber):
+# TODO replace w/ priorities derived from source types
+def getDocumentPriority(documentNumber):
 	"priority to resolve name collisions for section/category/type codes"
 	document=next(d for d in documents if d['documentNumber']==documentNumber)
 	if document['amendmentFlag']==2:
-		priority=300000 # law, published by fincom
+		priority=30 # law, published by fincom
 	elif document['amendmentFlag']==0:
-		priority=200000 # law project, published by fincom
+		priority=20 # law project, published by fincom
 	else:
-		priority=100000 # amendment, published by assembly, often contains typos
-	priority+=document['stageYear']*10
+		priority=10 # amendment, published by assembly, often contains typos
 	priority+=document['stageNumber'] # prefer latter stage
 	return priority
 
-# scan section codes
-for tableFile in fileLists.listTableFiles(glob.glob(inputDirectory+'/content/*.csv')):
-	if tableFile.table!='section':
-		continue
-	priority=getPriority(tableFile.documentNumber)
-	testOrder=makeTestOrder(['superSectionCode','sectionCode','categoryCode','typeCode'],[True,True,True,True])
-	for row in readCsv(tableFile.filename):
-		resets=testOrder(row)
-		superSections.add(row,priority)
-		sections.add(row,priority)
-		categories.add(row,priority)
-		types.add(row,priority)
-
-# read monetary data
-editNumber=0
-
-# def makeUniqueCheck():
-	# kv={}
-	# def uniqueCheck(k,v):
-		# if k in kv and kv[k]!=v:
-			# print('@',k,':',kv[k],'vs',v)
-		# kv[k]=v
-	# return uniqueCheck
-# uniqueCheck=makeUniqueCheck()
-
-for tableFile in fileLists.listTableFiles(glob.glob(inputDirectory+'/content/*.csv')):
-	if tableFile.table!='department':
-		continue
-	priority=getPriority(tableFile.documentNumber)
-	editNumber+=1
-	edits.append({
-		'editNumber':editNumber,
-		'documentNumber':tableFile.documentNumber,
-		'paragraphNumber':tableFile.paragraphNumber,
-	})
-	if type(tableFile.action) is fileLists.SetAction:
-		with items.makeSetContext(editNumber,tableFile.action.fiscalYears) as ctx:
-			testOrder=makeTestOrder(['departmentCode','sectionCode','categoryCode','typeCode'],[False,True,True,True])
-			for row in readCsv(tableFile.filename):
-				resets=testOrder(row)
-				if 'departmentCode' in resets:
-					departments.resetSequence()
-				departments.add(row,priority)
-				categories.add(row,priority)
-				types.add(row,priority)
-				ctx.set(row)
-				# uniqueCheck(row['categoryCode'],row['sectionCode'])
-	elif type(tableFile.action) is fileLists.DiffsetAction:
-		diffsetStartEditNumber=next(edit for edit in edits if edit['documentNumber']>tableFile.action.documentNumber)['editNumber']
-		with items.makeDiffsetContext(editNumber,diffsetStartEditNumber,tableFile.action.fiscalYears) as ctx:
-			testOrder=makeTestOrder(['departmentCode','sectionCode','categoryCode','typeCode'],[False,True,True,True])
-			for row in readCsv(tableFile.filename):
-				resets=testOrder(row)
-				if 'departmentCode' in resets:
-					departments.resetSequence()
-				departments.add(row,priority)
-				categories.add(row,priority)
-				types.add(row,priority)
-				ctx.set(row)
-				# uniqueCheck(row['categoryCode'],row['sectionCode'])
-	elif type(tableFile.action) is fileLists.DiffAction:
-		for row in readCsv(tableFile.filename):
-			departments.resetSequence() # ignore order
-			departments.add(row,priority)
-			categories.add(row,priority)
-			types.add(row,priority)
-			items.add(row,editNumber)
-	elif type(tableFile.action) is fileLists.MoveAction:
-		reader=readCsv(tableFile.filename)
-		for s,t in zip(reader,reader):
-			s['departmentCode']=departments.getCodeForName(s['departmentName'])
-			del s['departmentName']
-			t['departmentCode']=departments.getCodeForName(t['departmentName'])
-			del t['departmentName']
-			items.move(s,t,editNumber)
-	else:
-		raise Exception('unknown action '+str(tableFile.action))
+ys2014=dataSets.YearSet(2014,inputDirectory,getDocumentPriority)
+ys2015=dataSets.YearSet(2015,inputDirectory,getDocumentPriority)
+iys=dataSets.InterYearSet([ys2014,ys2015])
 
 ### write sql ###
 
@@ -217,15 +103,15 @@ CREATE TABLE documents(
 """);
 writeTable('documents',documents,('documentNumber','documentDate','stageYear','stageNumber','amendmentFlag','authorId','documentAssemblyUrl'))
 
-sql.write("""
-CREATE TABLE edits(
-	editNumber INT PRIMARY KEY,
-	documentNumber INT,
-	paragraphNumber TEXT,
-	FOREIGN KEY (documentNumber) REFERENCES documents(documentNumber)
-);
-""");
-writeTable('edits',edits,('editNumber','documentNumber','paragraphNumber'))
+# sql.write("""
+# CREATE TABLE edits(
+	# editNumber INT PRIMARY KEY,
+	# documentNumber INT,
+	# paragraphNumber TEXT,
+	# FOREIGN KEY (documentNumber) REFERENCES documents(documentNumber)
+# );
+# """);
+# writeTable('edits',edits,('editNumber','documentNumber','paragraphNumber'))
 
 sql.write("""
 CREATE TABLE departments(
@@ -234,7 +120,7 @@ CREATE TABLE departments(
 	departmentOrder INT
 );
 """)
-writeTable('departments',departments.getOrderedRows(),('departmentCode','departmentName','departmentOrder'))
+writeTable('departments',iys.departments.getOrderedRows(),('departmentCode','departmentName','departmentOrder'))
 
 sql.write("""
 CREATE TABLE superSections(
@@ -242,7 +128,7 @@ CREATE TABLE superSections(
 	superSectionName TEXT
 );
 """)
-writeTable('superSections',superSections.getOrderedRows(),('superSectionCode','superSectionName'))
+writeTable('superSections',iys.superSections.getOrderedRows(),('superSectionCode','superSectionName'))
 
 sql.write("""
 CREATE TABLE sections(
@@ -252,15 +138,15 @@ CREATE TABLE sections(
 	FOREIGN KEY (superSectionCode) REFERENCES superSections(superSectionCode)
 );
 """)
-writeTable('sections',sections.getOrderedRows(),('sectionCode','superSectionCode','sectionName'))
+writeTable('sections',iys.sections.getOrderedRows(),('sectionCode','superSectionCode','sectionName'))
 
-sql.write("""
-CREATE TABLE categories(
-	categoryCode CHAR(7) PRIMARY KEY,
-	categoryName TEXT
-);
-""")
-writeTable('categories',categories.getOrderedRows(),('categoryCode','categoryName'))
+# sql.write("""
+# CREATE TABLE categories(
+	# categoryCode CHAR(7) PRIMARY KEY,
+	# categoryName TEXT
+# );
+# """)
+# writeTable('categories',categories.getOrderedRows(),('categoryCode','categoryName'))
 
 sql.write("""
 CREATE TABLE types(
@@ -268,23 +154,23 @@ CREATE TABLE types(
 	typeName TEXT
 );
 """)
-writeTable('types',types.getOrderedRows(),('typeCode','typeName'))
+writeTable('types',iys.types.getOrderedRows(),('typeCode','typeName'))
 
-sql.write("""
-CREATE TABLE items(
-	editNumber INT,
-	fiscalYear INT,
-	departmentCode CHAR(3),
-	sectionCode CHAR(4),
-	categoryCode CHAR(7),
-	typeCode CHAR(3),
-	amount INT,
-	PRIMARY KEY (editNumber,fiscalYear,departmentCode,sectionCode,categoryCode,typeCode),
-	FOREIGN KEY (editNumber) REFERENCES edits(editNumber),
-	FOREIGN KEY (departmentCode) REFERENCES departments(departmentCode),
-	FOREIGN KEY (sectionCode) REFERENCES sections(sectionCode),
-	FOREIGN KEY (categoryCode) REFERENCES categories(categoryCode),
-	FOREIGN KEY (typeCode) REFERENCES types(typeCode)
-);
-"""); # amount DECIMAL(10,1) - but sqlite doesn't support decimal
-writeTable('items',items.getOrderedRows(),('editNumber','fiscalYear','departmentCode','sectionCode','categoryCode','typeCode','amount'))
+# sql.write("""
+# CREATE TABLE items(
+	# editNumber INT,
+	# fiscalYear INT,
+	# departmentCode CHAR(3),
+	# sectionCode CHAR(4),
+	# categoryCode CHAR(7),
+	# typeCode CHAR(3),
+	# amount INT,
+	# PRIMARY KEY (editNumber,fiscalYear,departmentCode,sectionCode,categoryCode,typeCode),
+	# FOREIGN KEY (editNumber) REFERENCES edits(editNumber),
+	# FOREIGN KEY (departmentCode) REFERENCES departments(departmentCode),
+	# FOREIGN KEY (sectionCode) REFERENCES sections(sectionCode),
+	# FOREIGN KEY (categoryCode) REFERENCES categories(categoryCode),
+	# FOREIGN KEY (typeCode) REFERENCES types(typeCode)
+# );
+# """); # amount DECIMAL(10,1) - but sqlite doesn't support decimal
+# writeTable('items',items.getOrderedRows(),('editNumber','fiscalYear','departmentCode','sectionCode','categoryCode','typeCode','amount'))
