@@ -29,7 +29,7 @@ def readMetaTable(tableName,intColumns):
 
 stages=readMetaTable('stages',{'stageYear','stageNumber'})
 authors=readMetaTable('authors',{'authorId'})
-documents=readMetaTable('documents',{'documentNumber','stageNumber','amendmentFlag','authorId'})
+documents=readMetaTable('documents',{'documentNumber','stageYear','stageNumber','amendmentFlag','authorId'})
 
 edits=[]
 departments=dataLists.DepartmentList()
@@ -72,11 +72,12 @@ def getPriority(documentNumber):
 	"priority to resolve name collisions for section/category/type codes"
 	document=next(d for d in documents if d['documentNumber']==documentNumber)
 	if document['amendmentFlag']==2:
-		priority=30 # law, published by fincom
+		priority=300000 # law, published by fincom
 	elif document['amendmentFlag']==0:
-		priority=20 # law project, published by fincom
+		priority=200000 # law project, published by fincom
 	else:
-		priority=10 # amendment, published by assembly, often contains typos
+		priority=100000 # amendment, published by assembly, often contains typos
+	priority+=document['stageYear']*10
 	priority+=document['stageNumber'] # prefer latter stage
 	return priority
 
