@@ -1,3 +1,5 @@
+# templates for spreadsheet rows and columns
+
 import itertools,datetime
 
 class LinesData:
@@ -264,7 +266,8 @@ class SectionRows(Lines):
 class AmendmentCols(Lines):
 	def listEntries(self):
 		return [
-			'year',
+			'fiscalYear',
+			'stageYear',
 			'stageNumber',
 			'documentNumber',
 		]
@@ -272,50 +275,58 @@ class AmendmentCols(Lines):
 		return [
 			self.AFTER,
 			self.AFTER,
+			self.AFTER,
 			self.BEFORE,
 		]
 	def listLevelKeys(self):
 		return [
-			('year',),
-			('year','stageNumber'),
-			('year','stageNumber','documentNumber'),
+			('fiscalYear',),
+			('fiscalYear','stageYear'),
+			('fiscalYear','stageYear','stageNumber'),
+			('fiscalYear','stageYear','stageNumber','documentNumber'),
 		]
 	def getItemValues(self,item,level):
-		if item['year']>2014: # FIXME hack
-			yearValue=str(item['year'])+' г. (план)'
+		if item['fiscalYear']>2015: # FIXME hack
+			fiscalYearValue=str(item['fiscalYear'])+' г. (план)'
 		else:
-			yearValue=str(item['year'])+' г.'
-		stageValue='Бюджет + изменения'
+			fiscalYearValue=str(item['fiscalYear'])+' г.'
+		stageYearValue='Последний закон'
+		stageNumberValue='Бюджет + изменения'
 		if level==0:
-			return (yearValue,stageValue,'')
-		if item['stageNumber']==0:
-			stageValue='Первоначальный бюджет'
-		else:
-			stageValue=str(item['stageNumber'])+'-е изменения'
+			return (fiscalYearValue,stageYearValue,stageNumberValue,'')
+		stageYearValue='Закон '+str(item['stageYear'])+'—'+str(item['stageYear']+2)+' гг.'
 		if level==1:
-			return (yearValue,stageValue,'Итого')
+			return (fiscalYearValue,stageYearValue,stageNumberValue,'')
+		if item['stageNumber']==0:
+			stageNumberValue='Первоначальный бюджет'
+		else:
+			stageNumberValue=str(item['stageNumber'])+'-е изменения'
+		if level==2:
+			return (fiscalYearValue,stageYearValue,stageNumberValue,'Итого')
 		if item['amendmentFlag']==0:
 			documentValue='Проект'
 		elif item['amendmentFlag']==1:
 			documentValue='+'+item['authorShortName']
 		else:
 			documentValue='+прочее'
-		if level==2:
-			return (yearValue,stageValue,documentValue)
+		if level==3:
+			return (fiscalYearValue,stageYearValue,stageNumberValue,documentValue)
 		raise ValueError()
 	def getItemComments(self,item,level):
-		yearComment='Бюджет Санкт-Петербурга на '+str(item['year'])+' год'
-		stageComment='Бюджет с учётом корректировок'
+		fiscalYearComment='Бюджет Санкт-Петербурга на '+str(item['fiscalYear'])+' год'
+		stageNumberComment='Бюджет с учётом корректировок'
 		if level==0:
-			return (yearComment,stageComment,None)
-		if item['stageNumber']==0:
-			stageComment='Первоначально утверждённый бюджет'
-		else:
-			stageComment=str(item['stageNumber'])+'-я корректировка бюджета'
-		stageComment+='\nСсылка на рассмотрение в ЗакСе: '+item['stageAssemblyUrl']
-		documentComment='Проект закона с внесёнными поправками'
+			return (fiscalYearComment,'',stageNumberComment,None)
 		if level==1:
-			return (yearComment,stageComment,documentComment)
+			return (fiscalYearComment,'',stageNumberComment,None)
+		if item['stageNumber']==0:
+			stageNumberComment='Первоначально утверждённый бюджет'
+		else:
+			stageNumberComment=str(item['stageNumber'])+'-я корректировка бюджета'
+		stageNumberComment+='\nСсылка на рассмотрение в ЗакСе: '+item['stageAssemblyUrl']
+		documentComment='Проект закона с внесёнными поправками'
+		if level==2:
+			return (fiscalYearComment,'',stageNumberComment,documentComment)
 		if item['amendmentFlag']==0:
 			documentComment='Проект закона'
 		elif item['amendmentFlag']==1:
@@ -328,10 +339,10 @@ class AmendmentCols(Lines):
 		documentComment+='\nДокумент в ЗакСе: № '+str(item['documentNumber'])+' от '+datetime.datetime.strptime(item['documentDate'],'%Y-%m-%d').strftime('%d.%m.%Y')
 		if item['documentAssemblyUrl']:
 			documentComment+='\nСсылка на документ в ЗакСе: '+item['documentAssemblyUrl']
-		if level==2:
-			return (yearComment,stageComment,documentComment)
+		if level==3:
+			return (fiscalYearComment,'',stageNumberComment,documentComment)
 		raise ValueError()
 	def listQuerySelects(self):
-		return 'year','stageNumber','stageAssemblyUrl','documentNumber','documentDate','documentAssemblyUrl','amendmentFlag','authorShortName','authorLongName'
+		return 'fiscalYear','stageYear','stageNumber','stageAssemblyUrl','documentNumber','documentDate','documentAssemblyUrl','amendmentFlag','authorShortName','authorLongName'
 	def listQueryOrderbys(self):
-		return 'year','stageNumber','documentNumber'
+		return 'fiscalYear','stageYear','stageNumber','documentNumber'

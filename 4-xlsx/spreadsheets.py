@@ -140,7 +140,7 @@ class XlsxSpreadsheet(Spreadsheet):
 						self.setColWidth(c,w)
 					self.writeRange(r0,c0+c,r1,c0+c,value,format(c))
 				for r in range(nColEntries):
-					ws.set_row(r0+r,30 if r==1 else 15)
+					ws.set_row(r0+r,30 if r==1 or r==2 else 15) # set height of rows for column headers/subheaders
 			def writeRowHeaders(self,rowHeaders):
 				def format(c):
 					if 'code' in staticColStyles[c]:

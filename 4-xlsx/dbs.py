@@ -1,25 +1,26 @@
 import sqlite3
 
 class Conn:
-	# table name : join key column name -> JOIN table USING(column)
+	# table name : join key column names -> [LEFT] JOIN table USING(column1,column2,...)
 	tables={
 		# 'items':None,
-		'edits':'editNumber',
-		'documents':'documentNumber',
-		'authors':'authorId',
-		'stages':'stageNumber',
-		'departments':'departmentCode',
-		'sections':'sectionCode',
-		'superSections':'superSectionCode',
-		'categories':'categoryCode',
-		'types':'typeCode',
+		'edits':['editNumber'],
+		'documents':['documentNumber'],
+		'authors':['authorId'],
+		'stages':['stageYear','stageNumber'],
+		'departments':['departmentCode'],
+		'sections':['sectionCode'],
+		'superSections':['superSectionCode'],
+		'categories':['categoryCode'],
+		'types':['typeCode'],
 	}
+	# column name : table to join starting from items
 	entries={
-		# column name : table to join starting from items
 		'stageAssemblyUrl':'stages',
 		'authorShortName':'authors',
 		'authorLongName':'authors',
 		'documentDate':'documents',
+		'stageYear':'documents',
 		'stageNumber':'documents',
 		'amendmentFlag':'documents',
 		'authorId':'documents',
@@ -34,7 +35,7 @@ class Conn:
 		'categoryName':'categories',
 		'typeName':'types',
 		'editNumber':'items',
-		'year':'items',
+		'fiscalYear':'items',
 		'departmentCode':'items',
 		'sectionCode':'items',
 		'categoryCode':'items',
@@ -52,10 +53,11 @@ class Conn:
 			table=self.entries[key]
 			if table in froms or table not in self.tables:
 				return
-			joinKey=self.tables[table]
-			rec(joinKey)
+			joinKeys=self.tables[table]
+			for joinKey in joinKeys:
+				rec(joinKey)
 			froms.add(table)
-			q+='LEFT JOIN '+table+' USING('+joinKey+')\n' # need LEFT JOIN for queries with author names
+			q+='LEFT JOIN '+table+' USING('+','.join(joinKeys)+')\n' # need LEFT JOIN for queries with author names
 		for key in keys:
 			rec(key)
 		return q
