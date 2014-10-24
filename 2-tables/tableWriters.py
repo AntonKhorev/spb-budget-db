@@ -53,16 +53,17 @@ class TableWriter:
 		raise NotImplementedError
 
 class SCTTableWriter(TableWriter):
+	"section-category-type tables base class"
 	def readRows(self,inputRows,currentRows):
-		class GrandTotalBox:
+		class FiscalYearTotalBox:
 			def set(self,value):
 				self.value=value
 			def __str__(self):
 				return str(self.value)
-		grandTotalBoxes=[GrandTotalBox() for row in currentRows]
-		currentRows.assignDifferent('grandTotal',grandTotalBoxes)
+		fiscalYearTotalBoxes=[FiscalYearTotalBox() for row in currentRows]
+		currentRows.assignDifferent('fiscalYearTotal',fiscalYearTotalBoxes)
 		def setGrandTotals(amounts):
-			for amount,box in zip(amounts,grandTotalBoxes):
+			for amount,box in zip(amounts,fiscalYearTotalBoxes):
 				box.set(amount)
 		self.readRowsWithGrandTotalsDeferred(inputRows,currentRows,setGrandTotals)
 	def readRowsWithGrandTotalsDeferred(self,inputRows,currentRows,setGrandTotals):
@@ -71,7 +72,7 @@ class SCTTableWriter(TableWriter):
 class DepartmentTableWriter(SCTTableWriter):
 	def listLevelCols(self):
 		return [
-			['grandTotal'],
+			['fiscalYearTotal'],
 			['departmentName','departmentCode','departmentTotal'],
 			['sectionCode','categoryName','categoryCode','categoryTotal'],
 			['typeName','typeCode','amount'],
@@ -110,7 +111,7 @@ class DepartmentTableWriter(SCTTableWriter):
 class SectionTableWriter(SCTTableWriter):
 	def listLevelCols(self):
 		return [
-			['grandTotal'],
+			['fiscalYearTotal'],
 			['superSectionName','superSectionCode','superSectionTotal'],
 			['sectionName','sectionCode','sectionTotal'],
 			['categoryName','categoryCode','categoryTotal'],
@@ -159,7 +160,7 @@ class SectionTableWriter(SCTTableWriter):
 class InvestmentTableWriter(TableWriter):
 	def listLevelCols(self):
 		return [
-			['grandTotal'],
+			['fiscalYearTotal'],
 			['departmentName','departmentTotal'],
 			['branchName','branchTotal'],
 			['recipientName','recipientTotal'],
@@ -177,7 +178,7 @@ class InvestmentTableWriter(TableWriter):
 			prefix='ВСЕГО:'
 			if name.startswith(prefix):
 				currentRows.setLevel(0)
-				currentRows.assignDifferent('grandTotal',amounts)
+				currentRows.assignDifferent('fiscalYearTotal',amounts)
 				continue
 			prefix='ЗАКАЗЧИК: '
 			if name.startswith(prefix):
