@@ -4,24 +4,24 @@ class AbstractAction:
 	pass
 
 class SetAction(AbstractAction):
-	def __init__(self,years):
-		self.years=set(years)
+	def __init__(self,fiscalYears):
+		self.fiscalYears=set(fiscalYears)
 
 class DiffAction(AbstractAction):
 	pass
 
 class DiffsetAction(AbstractAction):
-	def __init__(self,documentNumber,years):
+	def __init__(self,documentNumber,fiscalYears):
 		self.documentNumber=documentNumber
-		self.years=set(years)
+		self.fiscalYears=set(fiscalYears)
 
 class MoveAction(AbstractAction):
 	pass
 
 class TableFile:
-	def __init__(self,filename,year,documentNumber,paragraphNumber,table,action):
+	def __init__(self,filename,stageYear,documentNumber,paragraphNumber,table,action):
 		self.filename=filename
-		self.year=year
+		self.stageYear=stageYear
 		self.documentNumber=documentNumber
 		self.paragraphNumber=paragraphNumber
 		self.table=table
@@ -30,7 +30,7 @@ class TableFile:
 # sort by document and paragraph number
 # use with filenames=glob.glob('dir/*.csv')
 def listTableFiles(filenames):
-	r=re.compile(r'^(?:.+[/\\])?(?P<year>\d+)\.(?P<documentNumber>\d+)\.(?P<paragraphNumber>\d+(?:\.\d+)*)\.(?P<table>[a-z]+)\.(?P<action>[a-z0-9(),]+)\.csv$')
+	r=re.compile(r'^(?:.+[/\\])?(?P<stageYear>\d+)\.(?P<documentNumber>\d+)\.(?P<paragraphNumber>\d+(?:\.\d+)*)\.(?P<table>[a-z]+)\.(?P<action>[a-z0-9(),]+)\.csv$')
 	tableFiles=[]
 	for filename in filenames:
 		m=r.match(filename)
@@ -48,9 +48,9 @@ def listTableFiles(filenames):
 			action=DiffsetAction(args[0],args[1:])
 		else:
 			raise Exception('invalid action '+actText)
-		tableFile=TableFile(filename,int(m.group('year')),int(m.group('documentNumber')),m.group('paragraphNumber'),m.group('table'),action)
+		tableFile=TableFile(filename,int(m.group('stageYear')),int(m.group('documentNumber')),m.group('paragraphNumber'),m.group('table'),action)
 		tableFiles.append(tableFile)
 	def sortKey(tableFile):
-		return (tableFile.year,tableFile.documentNumber)+tuple(int(n) for n in tableFile.paragraphNumber.split('.'))
+		return (tableFile.stageYear,tableFile.documentNumber)+tuple(int(n) for n in tableFile.paragraphNumber.split('.'))
 	tableFiles.sort(key=sortKey)
 	return tableFiles

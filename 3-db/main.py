@@ -27,7 +27,7 @@ def readMetaTable(tableName,intColumns):
 			k:val(k,v) for k,v in row.items()
 		} for row in csv.DictReader(csvFile)]
 
-stages=readMetaTable('stages',{'stageNumber'})
+stages=readMetaTable('stages',{'stageYear','stageNumber'})
 authors=readMetaTable('authors',{'authorId'})
 documents=readMetaTable('documents',{'documentNumber','stageNumber','amendmentFlag','authorId'})
 
@@ -64,8 +64,8 @@ def makeTestOrder(cols,stricts):
 def readCsv(csvFilename):
 	with open(csvFilename,encoding='utf8',newline='') as csvFile:
 		for row in csv.DictReader(csvFile):
-			if 'year' in row:
-				row['year']=int(row['year'])
+			if 'fiscalYear' in row:
+				row['fiscalYear']=int(row['fiscalYear'])
 			yield row
 
 def getPriority(documentNumber):
@@ -116,7 +116,7 @@ for tableFile in fileLists.listTableFiles(glob.glob(inputDirectory+'/content/*.c
 		'paragraphNumber':tableFile.paragraphNumber,
 	})
 	if type(tableFile.action) is fileLists.SetAction:
-		with items.makeSetContext(editNumber,tableFile.action.years) as ctx:
+		with items.makeSetContext(editNumber,tableFile.action.fiscalYears) as ctx:
 			testOrder=makeTestOrder(['departmentCode','sectionCode','categoryCode','typeCode'],[False,True,True,True])
 			for row in readCsv(tableFile.filename):
 				resets=testOrder(row)
@@ -129,7 +129,7 @@ for tableFile in fileLists.listTableFiles(glob.glob(inputDirectory+'/content/*.c
 				# uniqueCheck(row['categoryCode'],row['sectionCode'])
 	elif type(tableFile.action) is fileLists.DiffsetAction:
 		diffsetStartEditNumber=next(edit for edit in edits if edit['documentNumber']>tableFile.action.documentNumber)['editNumber']
-		with items.makeDiffsetContext(editNumber,diffsetStartEditNumber,tableFile.action.years) as ctx:
+		with items.makeDiffsetContext(editNumber,diffsetStartEditNumber,tableFile.action.fiscalYears) as ctx:
 			testOrder=makeTestOrder(['departmentCode','sectionCode','categoryCode','typeCode'],[False,True,True,True])
 			for row in readCsv(tableFile.filename):
 				resets=testOrder(row)
@@ -161,7 +161,7 @@ for tableFile in fileLists.listTableFiles(glob.glob(inputDirectory+'/content/*.c
 ### write sql ###
 
 sql=open(outputFilename,'w',encoding='utf8')
-sql.write("-- бюджет Санкт-Петербурга на 2014-2016 гг.\n")
+sql.write("-- бюджет Санкт-Петербурга на 2014-2017 гг.\n")
 
 def putValue(v):
 	if type(v) is str:
@@ -184,11 +184,13 @@ def writeTable(name,rows,cols):
 
 sql.write("""
 CREATE TABLE stages(
-	stageNumber INT PRIMARY KEY,
-	stageAssemblyUrl TEXT
+	stageYear INT,
+	stageNumber INT,
+	stageAssemblyUrl TEXT,
+	PRIMARY KEY (stageYear,stageNumber)
 );
 """);
-writeTable('stages',stages,('stageNumber','stageAssemblyUrl'))
+writeTable('stages',stages,('stageYear','stageNumber','stageAssemblyUrl'))
 
 sql.write("""
 CREATE TABLE authors(
@@ -203,15 +205,16 @@ sql.write("""
 CREATE TABLE documents(
 	documentNumber INT PRIMARY KEY,
 	documentDate TEXT,
+	stageYear INT,
 	stageNumber INT,
 	amendmentFlag INT,
 	authorId INT,
 	documentAssemblyUrl TEXT,
-	FOREIGN KEY (stageNumber) REFERENCES stages(stageNumber),
+	FOREIGN KEY (stageYear,stageNumber) REFERENCES stages(stageYear,stageNumber),
 	FOREIGN KEY (authorId) REFERENCES authors(authorId)
 );
 """);
-writeTable('documents',documents,('documentNumber','documentDate','stageNumber','amendmentFlag','authorId','documentAssemblyUrl'))
+writeTable('documents',documents,('documentNumber','documentDate','stageYear','stageNumber','amendmentFlag','authorId','documentAssemblyUrl'))
 
 sql.write("""
 CREATE TABLE edits(
@@ -269,13 +272,13 @@ writeTable('types',types.getOrderedRows(),('typeCode','typeName'))
 sql.write("""
 CREATE TABLE items(
 	editNumber INT,
-	year INT,
+	fiscalYear INT,
 	departmentCode CHAR(3),
 	sectionCode CHAR(4),
 	categoryCode CHAR(7),
 	typeCode CHAR(3),
 	amount INT,
-	PRIMARY KEY (editNumber,year,departmentCode,sectionCode,categoryCode,typeCode),
+	PRIMARY KEY (editNumber,fiscalYear,departmentCode,sectionCode,categoryCode,typeCode),
 	FOREIGN KEY (editNumber) REFERENCES edits(editNumber),
 	FOREIGN KEY (departmentCode) REFERENCES departments(departmentCode),
 	FOREIGN KEY (sectionCode) REFERENCES sections(sectionCode),
@@ -283,4 +286,4 @@ CREATE TABLE items(
 	FOREIGN KEY (typeCode) REFERENCES types(typeCode)
 );
 """); # amount DECIMAL(10,1) - but sqlite doesn't support decimal
-writeTable('items',items.getOrderedRows(),('editNumber','year','departmentCode','sectionCode','categoryCode','typeCode','amount'))
+writeTable('items',items.getOrderedRows(),('editNumber','fiscalYear','departmentCode','sectionCode','categoryCode','typeCode','amount'))

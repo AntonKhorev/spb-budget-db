@@ -11,7 +11,7 @@ class TestFileLists(unittest.TestCase):
 		])
 		self.assertEqual(len(l),1)
 		t=l[0]
-		self.assertEqual(t.year,2014)
+		self.assertEqual(t.stageYear,2014)
 		self.assertEqual(t.documentNumber,3765)
 		self.assertEqual(t.paragraphNumber,'1.1')
 		self.assertEqual(t.table,'department')
@@ -37,7 +37,7 @@ class TestFileLists(unittest.TestCase):
 		])
 		self.assertEqual(len(l),1)
 		self.assertIsInstance(l[0].action,fileLists.SetAction)
-		self.assertEqual(l[0].action.years,{2015,2016})
+		self.assertEqual(l[0].action.fiscalYears,{2015,2016})
 	def testDiffset(self):
 		l=fileLists.listTableFiles([
 			'2014.3765.1.1.department.diffset(1234,2015,2016).csv',
@@ -45,7 +45,7 @@ class TestFileLists(unittest.TestCase):
 		self.assertEqual(len(l),1)
 		self.assertIsInstance(l[0].action,fileLists.DiffsetAction)
 		self.assertEqual(l[0].action.documentNumber,1234)
-		self.assertEqual(l[0].action.years,{2015,2016})
+		self.assertEqual(l[0].action.fiscalYears,{2015,2016})
 
 if __name__=='__main__':
 	unittest.main()
