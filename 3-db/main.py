@@ -42,6 +42,10 @@ def getDocumentPriority(documentNumber):
 	return priority
 
 ys2014=dataSets.YearSet(2014,inputDirectory,getDocumentPriority)
+x=dataSets.CategoryTrackingSet(ys2014) ####
+
+exit() ####
+
 ys2015=dataSets.YearSet(2015,inputDirectory,getDocumentPriority)
 iys=dataSets.InterYearSet([ys2014,ys2015])
 

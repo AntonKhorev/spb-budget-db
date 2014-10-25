@@ -3,9 +3,9 @@ import collections
 
 class AbstractList:
 	def __init__(self):
-		self.names={}
-		self.priorities={}
-		self.nameCollisions=collections.defaultdict(set)
+		self.names={} # code -> current name
+		self.priorities={} # code -> priority of current name
+		self.nameCollisions=collections.defaultdict(set) # code -> set of encountered names
 	def add(self,row,priority):
 		code=row[self.codeCol]
 		name=row[self.nameCol]
