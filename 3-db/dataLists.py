@@ -189,6 +189,8 @@ class InterYearCategoryList:
 		if row['categoryName'] not in self.nameData:
 			self.nId+=1
 			self.idData[self.nId]=row['categoryName']
+		if stageYear in self.nameData[row['categoryName']] and self.nameData[row['categoryName']][stageYear]!=row['categoryCode']:
+			print('category code collision:',self.nameData[row['categoryName']][stageYear],'vs',row['categoryCode'],'for',row['categoryName'])
 		self.nameData[row['categoryName']][stageYear]=row['categoryCode']
 	def getIdForCode(self,stageYear,categoryCode):
 		pass
