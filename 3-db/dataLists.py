@@ -177,3 +177,25 @@ class ItemList:
 				v=self.items[k][e]
 				if v:
 					yield dict(tuple(zip(self.keyCols,k))+(('editNumber',e),('amount',v)))
+
+class InterYearCategoryList:
+	def __init__(self):
+		# TODO handle multiple codes for name - need latest code
+		self.nameData=collections.defaultdict(dict) # categoryName -> stageYear -> categoryCode
+		# self.codeData={} # (stageYear,categoryCode) -> categoryId
+		self.idData={} # categoryId -> categoryName
+		self.nId=0
+	def add(self,row,stageYear):
+		if row['categoryName'] not in self.nameData:
+			self.nId+=1
+			self.idData[self.nId]=row['categoryName']
+		self.nameData[row['categoryName']][stageYear]=row['categoryCode']
+	def getIdForCode(self,stageYear,categoryCode):
+		pass
+	def getOrderedCategoryRows(self):
+		for categoryId,categoryName in sorted(self.idData.items()):
+			yield {'categoryId':categoryId,'categoryName':categoryName}
+	def getOrderedCategoryCodeRows(self):
+		for categoryId,categoryName in sorted(self.idData.items()):
+			for stageYear,categoryCode in sorted(self.nameData[categoryName].items()):
+				yield {'categoryId':categoryId,'stageYear':stageYear,'categoryCode':categoryCode}

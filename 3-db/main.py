@@ -140,13 +140,24 @@ CREATE TABLE sections(
 """)
 writeTable('sections',iys.sections.getOrderedRows(),('sectionCode','superSectionCode','sectionName'))
 
-# sql.write("""
-# CREATE TABLE categories(
-	# categoryCode CHAR(7) PRIMARY KEY,
-	# categoryName TEXT
-# );
-# """)
-# writeTable('categories',categories.getOrderedRows(),('categoryCode','categoryName'))
+sql.write("""
+CREATE TABLE categories(
+	categoryId INT PRIMARY KEY,
+	categoryName TEXT
+);
+""")
+writeTable('categories',iys.categories.getOrderedCategoryRows(),('categoryId','categoryName'))
+
+sql.write("""
+CREATE TABLE categoryCodes(
+	categoryId INT,
+	stageYear INT,
+	categoryCode CHAR(7),
+	PRIMARY KEY (categoryId,stageYear),
+	FOREIGN KEY (categoryId) REFERENCES categories(categoryId)
+);
+""")
+writeTable('categories',iys.categories.getOrderedCategoryCodeRows(),('categoryId','stageYear','categoryCode'))
 
 sql.write("""
 CREATE TABLE types(

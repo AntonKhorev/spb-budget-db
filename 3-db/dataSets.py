@@ -116,9 +116,9 @@ class InterYearSet:
 		self.superSections=dataLists.SuperSectionList()
 		self.sections=dataLists.SectionList()
 		self.types=dataLists.TypeList()
-		priority=0
+		self.categories=dataLists.InterYearCategoryList()
 		for yearSet in yearSets:
-			priority+=1
+			priority=yearSet.stageYear
 			self.departments.resetSequence()
 			for row in yearSet.departments.getOrderedRows():
 				self.departments.add(row,priority)
@@ -128,7 +128,8 @@ class InterYearSet:
 				self.sections.add(row,priority)
 			for row in yearSet.types.getOrderedRows():
 				self.types.add(row,priority)
+			for row in yearSet.categories.getOrderedRows():
+				self.categories.add(row,yearSet.stageYear)
 
 		# self.edits=[]
-		# self.categories=dataLists.CategoryList()
 		# self.items=dataLists.ItemList()
