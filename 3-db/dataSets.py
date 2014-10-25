@@ -136,8 +136,8 @@ class InterYearSet:
 		# self.items=dataLists.ItemList()
 
 class CategoryTrackingSet:
-	def __init__(self,yearSet):
-		# TODO step over documents instead of edits
+	def __init__(self,yearSets):
+		yearSet=yearSets[0]
 		print('== experimental log ==')
 		categoryNameCodeAmounts=collections.defaultdict(lambda: collections.defaultdict(decimal.Decimal)) # categoryName -> categoryCode -> amount
 		def getCategoryCodeset():
@@ -147,16 +147,23 @@ class CategoryTrackingSet:
 				c[name]=set(codeAmounts.keys())
 			return c
 		categoryCodeset2=getCategoryCodeset()
-		for editNumber in range(1,len(yearSet.edits)+1):
+		documentEdits=collections.OrderedDict()
+		for edit in yearSet.edits:
+			if edit['documentNumber'] not in documentEdits:
+				documentEdits[edit['documentNumber']]=[]
+			documentEdits[edit['documentNumber']].append(edit['editNumber'])
+		# for editNumber in range(1,len(yearSet.edits)+1):
+		for documentNumber,editNumbers in documentEdits.items():
 			categoryCodeset1=categoryCodeset2
 			for key,editAmounts in yearSet.items.items.items():
-				if editNumber not in editAmounts:
-					continue
-				fiscalYear,departmentCode,sectionCode,categoryCode,typeCode=key
-				categoryName=yearSet.categories.names[categoryCode]
-				categoryNameCodeAmounts[categoryName][categoryCode]+=editAmounts[editNumber]
-				if categoryNameCodeAmounts[categoryName][categoryCode]==0:
-					del categoryNameCodeAmounts[categoryName][categoryCode]
+				for editNumber in editNumbers:
+					if editNumber not in editAmounts:
+						continue
+					fiscalYear,departmentCode,sectionCode,categoryCode,typeCode=key
+					categoryName=yearSet.categories.names[categoryCode]
+					categoryNameCodeAmounts[categoryName][categoryCode]+=editAmounts[editNumber]
+					if categoryNameCodeAmounts[categoryName][categoryCode]==0:
+						del categoryNameCodeAmounts[categoryName][categoryCode]
 			categoryCodeset2=getCategoryCodeset()
 			for categoryName in categoryCodeset2:
 				cs1=categoryCodeset1[categoryName]
@@ -164,4 +171,4 @@ class CategoryTrackingSet:
 				if len(cs1)==0 and len(cs2)==1 or len(cs1)==1 and len(cs2)==0:
 					continue # not interesting
 				if cs1!=cs2:
-					print('edit',editNumber,'had',cs1,'got',cs2,'cat',categoryName)
+					print('doc',documentNumber,'had',cs1,'got',cs2,'cat',categoryName)
