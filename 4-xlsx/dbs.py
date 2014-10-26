@@ -1,6 +1,13 @@
 import sqlite3
 
 class Conn:
+	# TODO turn into template w/ documentNumber argument
+	categoriesSubquery="""(
+		SELECT categoryId,categoryCode,categoryName
+		FROM categories
+		LEFT JOIN documentCategoryCodes USING(categoryId)
+		WHERE documentNumber=5208
+	)"""
 	# table name : join key column names -> [LEFT] JOIN table USING(column1,column2,...)
 	tables={
 		# 'items':None,
@@ -11,7 +18,7 @@ class Conn:
 		'departments':['departmentCode'],
 		'sections':['sectionCode'],
 		'superSections':['superSectionCode'],
-		'categories':['categoryCode'],
+		categoriesSubquery:['categoryId'],
 		'types':['typeCode'],
 	}
 	# column name : table to join starting from items
@@ -32,13 +39,14 @@ class Conn:
 		'superSectionCode':'sections',
 		'sectionName':'sections',
 		'superSectionName':'superSections',
-		'categoryName':'categories',
+		'categoryCode':categoriesSubquery,
+		'categoryName':categoriesSubquery,
 		'typeName':'types',
 		'editNumber':'items',
 		'fiscalYear':'items',
 		'departmentCode':'items',
 		'sectionCode':'items',
-		'categoryCode':'items',
+		'categoryId':'items',
 		'typeCode':'items',
 	}
 	def execute(self,query):
