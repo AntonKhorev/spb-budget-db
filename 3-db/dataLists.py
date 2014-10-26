@@ -96,9 +96,7 @@ class TypeList(AbstractList):
 		self.codeCol='typeCode'
 		self.nameCol='typeName'
 
-class ItemList:
-	keyCols=('fiscalYear','departmentCode','sectionCode','categoryCode','typeCode')
-
+class AbstractItemList:
 	def __init__(self):
 		# keyCols -> editNumber -> decimal amount
 		self.items=collections.defaultdict(lambda: collections.defaultdict(decimal.Decimal))
@@ -114,6 +112,24 @@ class ItemList:
 		return self.keySum(self.rowKey(row))
 	def add(self,row,editNumber):
 		self.items[self.rowKey(row)][editNumber]+=self.rowValue(row)
+	def getOrderedRows(self):
+		for k in sorted(self.items):
+			for e in sorted(self.items[k]):
+				v=self.items[k][e]
+				if v:
+					yield dict(tuple(zip(self.keyCols,k))+(('editNumber',e),('amount',v)))
+	def getRowsForEdit(self,editNumber):
+		e=editNumber
+		for k in sorted(self.items):
+			if e in self.items[k]:
+				v=self.items[k][e]
+				if v:
+					yield dict(tuple(zip(self.keyCols,k))+(('editNumber',e),('amount',v)))
+
+class ItemList(AbstractItemList):
+	def __init__(self):
+		self.keyCols=('fiscalYear','departmentCode','sectionCode','categoryCode','typeCode')
+		super().__init__()
 
 	class Context:
 		def __init__(self,itemList,editNumber,fiscalYears):
@@ -171,46 +187,11 @@ class ItemList:
 			v=self.keySum(k1)
 			self.items[k1][editNumber]-=v
 			self.items[k2][editNumber]+=v
-	def getOrderedRows(self):
-		for k in sorted(self.items):
-			for e in sorted(self.items[k]):
-				v=self.items[k][e]
-				if v:
-					yield dict(tuple(zip(self.keyCols,k))+(('editNumber',e),('amount',v)))
-	def getRowsForEdit(self,editNumber):
-		e=editNumber
-		for k in sorted(self.items):
-			if e in self.items[k]:
-				v=self.items[k][e]
-				if v:
-					yield dict(tuple(zip(self.keyCols,k))+(('editNumber',e),('amount',v)))
 
-# TODO remove safety copypaste
-class InterYearItemList:
-	keyCols=('fiscalYear','departmentCode','sectionCode','categoryId','typeCode') # changed!!!
-
+class InterYearItemList(AbstractItemList):
 	def __init__(self):
-		# keyCols -> editNumber -> decimal amount
-		self.items=collections.defaultdict(lambda: collections.defaultdict(decimal.Decimal))
-		# TODO save running sum to make it faster
-		# TODO clean up zeros to make it faster
-	def rowKey(self,row):
-		return tuple(row[k] for k in self.keyCols)
-	def rowValue(self,row):
-		return decimal.Decimal(row['amount'])
-	def keySum(self,k):
-		return sum(self.items[k].values())
-	def rowSum(self,row):
-		return self.keySum(self.rowKey(row))
-	def add(self,row,editNumber):
-		self.items[self.rowKey(row)][editNumber]+=self.rowValue(row)
-
-	def getOrderedRows(self):
-		for k in sorted(self.items):
-			for e in sorted(self.items[k]):
-				v=self.items[k][e]
-				if v:
-					yield dict(tuple(zip(self.keyCols,k))+(('editNumber',e),('amount',v)))
+		self.keyCols=('fiscalYear','departmentCode','sectionCode','categoryId','typeCode')
+		super().__init__()
 
 class InterYearCategoryList:
 	def __init__(self,yearSets):
@@ -254,7 +235,7 @@ class InterYearCategoryList:
 				categoryCodeset2=getCategoryCodeset()
 				passiveCategoryCodeset2=collections.defaultdict(set)
 				# update ids and codes
-				for categoryName in categoryCodeset2:
+				for categoryName in sorted(categoryCodeset2.keys()):
 					cs1=categoryCodeset1[categoryName]
 					cs2=categoryCodeset2[categoryName]
 					ps1=passiveCategoryCodeset1[categoryName]
