@@ -269,7 +269,6 @@ class AmendmentCols(Lines):
 	def listEntries(self):
 		return [
 			'fiscalYear',
-			'stageYear',
 			'stageNumber',
 			'documentNumber',
 		]
@@ -277,13 +276,11 @@ class AmendmentCols(Lines):
 		return [
 			self.AFTER,
 			self.AFTER,
-			self.AFTER,
 			self.BEFORE,
 		]
 	def listLevelKeys(self):
 		return [
 			('fiscalYear',),
-			('fiscalYear','stageYear'),
 			('fiscalYear','stageYear','stageNumber'),
 			('fiscalYear','stageYear','stageNumber','documentNumber'),
 		]
@@ -292,43 +289,38 @@ class AmendmentCols(Lines):
 			fiscalYearValue=str(item['fiscalYear'])+' г. (план)'
 		else:
 			fiscalYearValue=str(item['fiscalYear'])+' г.'
-		stageYearValue='Последний закон'
 		stageNumberValue='Бюджет + изменения'
 		if level==0:
-			return (fiscalYearValue,stageYearValue,stageNumberValue,'')
-		stageYearValue='Закон '+str(item['stageYear'])+'—'+str(item['stageYear']+2)+' гг.'
-		if level==1:
-			return (fiscalYearValue,stageYearValue,stageNumberValue,'')
+			return (fiscalYearValue,stageNumberValue,'')
 		if item['stageNumber']==0:
 			stageNumberValue='Первоначальный бюджет'
 		else:
 			stageNumberValue=str(item['stageNumber'])+'-е изменения'
-		if level==2:
-			return (fiscalYearValue,stageYearValue,stageNumberValue,'Итого')
+		if level==1:
+			return (fiscalYearValue,stageNumberValue,'Итого')
 		if item['amendmentFlag']==0:
 			documentValue='Проект'
 		elif item['amendmentFlag']==1:
 			documentValue='+'+item['authorShortName']
 		else:
 			documentValue='+прочее'
-		if level==3:
-			return (fiscalYearValue,stageYearValue,stageNumberValue,documentValue)
+		if level==2:
+			return (fiscalYearValue,stageNumberValue,documentValue)
 		raise ValueError()
 	def getItemComments(self,item,level):
 		fiscalYearComment='Бюджет Санкт-Петербурга на '+str(item['fiscalYear'])+' год'
 		stageNumberComment='Бюджет с учётом корректировок'
 		if level==0:
-			return (fiscalYearComment,'',stageNumberComment,None)
-		if level==1:
-			return (fiscalYearComment,'',stageNumberComment,None)
+			return (fiscalYearComment,stageNumberComment,None)
+		stageNumberComment='Закон '+str(item['stageYear'])+'—'+str(item['stageYear']+2)+' гг.'
 		if item['stageNumber']==0:
-			stageNumberComment='Первоначально утверждённый бюджет'
+			stageNumberComment+='\nПервоначально утверждённый бюджет'
 		else:
-			stageNumberComment=str(item['stageNumber'])+'-я корректировка бюджета'
+			stageNumberComment+='\n'+str(item['stageNumber'])+'-я корректировка бюджета'
 		stageNumberComment+='\nСсылка на рассмотрение в ЗакСе: '+item['stageAssemblyUrl']
 		documentComment='Проект закона с внесёнными поправками'
-		if level==2:
-			return (fiscalYearComment,'',stageNumberComment,documentComment)
+		if level==1:
+			return (fiscalYearComment,stageNumberComment,documentComment)
 		if item['amendmentFlag']==0:
 			documentComment='Проект закона'
 		elif item['amendmentFlag']==1:
@@ -341,8 +333,8 @@ class AmendmentCols(Lines):
 		documentComment+='\nДокумент в ЗакСе: № '+str(item['documentNumber'])+' от '+datetime.datetime.strptime(item['documentDate'],'%Y-%m-%d').strftime('%d.%m.%Y')
 		if item['documentAssemblyUrl']:
 			documentComment+='\nСсылка на документ в ЗакСе: '+item['documentAssemblyUrl']
-		if level==3:
-			return (fiscalYearComment,'',stageNumberComment,documentComment)
+		if level==2:
+			return (fiscalYearComment,stageNumberComment,documentComment)
 		raise ValueError()
 	def listQuerySelects(self):
 		return 'fiscalYear','stageYear','stageNumber','stageAssemblyUrl','documentNumber','documentDate','documentAssemblyUrl','amendmentFlag','authorShortName','authorLongName'
