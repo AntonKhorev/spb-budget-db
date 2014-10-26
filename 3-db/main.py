@@ -103,15 +103,15 @@ CREATE TABLE documents(
 """);
 writeTable('documents',documents,('documentNumber','documentDate','stageYear','stageNumber','amendmentFlag','authorId','documentAssemblyUrl'))
 
-# sql.write("""
-# CREATE TABLE edits(
-	# editNumber INT PRIMARY KEY,
-	# documentNumber INT,
-	# paragraphNumber TEXT,
-	# FOREIGN KEY (documentNumber) REFERENCES documents(documentNumber)
-# );
-# """);
-# writeTable('edits',edits,('editNumber','documentNumber','paragraphNumber'))
+sql.write("""
+CREATE TABLE edits(
+	editNumber INT PRIMARY KEY,
+	documentNumber INT,
+	paragraphNumber TEXT,
+	FOREIGN KEY (documentNumber) REFERENCES documents(documentNumber)
+);
+""");
+writeTable('edits',iys.edits,('editNumber','documentNumber','paragraphNumber'))
 
 sql.write("""
 CREATE TABLE departments(
@@ -168,21 +168,21 @@ CREATE TABLE types(
 """)
 writeTable('types',iys.types.getOrderedRows(),('typeCode','typeName'))
 
-# sql.write("""
-# CREATE TABLE items(
-	# editNumber INT,
-	# fiscalYear INT,
-	# departmentCode CHAR(3),
-	# sectionCode CHAR(4),
-	# categoryCode CHAR(7),
-	# typeCode CHAR(3),
-	# amount INT, -- in roubles, not in thousands
-	# PRIMARY KEY (editNumber,fiscalYear,departmentCode,sectionCode,categoryCode,typeCode),
-	# FOREIGN KEY (editNumber) REFERENCES edits(editNumber),
-	# FOREIGN KEY (departmentCode) REFERENCES departments(departmentCode),
-	# FOREIGN KEY (sectionCode) REFERENCES sections(sectionCode),
-	# FOREIGN KEY (categoryCode) REFERENCES categories(categoryCode),
-	# FOREIGN KEY (typeCode) REFERENCES types(typeCode)
-# );
-# """); # amount DECIMAL(10,1) - but sqlite doesn't support decimal
-# writeTable('items',items.getOrderedRows(),('editNumber','fiscalYear','departmentCode','sectionCode','categoryCode','typeCode','amount'))
+sql.write("""
+CREATE TABLE items(
+	editNumber INT,
+	fiscalYear INT,
+	departmentCode CHAR(3),
+	sectionCode CHAR(4),
+	categoryId INT,
+	typeCode CHAR(3),
+	amount INT, -- in roubles, not in thousands
+	PRIMARY KEY (editNumber,fiscalYear,departmentCode,sectionCode,categoryCode,typeCode),
+	FOREIGN KEY (editNumber) REFERENCES edits(editNumber),
+	FOREIGN KEY (departmentCode) REFERENCES departments(departmentCode),
+	FOREIGN KEY (sectionCode) REFERENCES sections(sectionCode),
+	FOREIGN KEY (categoryId) REFERENCES categories(categoryId),
+	FOREIGN KEY (typeCode) REFERENCES types(typeCode)
+);
+"""); # amount DECIMAL(10,1) - but sqlite doesn't support decimal
+writeTable('items',iys.items.getOrderedRows(),('editNumber','fiscalYear','departmentCode','sectionCode','categoryId','typeCode','amount'))

@@ -112,6 +112,7 @@ class YearSet:
 class InterYearSet:
 	def __init__(self,yearSets):
 		print('== merge years ==')
+		# simple merges
 		self.departments=dataLists.DepartmentList()
 		self.superSections=dataLists.SuperSectionList()
 		self.sections=dataLists.SectionList()
@@ -127,6 +128,35 @@ class InterYearSet:
 				self.sections.add(row,priority)
 			for row in yearSet.types.getOrderedRows():
 				self.types.add(row,priority)
+		# categories with ids
 		self.categories=dataLists.InterYearCategoryList(yearSets)
-		# self.edits=[]
-		# self.items=dataLists.ItemList()
+		# edit merges
+		self.edits=[]
+		self.items=dataLists.InterYearItemList()
+		documentNumber=None
+		codeIds={}
+		interYearEditNumber=0
+		for yearSet in yearSets:
+			for oldEdit in yearSet.edits:
+				interYearEditNumber+=1
+				newEdit=dict(oldEdit)
+				newEdit['editNumber']=interYearEditNumber
+				self.edits.append(newEdit)
+				if documentNumber!=oldEdit['documentNumber']:
+					prevDocumentNumber=documentNumber
+					documentNumber=oldEdit['documentNumber']
+					prevCodeIds=codeIds
+					codeIds=self.categories.documentCodeIds[documentNumber]
+				# recollect edit - with cancellations due to code reassignment
+				for oldItem in yearSet.items.getRowsForEdit(oldEdit['editNumber']):
+					# old key: (fiscalYear,departmentCode,sectionCode,categoryCode,typeCode)
+					# new key: (fiscalYear,departmentCode,sectionCode,categoryId,typeCode)
+					commonCols=('fiscalYear','departmentCode','sectionCode','typeCode','amount')
+					categoryCode=oldItem['categoryCode']
+					if categoryCode in codeIds:
+						categoryId=codeIds[categoryCode]
+					else:
+						categoryId=prevCodeIds[categoryCode] # should happen only for code reassignments
+					newItem={col: oldItem[col] for col in commonCols}
+					newItem['categoryId']=categoryId
+					self.items.add(newItem,interYearEditNumber)

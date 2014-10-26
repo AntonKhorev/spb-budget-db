@@ -100,7 +100,7 @@ class ItemList:
 	keyCols=('fiscalYear','departmentCode','sectionCode','categoryCode','typeCode')
 
 	def __init__(self):
-		# (fiscalYear,departmentCode,sectionCode,categoryCode,typeCode) -> editNumber)-> decimal amount
+		# keyCols -> editNumber -> decimal amount
 		self.items=collections.defaultdict(lambda: collections.defaultdict(decimal.Decimal))
 		# TODO save running sum to make it faster
 		# TODO clean up zeros to make it faster
@@ -171,6 +171,40 @@ class ItemList:
 			v=self.keySum(k1)
 			self.items[k1][editNumber]-=v
 			self.items[k2][editNumber]+=v
+	def getOrderedRows(self):
+		for k in sorted(self.items):
+			for e in sorted(self.items[k]):
+				v=self.items[k][e]
+				if v:
+					yield dict(tuple(zip(self.keyCols,k))+(('editNumber',e),('amount',v)))
+	def getRowsForEdit(self,editNumber):
+		e=editNumber
+		for k in sorted(self.items):
+			if e in self.items[k]:
+				v=self.items[k][e]
+				if v:
+					yield dict(tuple(zip(self.keyCols,k))+(('editNumber',e),('amount',v)))
+
+# TODO remove safety copypaste
+class InterYearItemList:
+	keyCols=('fiscalYear','departmentCode','sectionCode','categoryId','typeCode') # changed!!!
+
+	def __init__(self):
+		# keyCols -> editNumber -> decimal amount
+		self.items=collections.defaultdict(lambda: collections.defaultdict(decimal.Decimal))
+		# TODO save running sum to make it faster
+		# TODO clean up zeros to make it faster
+	def rowKey(self,row):
+		return tuple(row[k] for k in self.keyCols)
+	def rowValue(self,row):
+		return decimal.Decimal(row['amount'])
+	def keySum(self,k):
+		return sum(self.items[k].values())
+	def rowSum(self,row):
+		return self.keySum(self.rowKey(row))
+	def add(self,row,editNumber):
+		self.items[self.rowKey(row)][editNumber]+=self.rowValue(row)
+
 	def getOrderedRows(self):
 		for k in sorted(self.items):
 			for e in sorted(self.items[k]):
@@ -254,8 +288,6 @@ class InterYearCategoryList:
 						self.documentCodeIds[documentNumber2][c]=self.documentCodeIds[documentNumber1][c]
 				documentNumber1=documentNumber2
 
-	def getIdForDocumentAndCode(self,documentNumber,categoryCode):
-		pass
 	def getOrderedCategoryRows(self):
 		for categoryId,categoryName in sorted(self.categoryIdNames.items()):
 			yield {'categoryId':categoryId,'categoryName':categoryName}
