@@ -3,10 +3,9 @@ import sqlite3
 class Conn:
 	# TODO turn into template w/ documentNumber argument
 	categoriesSubquery="""(
-		SELECT categoryId,categoryCode,categoryName
+		SELECT categories.categoryId,categoryCode,categoryName
 		FROM categories
-		LEFT JOIN documentCategoryCodes USING(categoryId)
-		WHERE documentNumber=5208
+		LEFT JOIN documentCategoryCodes ON categories.categoryId=documentCategoryCodes.categoryId AND documentNumber=5208
 	)"""
 	# table name : join key column names -> [LEFT] JOIN table USING(column1,column2,...)
 	tables={

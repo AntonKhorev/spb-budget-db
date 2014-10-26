@@ -159,7 +159,7 @@ class Lines:
 				if levelKeys[diffLevel]!=oldLevelKeys[diffLevel]:
 					break
 			else:
-				raise Exception('Duplicate key')
+				raise Exception('Duplicate key '+str(levelKeys))
 			# pop phase
 			for level in range(nLevels-1,diffLevel-1,-1):
 				if levelOrders[level]==self.AFTER and oldItem is not None:
@@ -198,8 +198,8 @@ class DepartmentRows(Lines):
 		return [
 			tuple(),
 			('departmentCode',),
-			('departmentCode','sectionCode','categoryCode'),
-			('departmentCode','sectionCode','categoryCode','typeCode'),
+			('departmentCode','sectionCode','categoryId'),
+			('departmentCode','sectionCode','categoryId','typeCode'),
 		]
 	def getItemValues(self,item,level):
 		if level==0:
@@ -213,11 +213,12 @@ class DepartmentRows(Lines):
 		raise ValueError()
 	def listQuerySelects(self):
 		return (
+			'categoryId',
 			'departmentCode','sectionCode','categoryCode','typeCode',
 			'departmentName',              'categoryName','typeName'
 		)
 	def listQueryOrderbys(self):
-		return 'departmentOrder','sectionCode','categoryCode','typeCode'
+		return 'departmentOrder','sectionCode','categoryCode','categoryName','typeCode'
 
 class SectionRows(Lines):
 	def listEntries(self):
@@ -240,8 +241,8 @@ class SectionRows(Lines):
 			tuple(),
 			('superSectionCode',),
 			('sectionCode',),
-			('sectionCode','categoryCode'),
-			('sectionCode','categoryCode','typeCode'),
+			('sectionCode','categoryId'),
+			('sectionCode','categoryId','typeCode'),
 		]
 	def getItemValues(self,item,level):
 		if level==0:
@@ -257,11 +258,12 @@ class SectionRows(Lines):
 		raise ValueError()
 	def listQuerySelects(self):
 		return (
+			'categoryId',
 			'superSectionCode','sectionCode','categoryCode','typeCode',
 			'superSectionName','sectionName','categoryName','typeName'
 		)
 	def listQueryOrderbys(self):
-		return 'superSectionCode','sectionCode','categoryCode','typeCode'
+		return 'superSectionCode','sectionCode','categoryCode','categoryName','typeCode'
 
 class AmendmentCols(Lines):
 	def listEntries(self):

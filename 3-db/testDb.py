@@ -60,12 +60,12 @@ with sqlite3.connect(':memory:') as conn:
 		SELECT fiscalYear,categoryCode,categoryName,SUM(amount)
 		FROM items
 		LEFT JOIN (
-			SELECT categoryId,categoryCode,categoryName
+			SELECT categories.categoryId,categoryCode,categoryName
 			FROM categories
-			LEFT JOIN documentCategoryCodes USING(categoryId)
+			LEFT JOIN documentCategoryCodes ON categories.categoryId=documentCategoryCodes.categoryId AND documentNumber=5208
 			WHERE documentNumber=5208
 		) USING (categoryId)
-		GROUP BY fiscalYear,categoryCode,categoryName
+		GROUP BY fiscalYear,categoryId,categoryCode,categoryName
 		ORDER BY categoryCode,fiscalYear
 	"""):
 		print(row)
