@@ -192,6 +192,13 @@ class InterYearItemList(AbstractItemList):
 	def __init__(self):
 		self.keyCols=('fiscalYear','departmentCode','sectionCode','categoryId','typeCode')
 		super().__init__()
+	def reset(self,editNumber,fiscalYears):
+		residuals=collections.defaultdict(decimal.Decimal)
+		for k in self.items:
+			if k[0] in fiscalYears:
+				residuals[k]=self.keySum(k)
+		for k,residual in residuals.items():
+			self.items[k][editNumber]-=residual
 
 class InterYearCategoryList:
 	def __init__(self,yearSets):

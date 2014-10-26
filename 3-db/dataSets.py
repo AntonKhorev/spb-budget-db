@@ -1,6 +1,13 @@
 import glob,csv
 import fileLists,dataLists
 
+# TODO back to single kind of dataset for all years
+# first pass should include category name as item key:
+#	('fiscalYear','departmentCode','sectionCode','categoryCode','categoryName','typeCode')
+# category continuity scan - translate ('categoryCode','categoryName') to 'categoryId'
+# second pass with key:
+#	('fiscalYear','departmentCode','sectionCode','categoryId','typeCode')
+
 class YearSet:
 	def __init__(self,stageYear,inputDirectory,getDocumentPriority):
 		self.stageYear=stageYear
@@ -148,6 +155,11 @@ class InterYearSet:
 					prevCodeIds=codeIds
 					codeIds=self.categories.documentCodeIds[documentNumber]
 				# recollect edit - with cancellations due to code reassignment
+				if oldEdit['editNumber']==1:
+					# HACK for first edit of nonfirst year
+					# while years are processed separately on 1st pass
+					# have to manually reset amounts for two overlapping years
+					self.items.reset(interYearEditNumber,[yearSet.stageYear,yearSet.stageYear+1])
 				for oldItem in yearSet.items.getRowsForEdit(oldEdit['editNumber']):
 					# old key: (fiscalYear,departmentCode,sectionCode,categoryCode,typeCode)
 					# new key: (fiscalYear,departmentCode,sectionCode,categoryId,typeCode)
