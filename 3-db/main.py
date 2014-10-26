@@ -43,10 +43,6 @@ def getDocumentPriority(documentNumber):
 
 ys2014=dataSets.YearSet(2014,inputDirectory,getDocumentPriority)
 ys2015=dataSets.YearSet(2015,inputDirectory,getDocumentPriority)
-x=dataSets.CategoryTrackingSet([ys2014,ys2015]) ####
-
-exit() ####
-
 iys=dataSets.InterYearSet([ys2014,ys2015])
 
 ### write sql ###
@@ -153,15 +149,16 @@ CREATE TABLE categories(
 writeTable('categories',iys.categories.getOrderedCategoryRows(),('categoryId','categoryName'))
 
 sql.write("""
-CREATE TABLE categoryCodes(
+CREATE TABLE documentCategoryCodes(
+	documentNumber INT, -- usually filtered first by document
 	categoryId INT,
-	stageYear INT,
 	categoryCode CHAR(7),
-	PRIMARY KEY (categoryId,stageYear),
+	PRIMARY KEY (documentNumber,categoryId),
+	FOREIGN KEY (documentNumber) REFERENCES documents(documentNumber),
 	FOREIGN KEY (categoryId) REFERENCES categories(categoryId)
 );
 """)
-writeTable('categories',iys.categories.getOrderedCategoryCodeRows(),('categoryId','stageYear','categoryCode'))
+writeTable('categories',iys.categories.getOrderedDocumentCategoryCodeRows(),('documentNumber','categoryId','categoryCode'))
 
 sql.write("""
 CREATE TABLE types(
@@ -179,7 +176,7 @@ writeTable('types',iys.types.getOrderedRows(),('typeCode','typeName'))
 	# sectionCode CHAR(4),
 	# categoryCode CHAR(7),
 	# typeCode CHAR(3),
-	# amount INT,
+	# amount INT, -- in roubles, not in thousands
 	# PRIMARY KEY (editNumber,fiscalYear,departmentCode,sectionCode,categoryCode,typeCode),
 	# FOREIGN KEY (editNumber) REFERENCES edits(editNumber),
 	# FOREIGN KEY (departmentCode) REFERENCES departments(departmentCode),

@@ -1,5 +1,4 @@
 import glob,csv
-import collections,decimal ###
 import fileLists,dataLists
 
 class YearSet:
@@ -117,7 +116,6 @@ class InterYearSet:
 		self.superSections=dataLists.SuperSectionList()
 		self.sections=dataLists.SectionList()
 		self.types=dataLists.TypeList()
-		self.categories=dataLists.InterYearCategoryList()
 		for yearSet in yearSets:
 			priority=yearSet.stageYear
 			self.departments.resetSequence()
@@ -129,50 +127,6 @@ class InterYearSet:
 				self.sections.add(row,priority)
 			for row in yearSet.types.getOrderedRows():
 				self.types.add(row,priority)
-			for row in yearSet.categories.getOrderedRows():
-				self.categories.add(row,yearSet.stageYear)
-
+		self.categories=dataLists.InterYearCategoryList(yearSets)
 		# self.edits=[]
 		# self.items=dataLists.ItemList()
-
-class CategoryTrackingSet:
-	def __init__(self,yearSets):
-		print('== experimental log ==')
-		categoryNameCodeAmounts=collections.defaultdict(lambda: collections.defaultdict(decimal.Decimal)) # categoryName -> categoryCode -> amount
-		def getCategoryCodeset():
-			# return { name:set(codeAmounts.keys()) for name,codeAmounts in categoryNameCodeAmounts.items() }
-			c=collections.defaultdict(set)
-			for name,codeAmounts in categoryNameCodeAmounts.items():
-				c[name]=set(codeAmounts.keys())
-			return c
-		categoryCodeset2=getCategoryCodeset()
-		for yearSet in yearSets:
-			# reset accumulated amounts
-			categoryNameCodeAmounts.clear()
-			# group edits by documents
-			documentEdits=collections.OrderedDict()
-			for edit in yearSet.edits:
-				if edit['documentNumber'] not in documentEdits:
-					documentEdits[edit['documentNumber']]=[]
-				documentEdits[edit['documentNumber']].append(edit['editNumber'])
-			# walk over documents
-			# for editNumber in range(1,len(yearSet.edits)+1):
-			for documentNumber,editNumbers in documentEdits.items():
-				categoryCodeset1=categoryCodeset2
-				for key,editAmounts in yearSet.items.items.items():
-					for editNumber in editNumbers:
-						if editNumber not in editAmounts:
-							continue
-						fiscalYear,departmentCode,sectionCode,categoryCode,typeCode=key
-						categoryName=yearSet.categories.names[categoryCode]
-						categoryNameCodeAmounts[categoryName][categoryCode]+=editAmounts[editNumber]
-						if categoryNameCodeAmounts[categoryName][categoryCode]==0:
-							del categoryNameCodeAmounts[categoryName][categoryCode]
-				categoryCodeset2=getCategoryCodeset()
-				for categoryName in categoryCodeset2:
-					cs1=categoryCodeset1[categoryName]
-					cs2=categoryCodeset2[categoryName]
-					if len(cs1)==0 and len(cs2)==1 or len(cs1)==1 and len(cs2)==0:
-						continue # not interesting
-					if cs1!=cs2:
-						print('doc',documentNumber,'had',cs1,'got',cs2,'cat',categoryName)

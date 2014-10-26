@@ -179,25 +179,87 @@ class ItemList:
 					yield dict(tuple(zip(self.keyCols,k))+(('editNumber',e),('amount',v)))
 
 class InterYearCategoryList:
-	def __init__(self):
-		# TODO handle multiple codes for name - need latest code
-		self.nameData=collections.defaultdict(dict) # categoryName -> stageYear -> categoryCode
-		# self.codeData={} # (stageYear,categoryCode) -> categoryId
-		self.idData={} # categoryId -> categoryName
-		self.nId=0
-	def add(self,row,stageYear):
-		if row['categoryName'] not in self.nameData:
-			self.nId+=1
-			self.idData[self.nId]=row['categoryName']
-		if stageYear in self.nameData[row['categoryName']] and self.nameData[row['categoryName']][stageYear]!=row['categoryCode']:
-			print('category code collision:',self.nameData[row['categoryName']][stageYear],'vs',row['categoryCode'],'for',row['categoryName'])
-		self.nameData[row['categoryName']][stageYear]=row['categoryCode']
-	def getIdForCode(self,stageYear,categoryCode):
+	def __init__(self,yearSets):
+		# can't use categoryName as key b/c one name can have multiple codes at the same time
+		nIds=0
+		self.categoryIdNames={}
+		self.documentCodeIds=collections.defaultdict(dict)
+		categoryNameCodeAmounts=collections.defaultdict(lambda: collections.defaultdict(decimal.Decimal)) # categoryName -> categoryCode -> amount
+		def getCategoryCodeset():
+			c=collections.defaultdict(set)
+			for name,codeAmounts in categoryNameCodeAmounts.items():
+				c[name]=set(codeAmounts.keys())
+			return c
+		categoryCodeset2=getCategoryCodeset() # active codes with nonzero amounts
+		passiveCategoryCodeset2=getCategoryCodeset() # codes that had nonzero amounts and can reclaim their id if they become active
+		documentNumber1=None
+		for yearSet in yearSets:
+			# reset accumulated amounts
+			categoryNameCodeAmounts.clear()
+			# group edits by documents
+			documentEdits=collections.OrderedDict()
+			for edit in yearSet.edits:
+				if edit['documentNumber'] not in documentEdits:
+					documentEdits[edit['documentNumber']]=[]
+				documentEdits[edit['documentNumber']].append(edit['editNumber'])
+			# walk over documents
+			# for editNumber in range(1,len(yearSet.edits)+1):
+			for documentNumber2,editNumbers in documentEdits.items():
+				categoryCodeset1=categoryCodeset2
+				passiveCategoryCodeset1=passiveCategoryCodeset2
+				# compute active category codes = with nonzero amounts
+				for key,editAmounts in yearSet.items.items.items():
+					for editNumber in editNumbers:
+						if editNumber not in editAmounts:
+							continue
+						fiscalYear,departmentCode,sectionCode,categoryCode,typeCode=key
+						categoryName=yearSet.categories.names[categoryCode]
+						categoryNameCodeAmounts[categoryName][categoryCode]+=editAmounts[editNumber]
+						if categoryNameCodeAmounts[categoryName][categoryCode]==0:
+							del categoryNameCodeAmounts[categoryName][categoryCode]
+				categoryCodeset2=getCategoryCodeset()
+				passiveCategoryCodeset2=collections.defaultdict(set)
+				# update ids and codes
+				for categoryName in categoryCodeset2:
+					cs1=categoryCodeset1[categoryName]
+					cs2=categoryCodeset2[categoryName]
+					ps1=passiveCategoryCodeset1[categoryName]
+					ps2=passiveCategoryCodeset2[categoryName]
+					assert(not cs1&ps1)
+					if len(cs1)==1 and len(cs2)==1 and cs1!=cs2:
+						# code transfer case
+						c1,=cs1
+						c2,=cs2
+						self.documentCodeIds[documentNumber2][c2]=self.documentCodeIds[documentNumber1][c1]
+						# don't put c1 into passive codeset b/c it lost its id
+						print('doc',documentNumber2,'reassign',c2,':=',c1,'cat',categoryName)
+					else:
+						# general case
+						for c in cs1-cs2:
+							ps2.add(c)
+							self.documentCodeIds[documentNumber2][c]=self.documentCodeIds[documentNumber1][c]
+							print('doc',documentNumber2,'deactivate',c,'cat',categoryName)
+						for c in cs1&cs2:
+							self.documentCodeIds[documentNumber2][c]=self.documentCodeIds[documentNumber1][c]
+						for c in cs2-cs1-ps1:
+							nIds+=1
+							self.categoryIdNames[nIds]=categoryName
+							self.documentCodeIds[documentNumber2][c]=nIds
+							print('doc',documentNumber2,'new',c,'cat',categoryName)
+						for c in cs2&ps1:
+							self.documentCodeIds[documentNumber2][c]=self.documentCodeIds[documentNumber1][c]
+							print('doc',documentNumber2,'reclaim',c,'cat',categoryName)
+					for c in ps1-cs2:
+						ps2.add(c)
+						self.documentCodeIds[documentNumber2][c]=self.documentCodeIds[documentNumber1][c]
+				documentNumber1=documentNumber2
+
+	def getIdForDocumentAndCode(self,documentNumber,categoryCode):
 		pass
 	def getOrderedCategoryRows(self):
-		for categoryId,categoryName in sorted(self.idData.items()):
+		for categoryId,categoryName in sorted(self.categoryIdNames.items()):
 			yield {'categoryId':categoryId,'categoryName':categoryName}
-	def getOrderedCategoryCodeRows(self):
-		for categoryId,categoryName in sorted(self.idData.items()):
-			for stageYear,categoryCode in sorted(self.nameData[categoryName].items()):
-				yield {'categoryId':categoryId,'stageYear':stageYear,'categoryCode':categoryCode}
+	def getOrderedDocumentCategoryCodeRows(self):
+		for documentNumber,codeIds in sorted(self.documentCodeIds.items()):
+			for categoryCode,categoryId in sorted(codeIds.items()):
+				yield {'documentNumber':documentNumber,'categoryId':categoryId,'categoryCode':categoryCode}
