@@ -30,6 +30,8 @@ with sqlite3.connect(':memory:') as conn:
 		# ORDER BY departmentCode,departmentName,fiscalYear
 	# """):
 		# print(row)
+
+	# author names
 	for row in conn.execute("""
 		SELECT documentNumber,authorLongName
 		FROM documents
@@ -37,3 +39,41 @@ with sqlite3.connect(':memory:') as conn:
 		ORDER BY documentNumber
 	"""):
 		print(row)
+
+	# category codes and names
+	# for row in conn.execute("""
+		# SELECT categoryCode,categoryName
+		# FROM categories
+		# LEFT JOIN documentCategoryCodes USING(categoryId)
+		# WHERE documentNumber=5208
+		# ORDER BY categoryCode
+	# """):
+		# print(row)
+	# for row in conn.execute("""
+		# SELECT categoryCode,categoryName
+		# FROM categories
+		# LEFT JOIN documentCategoryCodes ON categories.categoryId=documentCategoryCodes.categoryId AND documentNumber=5208
+		# ORDER BY categoryCode
+	# """):
+		# print(row)
+	for row in conn.execute("""
+		SELECT fiscalYear,categoryCode,categoryName,SUM(amount)
+		FROM items
+		LEFT JOIN (
+			SELECT categoryId,categoryCode,categoryName
+			FROM categories
+			LEFT JOIN documentCategoryCodes USING(categoryId)
+			WHERE documentNumber=5208
+		) USING (categoryId)
+		GROUP BY fiscalYear,categoryCode,categoryName
+		ORDER BY categoryCode,fiscalYear
+	"""):
+		print(row)
+
+	# for row in conn.execute("""
+		# SELECT *
+		# FROM items
+		# WHERE fiscalYear=2015 AND categoryId=421
+		# ORDER BY editNumber
+	# """):
+		# print(row)
