@@ -158,7 +158,7 @@ CREATE TABLE documentCategoryCodes(
 	FOREIGN KEY (categoryId) REFERENCES categories(categoryId)
 );
 """)
-writeTable('categories',iys.categories.getOrderedDocumentCategoryCodeRows(),('documentNumber','categoryId','categoryCode'))
+writeTable('documentCategoryCodes',iys.categories.getOrderedDocumentCategoryCodeRows(),('documentNumber','categoryId','categoryCode'))
 
 sql.write("""
 CREATE TABLE types(
@@ -177,7 +177,7 @@ CREATE TABLE items(
 	categoryId INT,
 	typeCode CHAR(3),
 	amount INT, -- in roubles, not in thousands
-	PRIMARY KEY (editNumber,fiscalYear,departmentCode,sectionCode,categoryCode,typeCode),
+	PRIMARY KEY (editNumber,fiscalYear,departmentCode,sectionCode,categoryId,typeCode),
 	FOREIGN KEY (editNumber) REFERENCES edits(editNumber),
 	FOREIGN KEY (departmentCode) REFERENCES departments(departmentCode),
 	FOREIGN KEY (sectionCode) REFERENCES sections(sectionCode),
