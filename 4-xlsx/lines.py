@@ -293,7 +293,7 @@ class AmendmentCols(Lines):
 		if level==0:
 			return (fiscalYearValue,stageNumberValue,'')
 		if item['stageNumber']==0:
-			stageNumberValue='Первоначальный бюджет'
+			stageNumberValue='Бюджет '+str(item['stageYear'])+'—'+str(item['stageYear']+2)+' гг.'
 		else:
 			stageNumberValue=str(item['stageNumber'])+'-е изменения'
 		if level==1:
