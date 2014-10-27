@@ -12,7 +12,7 @@ with dbs.Sqlite(inputFilename) as db:
 	reports.Report(
 		db,
 		lines.DepartmentRows(),
-		lines.AmendmentCols(),
+		lines.FiscalYearCols(),
 		"Ведомственная структура расходов бюджета Санкт-Петербурга"
 	).save(
 		spreadsheets.XlsxSpreadsheet(outputDirectory+'/departments2015.xlsx')
@@ -20,7 +20,7 @@ with dbs.Sqlite(inputFilename) as db:
 	reports.Report(
 		db,
 		lines.SectionRows(),
-		lines.AmendmentCols(),
+		lines.FiscalYearCols(),
 		"Функциональная структура расходов бюджета Санкт-Петербурга"
 	).save(
 		spreadsheets.XlsxSpreadsheet(outputDirectory+'/sections2015.xlsx')
