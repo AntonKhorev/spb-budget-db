@@ -140,7 +140,7 @@ class XlsxSpreadsheet(Spreadsheet):
 						self.setColWidth(c,w)
 					self.writeRange(r0,c0+c,r1,c0+c,value,format(c))
 				# set height of rows for column headers/subheaders
-				headerRowHeights=[30 if r==1 or r==2 else 15 for r in range(nColEntries)]
+				headerRowHeights=[30 if r==1 else 15 for r in range(nColEntries)]
 				minSumHeight=40 # minimal height for category/type/etc headers to fit
 				if sum(headerRowHeights)<minSumHeight:
 					headerRowHeights[-1]+=minSumHeight-sum(headerRowHeights)
