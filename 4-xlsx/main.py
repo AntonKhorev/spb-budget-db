@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-inputFilename='../3-db.out/db.sql'
+inputFilename='../3-db.out/db2015.sql'
 outputDirectory='../4-xlsx.out'
 import os
 if not os.path.exists(outputDirectory):
@@ -15,7 +15,7 @@ with dbs.Sqlite(inputFilename) as db:
 		lines.AmendmentCols(),
 		"Ведомственная структура расходов бюджета Санкт-Петербурга"
 	).save(
-		spreadsheets.XlsxSpreadsheet(outputDirectory+'/departments.xlsx')
+		spreadsheets.XlsxSpreadsheet(outputDirectory+'/departments2015.xlsx')
 	)
 	reports.Report(
 		db,
@@ -23,5 +23,5 @@ with dbs.Sqlite(inputFilename) as db:
 		lines.AmendmentCols(),
 		"Функциональная структура расходов бюджета Санкт-Петербурга"
 	).save(
-		spreadsheets.XlsxSpreadsheet(outputDirectory+'/sections.xlsx')
+		spreadsheets.XlsxSpreadsheet(outputDirectory+'/sections2015.xlsx')
 	)

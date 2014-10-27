@@ -2,7 +2,7 @@
 
 inputDirectory='../2-tables.out'
 outputDirectory='../3-db.out'
-outputFilename=outputDirectory+'/db.sql'
+outputFilename=outputDirectory+'/db2015.sql'
 import os
 if not os.path.exists(outputDirectory):
 	os.makedirs(outputDirectory)
@@ -41,14 +41,13 @@ def getDocumentPriority(documentNumber):
 	priority+=document['stageNumber'] # prefer latter stage
 	return priority
 
-ys2014=dataSets.YearSet(2014,inputDirectory,getDocumentPriority)
 ys2015=dataSets.YearSet(2015,inputDirectory,getDocumentPriority)
-iys=dataSets.InterYearSet([ys2014,ys2015])
+iys=dataSets.InterYearSet([ys2015])
 
 ### write sql ###
 
 sql=open(outputFilename,'w',encoding='utf8')
-sql.write("-- бюджет Санкт-Петербурга на 2014-2017 гг.\n")
+sql.write("-- бюджет Санкт-Петербурга на 2015-2017 гг.\n")
 
 def putValue(v):
 	if type(v) is str:
