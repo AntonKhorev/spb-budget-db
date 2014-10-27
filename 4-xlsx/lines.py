@@ -265,6 +265,37 @@ class SectionRows(Lines):
 	def listQueryOrderbys(self):
 		return 'superSectionCode','sectionCode','categoryCode','categoryName','typeCode'
 
+class FiscalYearCols(Lines):
+	def listEntries(self):
+		return [
+			'fiscalYear',
+		]
+	def listLevelOrders(self):
+		return [
+			self.AFTER,
+		]
+	def listLevelKeys(self):
+		return [
+			('fiscalYear',),
+		]
+	def getItemValues(self,item,level):
+		if item['fiscalYear']>2015: # FIXME hack
+			fiscalYearValue=str(item['fiscalYear'])+' г. (план)'
+		else:
+			fiscalYearValue=str(item['fiscalYear'])+' г.'
+		if level==0:
+			return (fiscalYearValue,)
+		raise ValueError()
+	def getItemComments(self,item,level):
+		fiscalYearComment='Бюджет Санкт-Петербурга на '+str(item['fiscalYear'])+' год'
+		if level==0:
+			return (fiscalYearComment,)
+		raise ValueError()
+	def listQuerySelects(self):
+		return 'fiscalYear',
+	def listQueryOrderbys(self):
+		return 'fiscalYear',
+
 class AmendmentCols(Lines):
 	def listEntries(self):
 		return [
