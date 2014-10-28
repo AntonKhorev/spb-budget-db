@@ -8,7 +8,7 @@ if not os.path.exists(outputDirectory):
 	os.makedirs(outputDirectory)
 
 import csv,decimal
-import dataSets
+import dataSets,translators
 
 def readMetaTable(tableName,intColumns):
 	def val(k,v):
@@ -43,12 +43,10 @@ def getDocumentPriority(documentNumber):
 
 ys2014=dataSets.YearSet(2014,inputDirectory,getDocumentPriority)
 ys2015=dataSets.YearSet(2015,inputDirectory,getDocumentPriority)
-with open('categoryNameTranslations.txt',encoding='utf8') as nameFile:
-	# category name translations between years
-	# file format: old name \n new name \n old name \n new name ...
-	# TODO fix typography
-	categoryNameTranslations={s.rstrip():t.rstrip() for s,t in zip(nameFile,nameFile)}
-iys=dataSets.InterYearSet([ys2014,ys2015],categoryNameTranslations)
+iys=dataSets.InterYearSet(
+	[ys2014,ys2015],
+	translators.CategoryNameTranslator('categoryNameTranslations.txt').getTranslations()
+)
 
 ### write sql ###
 
