@@ -31,6 +31,16 @@ class TestCategoryNameTranslator(unittest.TestCase):
 		self.assertFalse(tr.didManual)
 		self.assertEqual(tr.oldName,n1)
 		self.assertEqual(tr.newName,n2)
+	def testNestedQuoteTranslation(self):
+		n1='Субсидии бюджетному учреждению "Испытательная лаборатория пищевых продуктов и продовольственного сырья "СОЦПИТ" Управления социального питания" на финансовое обеспечение выполнения государственного задания'
+		n2='Субсидии бюджетному учреждению «Испытательная лаборатория пищевых продуктов и продовольственного сырья «СОЦПИТ» Управления социального питания» на финансовое обеспечение выполнения государственного задания'
+		t=translators.CategoryNameTranslator()
+		tr=t.translateWithReport(n1)
+		self.assertTrue(tr.changed)
+		self.assertTrue(tr.didQuotes)
+		self.assertFalse(tr.didManual)
+		self.assertEqual(tr.oldName,n1)
+		self.assertEqual(tr.newName,n2)
 		# tricky quotes:
 		# followed by punctuation
 		# 'Расходы на государственную автоматизированную информационную систему "Выборы", повышение правовой культуры избирателей и организаторов выборов'

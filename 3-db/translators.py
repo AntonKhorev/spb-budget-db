@@ -22,7 +22,12 @@ class CategoryNameTranslator:
 
 		# quote translation
 		if name.count('"')==2:
+			# ... "..." ...
 			name,nSubs=re.subn(r'(^|\s)"\b(.*?)\b"(\s|$)',r'\1«\2»\3',name)
+			tr.didQuotes=nSubs>0
+		elif name.count('"')==4:
+			# ... "... "..." ..." ...
+			name,nSubs=re.subn(r'(^|\s)"\b([^"]*)\s"\b([^"]*)\b"\s([^"]*)\b"(\s|$)',r'\1«\2 «\3» \4»\5',name)
 			tr.didQuotes=nSubs>0
 
 		# manual translation
