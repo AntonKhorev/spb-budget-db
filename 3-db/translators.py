@@ -1,7 +1,11 @@
 import re
 
 class CategoryNameTranslationReport:
-	pass
+	def __str__(self):
+		m=[]
+		if self.didQuotes: m.append('quotes')
+		if self.didManual: m.append('manual')
+		return 'category name translation using ('+','.join(m)+') from ('+self.oldName+') to ('+self.newName+')'
 
 class CategoryNameTranslator:
 	def __init__(self,lines=[]):

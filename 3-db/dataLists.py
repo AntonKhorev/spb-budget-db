@@ -239,7 +239,7 @@ class InterYearCategoryList:
 						tr=categoryNameTranslator.translateWithReport(categoryName)
 						if tr.changed:
 							categoryName=tr.newName
-							print('doc',documentNumber2,'translate name (',categoryName,') to (',tr.oldName,')')
+							print('doc',documentNumber2,tr)
 						categoryNameCodeAmounts[categoryName][categoryCode]+=editAmounts[editNumber]
 						if categoryNameCodeAmounts[categoryName][categoryCode]==0:
 							del categoryNameCodeAmounts[categoryName][categoryCode]
