@@ -201,7 +201,7 @@ class InterYearItemList(AbstractItemList):
 			self.items[k][editNumber]-=residual
 
 class InterYearCategoryList:
-	def __init__(self,yearSets):
+	def __init__(self,yearSets,categoryNameTranslations):
 		# can't use categoryName as key b/c one name can have multiple codes at the same time
 		nIds=0
 		self.categoryIdNames={}
@@ -236,6 +236,9 @@ class InterYearCategoryList:
 							continue
 						fiscalYear,departmentCode,sectionCode,categoryCode,typeCode=key
 						categoryName=yearSet.categories.names[categoryCode]
+						if categoryName in categoryNameTranslations:
+							print('doc',documentNumber2,'translate name (',categoryName,') to (',categoryNameTranslations[categoryName],')')
+							categoryName=categoryNameTranslations[categoryName]
 						categoryNameCodeAmounts[categoryName][categoryCode]+=editAmounts[editNumber]
 						if categoryNameCodeAmounts[categoryName][categoryCode]==0:
 							del categoryNameCodeAmounts[categoryName][categoryCode]
