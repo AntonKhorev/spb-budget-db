@@ -4,17 +4,27 @@ class CategoryNameTranslationReport:
 	pass
 
 class CategoryNameTranslator:
-	def __init__(self,lines):
+	def __init__(self,lines=[]):
 		# category name translations between years
 		# lines = list of old name, new name, old name, new name, ...
-		# TODO fix typography: quotes in (non-word char)"(word char).?*(word char)"(non-word char)
 		lines=(re.sub(' +',' ',line.strip()) for line in lines)
 		self.translations={s:t for s,t in zip(lines,lines)}
+
 	def translateWithReport(self,name):
 		tr=CategoryNameTranslationReport()
-		tr.changed=False
-		tr.newName=tr.oldName=name
+		tr.didQuotes=tr.didManual=False
+		tr.oldName=name
+
+		# quote translation
+		if name.count('"')==2:
+			name,nSubs=re.subn(r'(^|\s)"\b(.*?)\b"(\s|$)',r'\1«\2»\3',name)
+			tr.didQuotes=nSubs>0
+
+		# manual translation
 		if name in self.translations:
-			tr.changed=True
-			tr.newName=self.translations[name]
+			tr.didManual=True
+			name=self.translations[name]
+
+		tr.newName=name
+		tr.changed=tr.newName!=tr.oldName
 		return tr
