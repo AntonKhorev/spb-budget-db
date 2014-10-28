@@ -117,7 +117,7 @@ class YearSet:
 				raise Exception('unknown action '+str(tableFile.action))
 
 class InterYearSet:
-	def __init__(self,yearSets,categoryNameTranslations):
+	def __init__(self,yearSets,categoryNameTranslator):
 		print('== merge years ==')
 		# simple merges
 		self.departments=dataLists.DepartmentList()
@@ -136,7 +136,7 @@ class InterYearSet:
 			for row in yearSet.types.getOrderedRows():
 				self.types.add(row,priority)
 		# categories with ids
-		self.categories=dataLists.InterYearCategoryList(yearSets,categoryNameTranslations)
+		self.categories=dataLists.InterYearCategoryList(yearSets,categoryNameTranslator)
 		# edit merges
 		self.edits=[]
 		self.items=dataLists.InterYearItemList()

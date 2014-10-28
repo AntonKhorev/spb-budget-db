@@ -43,10 +43,9 @@ def getDocumentPriority(documentNumber):
 
 ys2014=dataSets.YearSet(2014,inputDirectory,getDocumentPriority)
 ys2015=dataSets.YearSet(2015,inputDirectory,getDocumentPriority)
-iys=dataSets.InterYearSet(
-	[ys2014,ys2015],
-	translators.CategoryNameTranslator('categoryNameTranslations.txt').getTranslations()
-)
+with open('categoryNameTranslations.txt',encoding='utf8') as file:
+	translator=translators.CategoryNameTranslator(file)
+iys=dataSets.InterYearSet([ys2014,ys2015],translator)
 
 ### write sql ###
 
