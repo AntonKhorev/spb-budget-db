@@ -5,7 +5,7 @@ class CategoryNameTranslator:
 		with open('categoryNameTranslations.txt',encoding='utf8') as nameFile:
 			# category name translations between years
 			# file format: old name \n new name \n old name \n new name ...
-			# TODO fix typography
+			# TODO fix typography: quotes in (non-word char)"(word char).?*(word char)"(non-word char)
 			lines=(re.sub(' +',' ',line.strip()) for line in nameFile)
 			self.translations={s:t for s,t in zip(lines,lines)}
 	def getTranslations(self):
