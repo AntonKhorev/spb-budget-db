@@ -13,6 +13,7 @@ class CategoryNameTranslator:
 		# lines = list of old name, new name, old name, new name, ...
 		lines=(re.sub(' +',' ',line.strip()) for line in lines)
 		self.translations={s:t for s,t in zip(lines,lines)}
+		self.unusedManualTranslations=set(self.translations.keys())
 
 	def translateWithReport(self,name):
 		tr=CategoryNameTranslationReport()
@@ -26,9 +27,13 @@ class CategoryNameTranslator:
 
 		# manual translation
 		if name in self.translations:
+			self.unusedManualTranslations.discard(name)
 			tr.didManual=True
 			name=self.translations[name]
 
 		tr.newName=name
 		tr.changed=tr.newName!=tr.oldName
 		return tr
+
+	def getUnusedManualTranslations(self):
+		return self.unusedManualTranslations

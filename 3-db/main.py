@@ -46,6 +46,9 @@ ys2015=dataSets.YearSet(2015,inputDirectory,getDocumentPriority)
 with open('categoryNameTranslations.txt',encoding='utf8') as file:
 	translator=translators.CategoryNameTranslator(file)
 iys=dataSets.InterYearSet([ys2014,ys2015],translator)
+print('== unused manual translations ==')
+for k in sorted(translator.getUnusedManualTranslations()):
+	print(k)
 
 ### write sql ###
 

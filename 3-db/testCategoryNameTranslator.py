@@ -42,6 +42,14 @@ class TestCategoryNameTranslator(unittest.TestCase):
 		# 'Расходы на предоставление ежемесячных социальных выплат в соответствии с Законом Санкт-Петербурга "О звании "Почетный гражданин Санкт-Петербурга"'
 		# both
 		# 'Бюджетные инвестиции на увеличение уставного капитала ОАО "Западный скоростной диаметр" в рамках реализации ДЦП СПб "Финансирование создания в Санкт-Петербурге автомобильной дороги "Западный скоростной диаметр"'
+	def testUnusedManualTranslations(self):
+		t=translators.CategoryNameTranslator([
+			'foo','bar',
+			'qwe','rty',
+			'asd','fgh',
+		])
+		tr=t.translateWithReport('qwe')
+		self.assertEqual(t.getUnusedManualTranslations(),{'foo','asd'})
 
 if __name__=='__main__':
 	unittest.main()
