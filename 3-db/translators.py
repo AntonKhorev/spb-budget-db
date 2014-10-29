@@ -37,6 +37,10 @@ class CategoryNameTranslator:
 				# ... "..." ... "..." ...
 				name,nSubs=re.subn(qPre+r'"\b'+qIn+r'\b"'+qPost+qIn+qPre+r'"\b'+qIn+r'\b"'+qPost,r'\1«\2»\3\4\5«\6»\7',name)
 				tr.didQuotes=nSubs>0
+		elif name.count('«')==1 and name.count('"')==1:
+			# ... «..." ...
+			name,nSubs=re.subn(qPre+r'«\b'+qIn+r'\b"'+qPost,r'\1«\2»\3',name)
+			tr.didQuotes=nSubs>0
 
 		# manual translation
 		if name in self.translations:
