@@ -28,6 +28,10 @@ class CategoryNameTranslator:
 			# ... "..." ...
 			name,nSubs=re.subn(qPre+r'"\b'+qIn+r'\b"'+qPost,r'\1«\2»\3',name)
 			tr.didQuotes=nSubs>0
+		elif name.count('"')==3:
+			# ... "... "..." ...
+			name,nSubs=re.subn(qPre+r'"\b'+qIn+r'\s"\b'+qIn+r'\b"'+qPost,r'\1«\2 „\3“»\4',name)
+			tr.didQuotes=nSubs>0
 		elif name.count('"')==4:
 			if True:
 				# ... "... "..." ..." ...
