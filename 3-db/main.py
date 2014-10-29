@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import itertools
+
 inputDirectory='../2-tables.out'
 outputDirectory='../3-db.out'
 outputFilename=outputDirectory+'/db.sql'
@@ -43,8 +45,8 @@ def getDocumentPriority(documentNumber):
 
 ys2014=dataSets.YearSet(2014,inputDirectory,getDocumentPriority)
 ys2015=dataSets.YearSet(2015,inputDirectory,getDocumentPriority)
-with open('categoryNameTranslations.txt',encoding='utf8') as file:
-	translator=translators.CategoryNameTranslator(file)
+with open('categoryNameTranslations.txt',encoding='utf8') as file1, open('categoryNameTypos.txt',encoding='utf8') as file2:
+	translator=translators.CategoryNameTranslator(itertools.chain(file1,file2))
 iys=dataSets.InterYearSet([ys2014,ys2015],translator)
 print('== unused manual translations ==')
 for k in sorted(translator.getUnusedManualTranslations()):
