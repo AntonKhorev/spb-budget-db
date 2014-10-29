@@ -21,14 +21,22 @@ class CategoryNameTranslator:
 		tr.oldName=name
 
 		# quote translation
+		qPre=r'(^|\s)'
+		qPost=r'(\s|$)'
+		qIn=r'([^"]*)'
 		if name.count('"')==2:
 			# ... "..." ...
-			name,nSubs=re.subn(r'(^|\s)"\b(.*?)\b"(\s|$)',r'\1«\2»\3',name)
+			name,nSubs=re.subn(qPre+r'"\b'+qIn+r'\b"'+qPost,r'\1«\2»\3',name)
 			tr.didQuotes=nSubs>0
 		elif name.count('"')==4:
-			# ... "... "..." ..." ...
-			name,nSubs=re.subn(r'(^|\s)"\b([^"]*)\s"\b([^"]*)\b"\s([^"]*)\b"(\s|$)',r'\1«\2 «\3» \4»\5',name)
-			tr.didQuotes=nSubs>0
+			if True:
+				# ... "... "..." ..." ...
+				name,nSubs=re.subn(qPre+r'"\b'+qIn+r'\s"\b'+qIn+r'\b"\s'+qIn+r'\b"'+qPost,r'\1«\2 «\3» \4»\5',name)
+				tr.didQuotes=nSubs>0
+			if not tr.didQuotes:
+				# ... "..." ... "..." ...
+				name,nSubs=re.subn(qPre+r'"\b'+qIn+r'\b"'+qPost+qIn+qPre+r'"\b'+qIn+r'\b"'+qPost,r'\1«\2»\3\4\5«\6»\7',name)
+				tr.didQuotes=nSubs>0
 
 		# manual translation
 		if name in self.translations:
