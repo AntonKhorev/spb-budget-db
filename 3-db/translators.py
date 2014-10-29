@@ -22,7 +22,7 @@ class CategoryNameTranslator:
 
 		# quote translation
 		qPre=r'(^|\s)'
-		qPost=r'(\s|$)'
+		qPost=r'(\W|$)'
 		qIn=r'([^"]*)'
 		if name.count('"')==2:
 			# ... "..." ...
