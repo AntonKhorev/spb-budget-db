@@ -24,27 +24,26 @@ class CategoryNameTranslator:
 		qPre=r'(^|\s)'
 		qPost=r'(\W|$)'
 		qIn=r'([^"]*)'
-		if name.count('"')==2:
+		qO='["«]'
+		qC='["»]'
+		nQuotes=sum(c in '"«»' for c in name)
+		if nQuotes==2:
 			# ... "..." ...
-			name,nSubs=re.subn(qPre+r'"\b'+qIn+r'\b"'+qPost,r'\1«\2»\3',name)
+			name,nSubs=re.subn(qPre+qO+r'\b'+qIn+r'\b'+qC+qPost,r'\1«\2»\3',name)
 			tr.didQuotes=nSubs>0
-		elif name.count('"')==3:
+		elif nQuotes==3:
 			# ... "... "..." ...
-			name,nSubs=re.subn(qPre+r'"\b'+qIn+r'\s"\b'+qIn+r'\b"'+qPost,r'\1«\2 „\3“»\4',name)
+			name,nSubs=re.subn(qPre+qO+r'\b'+qIn+r'\s'+qO+qIn+r'\b'+qC+qPost,r'\1«\2 „\3“»\4',name)
 			tr.didQuotes=nSubs>0
-		elif name.count('"')==4:
+		elif nQuotes==4:
 			if True:
 				# ... "... "..." ..." ...
-				name,nSubs=re.subn(qPre+r'"\b'+qIn+r'\s"\b'+qIn+r'\b"\s'+qIn+r'\b"'+qPost,r'\1«\2 «\3» \4»\5',name)
+				name,nSubs=re.subn(qPre+qO+r'\b'+qIn+r'\s'+qO+r'\b'+qIn+r'\b'+qC+r'\s'+qIn+r'\b'+qC+qPost,r'\1«\2 „\3“ \4»\5',name)
 				tr.didQuotes=nSubs>0
 			if not tr.didQuotes:
 				# ... "..." ... "..." ...
-				name,nSubs=re.subn(qPre+r'"\b'+qIn+r'\b"'+qPost+qIn+qPre+r'"\b'+qIn+r'\b"'+qPost,r'\1«\2»\3\4\5«\6»\7',name)
+				name,nSubs=re.subn(qPre+qO+r'\b'+qIn+r'\b'+qC+qPost+qIn+qPre+qO+r'\b'+qIn+r'\b'+qC+qPost,r'\1«\2»\3\4\5«\6»\7',name)
 				tr.didQuotes=nSubs>0
-		elif name.count('«')==1 and name.count('"')==1:
-			# ... «..." ...
-			name,nSubs=re.subn(qPre+r'«\b'+qIn+r'\b"'+qPost,r'\1«\2»\3',name)
-			tr.didQuotes=nSubs>0
 
 		# manual translation
 		if name in self.translations:
