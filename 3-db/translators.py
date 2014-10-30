@@ -4,6 +4,7 @@ class CategoryNameTranslationReport:
 	def __str__(self):
 		m=[]
 		if self.didQuotes: m.append('quotes')
+		if self.didDashes: m.append('dashes')
 		if self.didManual: m.append('manual')
 		return 'category name translation using ('+','.join(m)+') from ('+self.oldName+') to ('+self.newName+')'
 
@@ -17,7 +18,7 @@ class CategoryNameTranslator:
 
 	def translateWithReport(self,name):
 		tr=CategoryNameTranslationReport()
-		tr.didQuotes=tr.didManual=False
+		tr.didQuotes=tr.didDashes=tr.didManual=False
 		tr.oldName=name
 
 		# quote translation
@@ -44,6 +45,10 @@ class CategoryNameTranslator:
 				# ... "..." ... "..." ...
 				name,nSubs=re.subn(qPre+qO+r'\b'+qIn+r'\b'+qC+qPost+qIn+qPre+qO+r'\b'+qIn+r'\b'+qC+qPost,r'\1«\2»\3\4\5«\6»\7',name)
 				tr.didQuotes=nSubs>0
+
+		# dash translation
+		name,nSubs=re.subn('\s[-–—]\s',' — ',name)
+		tr.didDashes=nSubs>0
 
 		# manual translation
 		if name in self.translations:

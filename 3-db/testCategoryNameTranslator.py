@@ -10,6 +10,7 @@ class TestCategoryNameTranslator(unittest.TestCase):
 		tr=t.translateWithReport('baz')
 		self.assertFalse(tr.changed)
 		self.assertFalse(tr.didQuotes)
+		self.assertFalse(tr.didDashes)
 		self.assertFalse(tr.didManual)
 		self.assertEqual(tr.oldName,'baz')
 		self.assertEqual(tr.newName,'baz')
@@ -18,6 +19,7 @@ class TestCategoryNameTranslator(unittest.TestCase):
 		tr=t.translateWithReport('foo')
 		self.assertTrue(tr.changed)
 		self.assertFalse(tr.didQuotes)
+		self.assertFalse(tr.didDashes)
 		self.assertTrue(tr.didManual)
 		self.assertEqual(tr.oldName,'foo')
 		self.assertEqual(tr.newName,'bar')
@@ -27,6 +29,7 @@ class TestCategoryNameTranslator(unittest.TestCase):
 		tr=t.translateWithReport(n1)
 		self.assertTrue(tr.changed)
 		self.assertTrue(tr.didQuotes)
+		self.assertFalse(tr.didDashes)
 		self.assertFalse(tr.didManual)
 		self.assertEqual(tr.oldName,n1)
 		self.assertEqual(tr.newName,n2)
@@ -75,6 +78,26 @@ class TestCategoryNameTranslator(unittest.TestCase):
 		# 'Расходы на проведение мероприятий по реализации Комплексной программы "Наука. Промышленность. Инновации." в Санкт-Петербурге на 2012-2015 годы'
 		# one opening, one closing, two opening, one closing
 		# 'Бюджетные инвестиции на увеличение уставного капитала ОАО "Западный скоростной диаметр" в рамках реализации ДЦП СПб "Финансирование создания в Санкт-Петербурге автомобильной дороги "Западный скоростной диаметр"'
+
+	def doTestDashTranslation(self,n1,n2):
+		t=translators.CategoryNameTranslator()
+		tr=t.translateWithReport(n1)
+		self.assertTrue(tr.changed)
+		self.assertFalse(tr.didQuotes)
+		self.assertTrue(tr.didDashes)
+		self.assertFalse(tr.didManual)
+		self.assertEqual(tr.oldName,n1)
+		self.assertEqual(tr.newName,n2)
+	def testShortDashTranslation(self):
+		self.doTestDashTranslation(
+			'Субсидии бюджетным учреждениям - школам-интернатам на иные цели',
+                        'Субсидии бюджетным учреждениям — школам-интернатам на иные цели'
+		)
+	def testMediumDashTranslation(self):
+		self.doTestDashTranslation(
+			'Субсидии бюджетным учреждениям – спортивным школам на выполнение государственного задания',
+			'Субсидии бюджетным учреждениям — спортивным школам на выполнение государственного задания'
+		)
 
 	def testUnusedManualTranslations(self):
 		t=translators.CategoryNameTranslator([
